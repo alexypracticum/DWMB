@@ -805,7 +805,9 @@ async def entity_add_relation(
     entity_id: str,
     relation_type_id: str = Form(...),
     target_entity_id: str = Form(...),
-    direction: str = Form("outgoing"),
+    role: str = Form(""),
+    confidence: float = Form(1.0),
+    weight: float = Form(1.0),
     db: AsyncSession = Depends(get_db),
     user: UserAccount = Depends(require_auth),
 ):
@@ -836,22 +838,47 @@ async def entity_add_relation(
     version_result = await db.execute(select(func.max(SemanticRelation.version_id)))
     version_id = (version_result.scalar() or 0) + 1
 
-    # Create relation based on direction
-    if direction == "outgoing":
-        source_proj_id = src_proj.projection_id
-        target_proj_id = tgt_proj.projection_id
-    else:
-        source_proj_id = tgt_proj.projection_id
-        target_proj_id = src_proj.projection_id
+    # Get relation type and its inverse
+    rt_result = await db.execute(select(RelationType).where(RelationType.relation_type_id == rtid))
+    rt = rt_result.scalar_one_or_none()
+    inverse_rtid = rt.inverse_type_id if rt else None
 
+    # Build metadata
+    import json
+    metadata = {}
+    if role and role.strip():
+        metadata["role"] = role.strip()
+    if confidence != 1.0:
+        metadata["confidence"] = confidence
+    if weight != 1.0:
+        metadata["weight"] = weight
+
+    # Create direct relation (source → target)
     relation = SemanticRelation(
-        source_projection_id=source_proj_id,
+        source_projection_id=src_proj.projection_id,
         relation_type_id=rtid,
-        target_projection_id=target_proj_id,
-        confidence=1.0,
+        target_projection_id=tgt_proj.projection_id,
+        confidence=confidence,
+        weight=weight,
+        metadata_=metadata,
         version_id=version_id,
     )
     db.add(relation)
+
+    # Create inverse relation (target → source) automatically
+    # Skip if self-inverse (undirected relation)
+    if inverse_rtid and inverse_rtid != rtid:
+        inverse_relation = SemanticRelation(
+            source_projection_id=tgt_proj.projection_id,
+            relation_type_id=inverse_rtid,
+            target_projection_id=src_proj.projection_id,
+            confidence=confidence,
+            weight=weight,
+            metadata_=metadata,
+            version_id=version_id,
+        )
+        db.add(inverse_relation)
+
     await db.commit()
 
     return RedirectResponse(url=f"/entity/{entity_id}/edit", status_code=303)
@@ -865,12 +892,28 @@ async def entity_delete_relation(
     user: UserAccount = Depends(require_auth),
 ):
     from uuid import UUID
-    from app.models.relations import SemanticRelation
+    from app.models.relations import SemanticRelation, RelationType
 
     rid = UUID(relation_id)
     result = await db.execute(select(SemanticRelation).where(SemanticRelation.relation_id == rid))
     rel = result.scalar_one_or_none()
     if rel:
+        # Find and delete the inverse relation (skip if self-inverse)
+        rt_result = await db.execute(select(RelationType).where(RelationType.relation_type_id == rel.relation_type_id))
+        rt = rt_result.scalar_one_or_none()
+        if rt and rt.inverse_type_id and rt.inverse_type_id != rel.relation_type_id:
+            # Find inverse: source=this.target, target=this.source, type=inverse_type
+            inverse_result = await db.execute(
+                select(SemanticRelation).where(
+                    SemanticRelation.source_projection_id == rel.target_projection_id,
+                    SemanticRelation.target_projection_id == rel.source_projection_id,
+                    SemanticRelation.relation_type_id == rt.inverse_type_id,
+                )
+            )
+            inverse_rel = inverse_result.scalar_one_or_none()
+            if inverse_rel:
+                await db.delete(inverse_rel)
+
         await db.delete(rel)
         await db.commit()
 

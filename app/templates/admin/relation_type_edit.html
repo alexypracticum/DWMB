@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Редактирование типа связи - Админ DWMB{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-2xl">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">
+            {% if rt %}Редактирование: {{ rt.relation_name }}{% else %}Создать тип связи{% endif %}
+        </h1>
+        <a href="/admin/relation-types" class="text-sm text-blue-600 hover:text-blue-800">← Назад</a>
+    </div>
+
+    <form action="{% if rt %}/admin/relation-types/{{ rt.relation_type_id }}/edit{% else %}/admin/relation-types/create{% endif %}" method="post" class="space-y-6">
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Основная информация</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Код типа *</label>
+                    <input type="text" name="relation_code" value="{{ rt.relation_code if rt else '' }}" required placeholder="acted_in"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <p class="text-xs text-gray-400 mt-1">Латиница, нижний регистр, подчёркивания</p>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Название *</label>
+                    <input type="text" name="relation_name" value="{{ rt.relation_name if rt else '' }}" required placeholder="Сыграл в"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+            <div class="mt-4">
+                <label class="block text-xs text-gray-500 mb-1">Описание</label>
+                <input type="text" name="description" value="{{ rt.description if rt else '' }}" placeholder="Описание типа связи"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Настройки</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Обратный тип связи</label>
+                    <select name="inverse_type_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">— создать автоматически —</option>
+                        {% for item in all_types %}
+                        {% if not rt or item.relation_type_id != rt.relation_type_id %}
+                        <option value="{{ item.relation_type_id }}" {% if rt and rt.inverse_type_id == item.relation_type_id %}selected{% endif %}>
+                            {{ item.relation_name }} ({{ item.relation_code }})
+                        </option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">Направленная: указать другой тип. Ненаправленная: оставить пустым.</p>
+                </div>
+                <div>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="transitive_relation" value="true" {% if rt and rt.transitive_relation %}checked{% endif %} class="rounded border-gray-300">
+                        <span class="text-sm text-gray-600">Транзитивная (A→B, B→C → A→C)</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <a href="/admin/relation-types" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">Отмена</a>
+            <button type="submit" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                {% if rt %}Сохранить{% else %}Создать{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

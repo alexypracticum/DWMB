@@ -1,15 +1,16 @@
 # TODO
 
-## Текущий статус: v0.4.0
+## Текущий статус: v0.4.1
 
 ### Приоритет 1: Критичные пробелы
 
 - [x] CRUD для OntologyModel через UI
 - [x] CRUD для EntityKind через UI
+- [x] CRUD для RelationType через UI
 - [x] Синхронизация CRUD с сущностями
 - [x] Мультиязычные переводы (ru/en)
 - [x] REST API для kinds, fields, categories
-- [x] Безопасность для GitHub (.env, .gitignore)
+- [x] Безопасность для GitHub (.env, .gitignore, env_file)
 
 ### Приоритет 2: Важные функции
 
@@ -18,7 +19,13 @@
   - [x] Модальное окно добавления связи
   - [x] Поиск сущности через AJAX
   - [x] Удаление связей
-  - [ ] Выбор нескольких связей одновременно
+  - [x] Метаданные связей (role, confidence, weight)
+  - [x] Двусторонние связи (авто-создание пар)
+
+- [x] Упрощение модели связей
+  - [x] Убраны поля directionality и symmetric_relation
+  - [x] inverse_type_id = self для ненаправленных связей
+  - [x] inverse_type_id = другой_тип для направленных
 
 - [ ] Импорт из внешних источников
   - [ ] Wikipedia API
@@ -29,43 +36,14 @@
   - [ ] Middleware для ограничения запросов
   - [ ] Конфигурация лимитов
 
-- [x] Онтологии как сущности
-  - [x] Типы ontology_model/ontology_template
-  - [x] Конвертация данных
-  - [x] Синхронизация CRUD
-
 ### Приоритет 3: Продвинутые функции
 
 - [ ] Визуализация связей
-  - [ ] D3.js / Cytoscape.js
-  - [ ] Графовое представление
-  - [ ] Фильтрация по типам
-
 - [ ] AI: Автоматическая генерация связей
-  - [ ] Анализ текста
-  - [ ] Предложение связей
-  - [ ] Автосоздание
-
 - [ ] Плагины
-  - [ ] Архитектура плагинов
-  - [ ] Интерфейс подключения
 
 ### Приоритет 4: Инфраструктура
 
 - [ ] Микросервисы
 - [ ] GraphQL
-- [ ] RLS (Row-Level Security)
-
-### Исправления багов
-
-- [x] Internal Server Error при /entities?kind=movie
-- [x] Синхронизация схем kind ↔ template
-- [x] Тип ENUM для language_preference
-- [x] Потеря datetime в api_update_entity_field
-- [x] FK violation при загрузке изображений
-- [x] Дедупликация загрузок по хешу
-- [x] Ключ poster_url → poster
-- [x] Дублирование name="poster" в edit
-- [x] UUID() → uuid.uuid4() в add-projection
-- [x] Импорт EntityProjection/ProjectionState
-- [x] Модель model_code → entity_code синхронизация
+- [ ] RLS

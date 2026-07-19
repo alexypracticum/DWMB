@@ -1268,3 +1268,176 @@ async def admin_ai_save(
 
     await db.commit()
     return RedirectResponse(url="/admin/ai", status_code=303)
+
+
+# =============================================================================
+#  RELATION TYPES CRUD
+# =============================================================================
+
+@router.get("/relation-types", response_class=HTMLResponse)
+async def admin_relation_types(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+    from app.models.relations import RelationType, SemanticRelation
+
+    result = await db.execute(select(RelationType).order_by(RelationType.relation_code))
+    types = result.scalars().all()
+
+    type_data = []
+    for rt in types:
+        # Get inverse code
+        inverse_code = None
+        if rt.inverse_type_id:
+            inv_result = await db.execute(select(RelationType.relation_code).where(RelationType.relation_type_id == rt.inverse_type_id))
+            inverse_code = inv_result.scalar_one_or_none()
+
+        # Count relations of this type
+        count_result = await db.execute(select(func.count(SemanticRelation.relation_id)).where(SemanticRelation.relation_type_id == rt.relation_type_id))
+        relation_count = count_result.scalar() or 0
+
+        type_data.append({"rt": rt, "inverse_code": inverse_code, "relation_count": relation_count})
+
+    return templates.TemplateResponse("admin/relation_types.html", {
+        "request": request, "user": user, "relation_types": type_data,
+    })
+
+
+@router.get("/relation-types/create", response_class=HTMLResponse)
+async def admin_relation_type_create_page(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+    from app.models.relations import RelationType
+    result = await db.execute(select(RelationType).order_by(RelationType.relation_code))
+    all_types = result.scalars().all()
+    return templates.TemplateResponse("admin/relation_type_edit.html", {
+        "request": request, "user": user, "rt": None, "all_types": all_types,
+    })
+
+
+@router.post("/relation-types/create")
+async def admin_relation_type_create(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+    relation_code: str = Form(""),
+    relation_name: str = Form(""),
+    description: str = Form(""),
+    inverse_type_id: str = Form(""),
+    transitive_relation: bool = Form(False),
+):
+    from app.models.relations import RelationType
+
+    relation_code = relation_code.strip().lower().replace(" ", "_")
+    if not relation_code or not relation_name:
+        return RedirectResponse(url="/admin/relation-types/create?error=empty", status_code=303)
+
+    existing = await db.execute(select(RelationType).where(RelationType.relation_code == relation_code))
+    if existing.scalar_one_or_none():
+        return RedirectResponse(url="/admin/relation-types/create?error=exists", status_code=303)
+
+    version_result = await db.execute(select(func.max(RelationType.version_id)))
+    version_id = (version_result.scalar() or 0) + 1
+
+    rt = RelationType(
+        relation_code=relation_code,
+        relation_name=relation_name,
+        description=description,
+        directionality='directed',  # Default, will be deprecated
+        inverse_type_id=UUID(inverse_type_id) if inverse_type_id else None,
+        symmetric_relation=False,  # Deprecated, kept for DB compatibility
+        transitive_relation=transitive_relation,
+        version_id=version_id,
+    )
+    db.add(rt)
+    await db.flush()
+
+    # Link inverse if specified
+    if inverse_type_id:
+        inv_result = await db.execute(select(RelationType).where(RelationType.relation_type_id == UUID(inverse_type_id)))
+        inv = inv_result.scalar_one_or_none()
+        if inv and not inv.inverse_type_id:
+            inv.inverse_type_id = rt.relation_type_id
+
+    await db.commit()
+    return RedirectResponse(url="/admin/relation-types", status_code=303)
+
+
+@router.get("/relation-types/{rt_id}/edit", response_class=HTMLResponse)
+async def admin_relation_type_edit_page(rt_id: str, request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+    from app.models.relations import RelationType
+    result = await db.execute(select(RelationType).where(RelationType.relation_type_id == UUID(rt_id)))
+    rt = result.scalar_one_or_none()
+    if not rt:
+        return RedirectResponse(url="/admin/relation-types", status_code=303)
+
+    all_result = await db.execute(select(RelationType).order_by(RelationType.relation_code))
+    all_types = all_result.scalars().all()
+
+    return templates.TemplateResponse("admin/relation_type_edit.html", {
+        "request": request, "user": user, "rt": rt, "all_types": all_types,
+    })
+
+
+@router.post("/relation-types/{rt_id}/edit")
+async def admin_relation_type_edit(
+    rt_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+    relation_code: str = Form(""),
+    relation_name: str = Form(""),
+    description: str = Form(""),
+    inverse_type_id: str = Form(""),
+    transitive_relation: bool = Form(False),
+):
+    from app.models.relations import RelationType
+
+    result = await db.execute(select(RelationType).where(RelationType.relation_type_id == UUID(rt_id)))
+    rt = result.scalar_one_or_none()
+    if not rt:
+        return RedirectResponse(url="/admin/relation-types", status_code=303)
+
+    # Unlink old inverse
+    if rt.inverse_type_id:
+        old_inv_result = await db.execute(select(RelationType).where(RelationType.relation_type_id == rt.inverse_type_id))
+        old_inv = old_inv_result.scalar_one_or_none()
+        if old_inv and old_inv.inverse_type_id == rt.relation_type_id:
+            old_inv.inverse_type_id = None
+
+    rt.relation_code = relation_code.strip().lower()
+    rt.relation_name = relation_name
+    rt.description = description
+    rt.transitive_relation = transitive_relation
+    rt.inverse_type_id = UUID(inverse_type_id) if inverse_type_id else None
+
+    # Link new inverse
+    if inverse_type_id:
+        inv_result = await db.execute(select(RelationType).where(RelationType.relation_type_id == UUID(inverse_type_id)))
+        inv = inv_result.scalar_one_or_none()
+        if inv:
+            inv.inverse_type_id = rt.relation_type_id
+
+    await db.commit()
+    return RedirectResponse(url="/admin/relation-types", status_code=303)
+
+
+@router.post("/relation-types/{rt_id}/delete")
+async def admin_relation_type_delete(rt_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+    from app.models.relations import RelationType, SemanticRelation
+
+    result = await db.execute(select(RelationType).where(RelationType.relation_type_id == UUID(rt_id)))
+    rt = result.scalar_one_or_none()
+    if not rt:
+        return RedirectResponse(url="/admin/relation-types", status_code=303)
+
+    # Unlink inverse
+    if rt.inverse_type_id:
+        inv_result = await db.execute(select(RelationType).where(RelationType.relation_type_id == rt.inverse_type_id))
+        inv = inv_result.scalar_one_or_none()
+        if inv and inv.inverse_type_id == rt.relation_type_id:
+            inv.inverse_type_id = None
+
+    # Delete relations of this type
+    rel_result = await db.execute(select(SemanticRelation).where(SemanticRelation.relation_type_id == rt.relation_type_id))
+    for rel in rel_result.scalars().all():
+        await db.delete(rel)
+
+    await db.delete(rt)
+    await db.commit()
+    return RedirectResponse(url="/admin/relation-types", status_code=303)
