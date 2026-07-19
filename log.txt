@@ -1,0 +1,8 @@
+darckwarrior@DWNPC:/media/darckwarrior/G/Yandex.Disk/PC/Dev/DWMB$ docker logs dwmb_app 2>&1 | grep DB_DIRTY
+WARNING:root:DB_DIRTY: Entity id=097edb03-ba73-4abc-8d65-91c595a4a77c
+darckwarrior@DWNPC:/media/darckwarrior/G/Yandex.Disk/PC/Dev/DWMB$ docker compose exec db psql -U dwmb -d dwmb -c "SELECT state_data->>'poster_url' as poster FROM meta.entity_projection ep JOIN meta.projection_state ps ON ps.projection_id = ep.projection_id WHERE ep.entity_id = '6ebb5e65-487f-48d7-bda4-185f3046348e' AND ps.is_current = true"
+WARN[0000] /media/darckwarrior/G/Yandex.Disk/PC/Dev/DWMB/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion
+ poster
+--------
+
+(1 row)

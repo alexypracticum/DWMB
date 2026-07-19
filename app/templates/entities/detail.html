@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}{{ entity.entity_code }} - DWMB{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
+    <a href="/" class="hover:underline" style="color: var(--color-primary);">Главная</a>
+    <span class="mx-2">/</span>
+    <a href="/entities" class="hover:underline" style="color: var(--color-primary);">Сущности</a>
+    <span class="mx-2">/</span>
+    <a href="/entities?kind={{ kind.kind_code }}" class="hover:underline" style="color: var(--color-primary);">{{ kind_label }}</a>
+    <span class="mx-2">/</span>
+    <span style="color: var(--color-text);">{{ entity.entity_code }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-4xl">
+    <!-- Header -->
+    <div class="flex items-start justify-between mb-6">
+        <div>
+            <div class="flex items-center gap-2 mb-2">
+                <a href="/entities?kind={{ kind.kind_code }}" class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition">{{ kind_label }}</a>
+                <span class="text-xs text-gray-400">{{ entity.entity_code }}</span>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">
+                {% for label in labels %}{% if label.language == 'ru' %}{{ label.label }}{% endif %}{% endfor %}
+            </h1>
+            {% for label in labels %}{% if label.language == 'en' %}
+            <div class="text-lg text-gray-500 mt-1">{{ label.label }}</div>
+            {% endif %}{% endfor %}
+        </div>
+        <div class="flex gap-2">
+            {% if user %}
+            <a href="/entity/{{ entity.entity_id }}/edit" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">Редактировать</a>
+            {% endif %}
+            {% if user and user.is_admin %}
+            <form action="/entity/{{ entity.entity_id }}/delete" method="post" onsubmit="return confirm('Удалить сущность?')">
+                <button type="submit" class="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">Удалить</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if layout_html %}
+    <!-- Layout-rendered content -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+        {{ layout_html | safe }}
+    </div>
+    {% else %}
+    <!-- Fallback: Description -->
+    {% for label in labels %}{% if label.language == 'ru' and label.description %}
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+        <p class="text-gray-700 leading-relaxed">{{ label.description }}</p>
+    </div>
+    {% endif %}{% endfor %}
+
+    <!-- Schema fields in key:value format -->
+    {% if schema_fields and state_data %}
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">
+            Данные
+            {% if template_obj %}
+            <span class="text-sm font-normal text-gray-400 ml-2">({{ template_obj.template_name }})</span>
+            {% endif %}
+        </h2>
+        <div class="w-full">
+            {% for field in schema_fields %}
+            {% set val = state_data.get(field.key, '') %}
+            {% if val is not none and val != '' %}
+            {% set val_str = val|string %}
+            <div class="flex items-center border-b border-gray-100 py-2.5 {% if field.key == 'description' or field.key == 'content' %}flex-col items-stretch{% endif %}">
+                {% if field.key != 'description' and field.key != 'content' %}
+                <div class="w-48 flex-shrink-0 text-sm text-gray-500 font-medium text-right pr-4">{{ field.label }}</div>
+                <div class="text-gray-400 pr-4">:</div>
+                <div class="flex-1 text-sm text-gray-800">
+                    {% if val_str.startswith('http') and ('.jpg' in val_str or '.jpeg' in val_str or '.png' in val_str or '.webp' in val_str or '.gif' in val_str or '.svg' in val_str) %}
+                    <img src="{{ val_str }}" alt="{{ field.label }}" class="rounded-lg max-h-48 object-contain">
+                    {% elif val_str.startswith('http') and ('.mp4' in val_str or '.webm' in val_str) %}
+                    <video controls class="rounded-lg max-h-64"><source src="{{ val_str }}"></video>
+                    {% elif val_str.startswith('http') and ('.mp3' in val_str or '.ogg' in val_str or '.wav' in val_str) %}
+                    <audio controls class="w-full max-w-md"><source src="{{ val_str }}"></audio>
+                    {% elif val_str.startswith('http') %}
+                    <a href="{{ val_str }}" target="_blank" class="text-blue-600 hover:underline">{{ val_str }}</a>
+                    {% else %}
+                    {{ val }}
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% if field.key == 'description' or field.key == 'content' %}
+                <div class="text-sm text-gray-500 font-medium mb-1">{{ field.label }}</div>
+                <div class="text-sm text-gray-800 prose prose-sm max-w-none">{{ val }}</div>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Fallback: Projections raw data (if no schema) -->
+    {% if projections and not schema_fields %}
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Данные</h2>
+        <div class="space-y-4">
+            {% for p in projections %}
+            <div class="border border-gray-200 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">{{ p.model.model_code }}</span>
+                    <span class="text-sm text-gray-500">{{ p.projection.projection_name }}</span>
+                </div>
+                {% if p.state %}
+                <div class="bg-gray-50 rounded-lg p-3 mt-2">
+                    <pre class="text-sm text-gray-700 whitespace-pre-wrap font-mono">{{ p.state.state_data | tojson(indent=2) }}</pre>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Labels -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Метки</h2>
+        <div class="space-y-3">
+            {% for label in labels %}
+            <div class="flex items-center gap-3">
+                <span class="px-2 py-0.5 text-xs font-mono bg-gray-100 text-gray-600 rounded">{{ label.language }}</span>
+                <span class="font-medium text-gray-800">{{ label.label }}</span>
+                {% if label.is_primary %}
+                <span class="px-1.5 py-0.5 text-xs bg-green-100 text-green-700 rounded">основной</span>
+                {% endif %}
+            </div>
+            {% if label.description %}
+            <div class="ml-11 text-sm text-gray-500">{{ label.description }}</div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Relations -->
+    {% if outgoing_relations or incoming_relations %}
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Связи</h2>
+
+        {% if outgoing_relations %}
+        <div class="mb-4">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Исходящие связи</h3>
+            <div class="space-y-2">
+                {% for r in outgoing_relations %}
+                <a href="/entity/{{ r.target.entity_id }}" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition">
+                    <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">{{ r.type.relation_name }}</span>
+                    <span class="font-medium text-gray-800">{{ r.label.label }}</span>
+                    <span class="text-xs text-gray-400">{{ r.target.entity_code }}</span>
+                    <svg class="w-4 h-4 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if incoming_relations %}
+        <div>
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Входящие связи</h3>
+            <div class="space-y-2">
+                {% for r in incoming_relations %}
+                <a href="/entity/{{ r.source.entity_id }}" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-green-50 transition">
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    <span class="font-medium text-gray-800">{{ r.label.label }}</span>
+                    <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">{{ r.type.relation_name }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Meta -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Мета-информация</h2>
+        <dl class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+                <dt class="text-gray-400">ID</dt>
+                <dd class="font-mono text-gray-700 text-xs">{{ entity.entity_id }}</dd>
+            </div>
+            <div>
+                <dt class="text-gray-400">Статус</dt>
+                <dd class="text-gray-700">{{ entity.status }}</dd>
+            </div>
+            <div>
+                <dt class="text-gray-400">Создано</dt>
+                <dd class="text-gray-700">{{ entity.created_at.strftime('%d.%m.%Y %H:%M') if entity.created_at else '-' }}</dd>
+            </div>
+            <div>
+                <dt class="text-gray-400">Обновлено</dt>
+                <dd class="text-gray-700">{{ entity.updated_at.strftime('%d.%m.%Y %H:%M') if entity.updated_at else '-' }}</dd>
+            </div>
+        </dl>
+    </div>
+</div>
+{% endblock %}

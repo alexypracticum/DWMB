@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+{% block title %}Редактирование - DWMB{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
+    <a href="/" class="hover:underline" style="color: var(--color-primary);">Главная</a>
+    <span class="mx-2">/</span>
+    <a href="/entities" class="hover:underline" style="color: var(--color-primary);">Сущности</a>
+    <span class="mx-2">/</span>
+    <a href="/entity/{{ entity.entity_id }}" class="hover:underline" style="color: var(--color-primary);">{{ entity.entity_code }}</a>
+    <span class="mx-2">/</span>
+    <span style="color: var(--color-text);">Редактирование</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-4xl">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Редактирование сущности</h1>
+
+    <form action="/entity/{{ entity.entity_id }}/edit" method="post" enctype="multipart/form-data" class="space-y-6">
+        <!-- Layout blocks as editable forms -->
+        {% if layout_blocks %}
+        {% from "macros/layout_fields.html" import render_block_form %}
+        {% for block in layout_blocks %}
+        {{ render_block_form(block, loop.index, schema_fields, state_data) }}
+        {% endfor %}
+        {% endif %}
+
+        <!-- Schema-based fields -->
+        {% if schema_fields %}
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Данные
+                    {% if template_obj %}
+                    <span class="text-sm font-normal text-gray-400 ml-2">({{ template_obj.template_name }})</span>
+                    {% endif %}
+                </h2>
+                <a href="/entity/{{ entity.entity_id }}/edit" class="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded border border-emerald-200 hover:bg-emerald-100 transition">🔄 Обновить из схемы</a>
+            </div>
+            <div class="w-full">
+                {% for field in schema_fields %}
+                <div class="flex items-center border-b border-gray-100 py-3 {% if field.key == 'description' or field.key == 'content' %}flex-col items-stretch{% endif %}">
+                    {% if field.key != 'description' and field.key != 'content' %}
+                    <div class="w-44 flex-shrink-0 text-sm text-gray-500 font-medium text-right pr-3">
+                        {{ field.label }}{% if field.required %} <span class="text-red-500">*</span>{% endif %}
+                    </div>
+                    <div class="text-gray-400 pr-3">:</div>
+                    <div class="flex-1">
+                    {% endif %}
+                        {% if field.enum %}
+                        <select name="{{ field.key }}" {% if field.required %}required{% endif %}
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                            <option value="">— выбрать —</option>
+                            {% for opt in field.enum %}
+                            <option value="{{ opt }}" {% if state_data.get(field.key) == opt %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                        {% elif field.type == 'integer' or field.type == 'number' %}
+                        <input type="number" name="{{ field.key }}" step="{% if field.type == 'number' %}any{% else %}1{% endif %}"
+                            value="{{ state_data.get(field.key, '') }}"
+                            {% if field.required %}required{% endif %}
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        {% elif field.type == 'boolean' %}
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="{{ field.key }}" value="true"
+                                {% if state_data.get(field.key) %}checked{% endif %} class="rounded border-gray-300">
+                            <span class="text-sm text-gray-600">{{ field.description or field.label }}</span>
+                        </label>
+                        {% elif field.key == 'description' or field.key == 'content' or field.type == 'array' %}
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-sm text-gray-500 font-medium">{{ field.label }}</span>
+                            {% if field.key == 'content' %}<span class="text-xs text-gray-400">(Markdown)</span>{% endif %}
+                        </div>
+                        <textarea name="{{ field.key }}" rows="5"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono">{{ state_data.get(field.key, '') }}</textarea>
+                        {% else %}
+                        <input type="text" name="{{ field.key }}" value="{{ state_data.get(field.key, '') }}"
+                            {% if field.required %}required{% endif %}
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                        {% endif %}
+                    {% if field.key != 'description' and field.key != 'content' %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Labels -->
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Метки</h2>
+            <div class="w-full">
+                {% for label in labels %}
+                <div class="flex items-center border-b border-gray-100 py-2">
+                    <div class="w-44 flex-shrink-0 text-sm text-gray-500 font-medium text-right pr-3">
+                        {{ 'Название (RU)' if label.language == 'ru' else 'Название (EN)' }}
+                        {% if label.language == 'ru' %}*{% endif %}
+                    </div>
+                    <div class="text-gray-400 pr-3">:</div>
+                    <div class="flex-1">
+                        <input type="text" name="{{ 'label_ru' if label.language == 'ru' else 'label_en' }}" value="{{ label.label }}"
+                            {% if label.language == 'ru' %}required{% endif %}
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    </div>
+                </div>
+                {% endfor %}
+                <div class="flex items-center border-b border-gray-100 py-2">
+                    <div class="w-44 flex-shrink-0 text-sm text-gray-500 font-medium text-right pr-3">Описание (RU)</div>
+                    <div class="text-gray-400 pr-3">:</div>
+                    <div class="flex-1">
+                        {% for label in labels %}{% if label.language == 'ru' %}
+                        <textarea name="description_ru" rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">{{ label.description or '' }}</textarea>
+                        {% endif %}{% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-3">
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Сохранить</button>
+            <a href="/entity/{{ entity.entity_id }}" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Отмена</a>
+        </div>
+    </form>
+
+    <!-- Projections management -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mt-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Привязанные онтологии ({{ projections|length }})</h2>
+        {% if projections %}
+        <div class="space-y-2 mb-4">
+            {% for p in projections %}
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center gap-3">
+                    <span class="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">{{ p.model.model_code }}</span>
+                    <span class="text-sm font-medium text-gray-700">{{ p.projection.projection_name }}</span>
+                    <span class="text-xs text-gray-400">({{ p.projection.projection_code }})</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    {% if p.state %}
+                    <span class="text-xs text-gray-400">{{ p.state.state_data | length }} полей</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400 mb-4">Нет привязанных онтологий</p>
+        {% endif %}
+
+        <!-- Add new projection -->
+        <div class="border-t border-gray-100 pt-4">
+            <button type="button" onclick="document.getElementById('addProjectionModal').classList.remove('hidden')"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
+                + Добавить онтологию
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal: Add Projection -->
+    <div id="addProjectionModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">Добавить онтологию</h3>
+                <button onclick="document.getElementById('addProjectionModal').classList.add('hidden')"
+                        class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1">
+                {% if available_templates %}
+                <form action="/entity/{{ entity.entity_id }}/add-projection" method="post" id="addProjectionForm">
+                    <!-- Search -->
+                    <input type="text" id="templateSearch" placeholder="Поиск шаблона..."
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm mb-4 focus:ring-2 focus:ring-blue-500 outline-none"
+                           oninput="filterTemplates(this.value)">
+                    
+                    <div id="templateList" class="space-y-3">
+                        {% for kind_group in available_templates %}
+                        <div class="template-group" data-kind="{{ kind_group.kind_code }}">
+                            <div class="text-xs font-medium text-gray-500 mb-2 flex items-center gap-1 sticky top-0 bg-white py-1">
+                                <span class="px-1.5 py-0.5 bg-gray-100 rounded">{{ kind_group.kind_code }}</span>
+                                {{ kind_group.kind_label }}
+                                <span class="text-gray-400 ml-1">({{ kind_group.templates|length }})</span>
+                            </div>
+                            {% for tmpl in kind_group.templates %}
+                            <label class="template-item flex items-center gap-2 p-2 rounded border border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition cursor-pointer text-sm"
+                                   data-name="{{ tmpl.template_name|lower }}">
+                                <input type="radio" name="template_id" value="{{ tmpl.template_id }}" required
+                                       class="text-blue-600 focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium text-gray-700">{{ tmpl.template_name }}</span>
+                                    <span class="text-xs text-gray-400 ml-1">({{ tmpl.model_code }})</span>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </form>
+                {% else %}
+                <p class="text-sm text-gray-400 text-center py-8">Все доступные шаблоны уже привязаны</p>
+                {% endif %}
+            </div>
+            {% if available_templates %}
+            <div class="p-4 border-t border-gray-200 flex justify-end gap-3">
+                <button onclick="document.getElementById('addProjectionModal').classList.add('hidden')"
+                        class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Отмена</button>
+                <button onclick="document.getElementById('addProjectionForm').submit()"
+                        class="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Привязать</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+    function filterTemplates(query) {
+        const q = query.toLowerCase();
+        document.querySelectorAll('.template-item').forEach(item => {
+            const name = item.dataset.name || '';
+            item.style.display = name.includes(q) ? '' : 'none';
+        });
+        // Hide empty groups
+        document.querySelectorAll('.template-group').forEach(group => {
+            const visible = group.querySelectorAll('.template-item[style=""], .template-item:not([style])');
+            group.style.display = visible.length > 0 ? '' : 'none';
+        });
+    }
+
+    function filterEntities(query) {
+        const q = query.toLowerCase();
+        document.querySelectorAll('.entity-item').forEach(item => {
+            const name = (item.dataset.label || '').toLowerCase();
+            item.style.display = name.includes(q) ? '' : 'none';
+        });
+    }
+    </script>
+
+    <!-- Relationships management -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mt-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Связи ({{ outgoing_relations|length + incoming_relations|length }})</h2>
+
+        <!-- Outgoing relations -->
+        {% if outgoing_relations %}
+        <div class="mb-4">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Исходящие связи</h3>
+            <div class="space-y-2">
+                {% for r in outgoing_relations %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">{{ r.type.relation_name }}</span>
+                        <a href="/entity/{{ r.target.entity_id }}" class="text-sm font-medium text-blue-600 hover:underline">{{ r.label.label }}</a>
+                    </div>
+                    <form action="/entity/{{ entity.entity_id }}/delete-relation/{{ r.relation.relation_id }}" method="post" onsubmit="return confirm('Удалить связь?')">
+                        <button type="submit" class="text-red-500 hover:text-red-700 text-xs">Удалить</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Incoming relations -->
+        {% if incoming_relations %}
+        <div class="mb-4">
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Входящие связи</h3>
+            <div class="space-y-2">
+                {% for r in incoming_relations %}
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <a href="/entity/{{ r.source.entity_id }}" class="text-sm font-medium text-blue-600 hover:underline">{{ r.label.label }}</a>
+                        <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">{{ r.type.relation_name }}</span>
+                    </div>
+                    <form action="/entity/{{ entity.entity_id }}/delete-relation/{{ r.relation.relation_id }}" method="post" onsubmit="return confirm('Удалить связь?')">
+                        <button type="submit" class="text-red-500 hover:text-red-700 text-xs">Удалить</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if not outgoing_relations and not incoming_relations %}
+        <p class="text-sm text-gray-400 mb-4">Нет связей</p>
+        {% endif %}
+
+        <!-- Add new relation -->
+        <div class="border-t border-gray-100 pt-4">
+            <button type="button" onclick="document.getElementById('addRelationModal').classList.remove('hidden')"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                + Добавить связь
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal: Add Relation -->
+    <div id="addRelationModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">Добавить связь</h3>
+                <button onclick="document.getElementById('addRelationModal').classList.add('hidden')"
+                        class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1">
+                <form action="/entity/{{ entity.entity_id }}/add-relation" method="post" id="addRelationForm" class="space-y-4">
+                    <!-- Relation type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Тип связи</label>
+                        <select name="relation_type_id" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">— выбрать тип —</option>
+                            {% for rt in relation_types %}
+                            <option value="{{ rt.relation_type_id }}">{{ rt.relation_name }} ({{ rt.relation_code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Direction -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Направление</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2">
+                                <input type="radio" name="direction" value="outgoing" checked class="text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Эта сущность → другая</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <input type="radio" name="direction" value="incoming" class="text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Другая → эта сущность</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Target entity search -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Целевая сущность</label>
+                        <input type="text" id="entitySearch" placeholder="Поиск сущности..."
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none mb-2"
+                               oninput="searchEntities(this.value)">
+                        <input type="hidden" name="target_entity_id" id="targetEntityId" required>
+                        <div id="entityResults" class="max-h-40 overflow-y-auto border border-gray-200 rounded-lg hidden">
+                            <div id="entityResultsList"></div>
+                        </div>
+                        <div id="selectedEntity" class="hidden p-2 bg-blue-50 rounded-lg text-sm text-blue-700"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="p-4 border-t border-gray-200 flex justify-end gap-3">
+                <button onclick="document.getElementById('addRelationModal').classList.add('hidden')"
+                        class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Отмена</button>
+                <button onclick="document.getElementById('addRelationForm').submit()"
+                        class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let searchTimeout = null;
+
+    function searchEntities(query) {
+        clearTimeout(searchTimeout);
+        if (query.length < 2) {
+            document.getElementById('entityResults').classList.add('hidden');
+            return;
+        }
+        searchTimeout = setTimeout(() => {
+            fetch(`/api/editor/search?q=${encodeURIComponent(query)}&limit=10`)
+                .then(r => r.json())
+                .then(data => {
+                    const list = document.getElementById('entityResultsList');
+                    const container = document.getElementById('entityResults');
+                    if (data.items && data.items.length > 0) {
+                        list.innerHTML = data.items.map(item => `
+                            <div class="p-2 hover:bg-blue-50 cursor-pointer text-sm" onclick="selectEntity('${item.entity_id}', '${item.label}', '${item.kind}')">
+                                <span class="font-medium">${item.label}</span>
+                                <span class="text-xs text-gray-400 ml-1">(${item.kind})</span>
+                            </div>
+                        `).join('');
+                        container.classList.remove('hidden');
+                    } else {
+                        list.innerHTML = '<div class="p-2 text-sm text-gray-400">Ничего не найдено</div>';
+                        container.classList.remove('hidden');
+                    }
+                });
+        }, 300);
+    }
+
+    function selectEntity(id, label, kind) {
+        document.getElementById('targetEntityId').value = id;
+        document.getElementById('selectedEntity').textContent = `${label} (${kind})`;
+        document.getElementById('selectedEntity').classList.remove('hidden');
+        document.getElementById('entityResults').classList.add('hidden');
+        document.getElementById('entitySearch').value = '';
+    }
+    </script>
+</div>
+{% endblock %}

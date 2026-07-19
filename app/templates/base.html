@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="{{ request.state.lang or 'ru' }}" class="{% if request.state.theme and request.state.theme.is_dark %}dark{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DWMB{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/theme.css">
+    <style>:root { {{ request.state.theme_css }} }</style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="/static/js/upload.js"></script>
+    <script>
+        function toggleRightSidebar() {
+            const sidebar = document.getElementById('right-sidebar');
+            const toggle = document.getElementById('sidebar-toggle');
+            sidebar.classList.toggle('collapsed');
+            if (sidebar.classList.contains('collapsed')) {
+                sidebar.style.width = '0';
+                sidebar.style.minWidth = '0';
+                sidebar.style.overflow = 'hidden';
+                sidebar.style.padding = '0';
+                toggle.innerHTML = '◀';
+                localStorage.setItem('right-sidebar-collapsed', '1');
+            } else {
+                sidebar.style.width = '';
+                sidebar.style.minWidth = '';
+                sidebar.style.overflow = '';
+                sidebar.style.padding = '';
+                toggle.innerHTML = '▶';
+                localStorage.setItem('right-sidebar-collapsed', '0');
+            }
+        }
+        function toggleLeftSidebar() {
+            const sidebar = document.getElementById('left-sidebar');
+            const toggle = document.getElementById('left-sidebar-toggle');
+            const main = document.getElementById('main-content');
+            sidebar.classList.toggle('collapsed');
+            if (sidebar.classList.contains('collapsed')) {
+                sidebar.style.width = '0';
+                sidebar.style.minWidth = '0';
+                sidebar.style.overflow = 'hidden';
+                sidebar.style.padding = '0';
+                toggle.innerHTML = '▶';
+                main.style.marginLeft = '0';
+                localStorage.setItem('left-sidebar-collapsed', '1');
+            } else {
+                sidebar.style.width = '';
+                sidebar.style.minWidth = '';
+                sidebar.style.overflow = '';
+                sidebar.style.padding = '';
+                toggle.innerHTML = '◀';
+                main.style.marginLeft = '14rem';
+                localStorage.setItem('left-sidebar-collapsed', '0');
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('right-sidebar-collapsed') === '1') {
+                toggleRightSidebar();
+            }
+            if (localStorage.getItem('left-sidebar-collapsed') === '1') {
+                toggleLeftSidebar();
+            }
+        });
+
+        function scrollGallery(btn, dir) {
+            const wrapper = btn.closest('.group');
+            if (!wrapper) return;
+            const container = wrapper.querySelector('.gallery-scroll');
+            if (!container) return;
+            const scrollAmount = 340;
+            container.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
+        }
+
+        function openGalleryFullscreen(src) {
+            if (!src) return;
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center cursor-pointer';
+            overlay.onclick = () => overlay.remove();
+            overlay.innerHTML = '<img src="' + src + '" class="max-w-[90vw] max-h-[90vh] rounded-lg object-contain shadow-2xl">';
+            document.body.appendChild(overlay);
+            document.addEventListener('keydown', function handler(e) {
+                if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', handler); }
+            });
+        }
+
+        function saveEntityField(entityId, fieldKey, value) {
+            if (!entityId || !fieldKey || value === null || value === undefined) return;
+            fetch('/api/entity/' + entityId + '/field', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({key: fieldKey, value: value})
+            }).then(r => r.json()).then(d => {
+                if (d.ok) {
+                    // Update the field row inline — find the stub row and replace it
+                    const stubId = 'stub_' + entityId + '_' + fieldKey;
+                    const stub = document.getElementById(stubId);
+                    if (stub) {
+                        const td = stub.querySelector('td:last-child');
+                        if (td) {
+                            td.classList.remove('italic', 'text-gray-400');
+                            td.classList.add('text-gray-800');
+                            td.innerHTML = '<span class="field-value">' + value + '</span>';
+                        }
+                    } else {
+                        // Fallback: just reload
+                        location.reload();
+                    }
+                } else {
+                    alert('Ошибка: ' + (d.error || 'неизвестная'));
+                }
+            }).catch(() => location.reload());
+        }
+
+        function toggleKindDropdown() {
+            const menu = document.getElementById('kindDropdownMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('kindDropdown');
+            const menu = document.getElementById('kindDropdownMenu');
+            if (dropdown && !dropdown.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+    </script>
+    <style>.gallery-scroll::-webkit-scrollbar{display:none}.gallery-scroll{scrollbar-width:none}</style>
+</head>
+<body class="min-h-screen overflow-y-auto" style="background: var(--color-bg); color: var(--color-text); font-family: var(--font-body);">
+
+    <!-- Top Navigation -->
+    <nav class="top-nav px-4 py-3 fixed top-0 w-full z-50 shadow-sm" style="background: var(--color-surface); border-bottom: 1px solid var(--color-border);">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/" class="text-xl font-bold" style="color: var(--color-primary);">DWMB</a>
+                <div class="hidden md:flex items-center gap-1">
+                    <a href="/entities" class="px-3 py-1.5 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.nav_entities }}</a>
+
+                    <!-- Dropdown: Классификаторы -->
+                    <div class="relative" id="kindDropdown">
+                        <button onclick="toggleKindDropdown()" class="px-3 py-1.5 text-sm hover-bg-primary rounded-md transition flex items-center gap-1" style="color: var(--color-text-secondary);">
+                            {{ request.state.t.nav_classifiers }}
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div id="kindDropdownMenu" class="hidden absolute left-0 mt-1 w-64 rounded-lg shadow-lg border max-h-80 overflow-y-auto z-50" style="background: var(--color-surface); border-color: var(--color-border);">
+                            <div class="p-2">
+                                {% if request.state.kinds %}
+                                {% for kind in request.state.kinds %}
+                                <a href="/entities?kind={{ kind.kind_code }}" class="block px-3 py-1.5 text-sm rounded-md transition hover:bg-blue-50" style="color: var(--color-text-secondary);">
+                                    {{ kind.kind_code }}
+                                </a>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="/search" class="px-3 py-1.5 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.nav_search }}</a>
+                    <a href="/entity/create" class="px-3 py-1.5 text-sm rounded-md transition font-medium" style="background: var(--color-primary); color: #fff;">{{ request.state.t.sidebar_new_entity }}</a>
+                    <a href="/stats" class="px-3 py-1.5 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.nav_stats }}</a>
+                    {% if user and user.is_admin %}
+                    <a href="/admin" class="px-3 py-1.5 text-sm hover-bg-error rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.nav_admin }}</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                {% if user %}
+                <a href="/profile/" class="text-sm hover-primary transition" style="color: var(--color-text-secondary);">{{ user.display_name or user.username }}</a>
+                {% if user.is_admin %}
+                <span class="badge-error px-2 py-0.5 text-xs rounded-full">admin</span>
+                {% endif %}
+                <a href="/auth/logout" class="text-sm transition" style="color: var(--color-text-secondary);" onmouseover="this.style.color='var(--color-error)'" onmouseout="this.style.color='var(--color-text-secondary)'">{{ request.state.t.nav_logout }}</a>
+                {% else %}
+                <a href="/auth/login" class="btn btn-primary px-3 py-1.5 text-sm rounded-md transition">{{ request.state.t.nav_login }}</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex pt-14">
+        <!-- Left Sidebar Toggle Button -->
+        <button id="left-sidebar-toggle" onclick="toggleLeftSidebar()"
+                class="fixed left-0 z-40 px-1 py-4 text-xs transition-all duration-300 hover:opacity-80"
+                style="top: 50%; transform: translateY(-50%); background: var(--color-surface); border: 1px solid var(--color-border); border-left: none; border-radius: 0 4px 4px 0; color: var(--color-text-secondary);">
+            ◀
+        </button>
+
+        <!-- Left Sidebar -->
+        <aside id="left-sidebar" class="w-56 h-[calc(100vh-3.5rem)] fixed left-0 overflow-y-auto scrollbar-thin transition-all duration-300"
+               style="background: var(--color-surface); border-right: 1px solid var(--color-border);">
+            <div class="p-4">
+                <h3 class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--color-text-secondary);">{{ request.state.t.sidebar_entity_types }}</h3>
+                <div class="space-y-0.5">
+                    <a href="/entities" class="sidebar-item block px-3 py-2 text-sm rounded-md {% if not current_kind %}active{% endif %}">
+                        {{ request.state.t.sidebar_all }}
+                    </a>
+                    {% for kind in kinds %}
+                    <a href="/entities?kind={{ kind.kind_code }}" class="sidebar-item block px-3 py-2 text-sm rounded-md {% if current_kind == kind.kind_code %}active{% endif %}">
+                        {{ kind.kind_code }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content flex-1 p-6 min-h-[calc(100vh-3.5rem)] transition-all duration-300" style="margin-left: 14rem;">
+            {% block breadcrumbs %}{% endblock %}
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Right Sidebar Toggle Button -->
+        <button id="sidebar-toggle" onclick="toggleRightSidebar()"
+                class="fixed right-0 z-40 px-1 py-4 text-xs transition-all duration-300 hover:opacity-80"
+                style="top: 50%; transform: translateY(-50%); background: var(--color-surface); border: 1px solid var(--color-border); border-right: none; border-radius: 4px 0 0 4px; color: var(--color-text-secondary);">
+            ▶
+        </button>
+
+        <!-- Right Sidebar -->
+        <aside id="right-sidebar" class="min-h-[calc(100vh-3.5rem)] overflow-y-auto scrollbar-thin transition-all duration-300"
+               style="width: 256px; min-width: 256px; background: var(--color-surface); border-left: 1px solid var(--color-border);">
+            <div class="p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xs font-semibold uppercase tracking-wider" style="color: var(--color-text-secondary);">{{ request.state.t.sidebar_quick_access }}</h3>
+                    <button onclick="toggleRightSidebar()" class="text-xs hover:opacity-70" style="color: var(--color-text-secondary);">✕</button>
+                </div>
+                <div class="space-y-2">
+                    <a href="/entity/create" class="block px-3 py-2 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.sidebar_new_entity }}</a>
+                    <a href="/search" class="block px-3 py-2 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.nav_search }}</a>
+                    <a href="/stats" class="block px-3 py-2 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.nav_stats }}</a>
+                </div>
+
+                {% if user and user.is_admin %}
+                <h3 class="text-xs font-semibold uppercase tracking-wider mt-6 mb-3" style="color: var(--color-text-secondary);">{{ request.state.t.nav_admin }}</h3>
+                <div class="space-y-2">
+                    <a href="/admin/" class="block px-3 py-2 text-sm hover-bg-error rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.sidebar_admin_panel }}</a>
+                    <a href="/admin/pages/" class="block px-3 py-2 text-sm hover-bg-error rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.sidebar_pages }}</a>
+                    <a href="/admin/kinds" class="block px-3 py-2 text-sm hover-bg-error rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.sidebar_kinds }}</a>
+                </div>
+                {% endif %}
+            </div>
+        </aside>
+    </div>
+
+    {% block scripts %}{% endblock %}
+
+    <!-- Footer -->
+    <footer class="site-footer py-4 mt-8" style="background: var(--color-surface); border-top: 1px solid var(--color-border);">
+        <div class="max-w-7xl mx-auto px-6 text-center text-sm" style="color: var(--color-text-secondary);">
+            <p>{{ request.state.t.footer_text }} &copy; 2026</p>
+        </div>
+    </footer>
+</body>
+</html>

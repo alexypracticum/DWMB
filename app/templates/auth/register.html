@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru" class="{% if request.state.theme and request.state.theme.is_dark %}dark{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - DWMB</title>
+    <link rel="stylesheet" href="/static/css/theme.css">
+    <style>:root { {{ request.state.theme_css }} }</style>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center" style="background: var(--color-bg); color: var(--color-text); font-family: var(--font-body);">
+    <div class="w-full max-w-md">
+        <div class="card rounded-2xl shadow-lg p-8" style="background: var(--color-surface); border: 1px solid var(--color-border);">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold" style="color: var(--color-primary);">DWMB</h1>
+                <p class="mt-2" style="color: var(--color-text-secondary);">Создать аккаунт</p>
+            </div>
+
+            {% if error %}
+            <div class="badge-error px-4 py-3 rounded-lg mb-4 text-sm" style="background: color-mix(in srgb, var(--color-error) 15%, transparent); color: var(--color-error);">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form action="/auth/register" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Имя пользователя</label>
+                    <input type="text" name="username" required class="form-input w-full px-4 py-3 rounded-lg outline-none transition"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Email</label>
+                    <input type="email" name="email" class="form-input w-full px-4 py-3 rounded-lg outline-none transition"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Пароль</label>
+                    <input type="password" name="password" required class="form-input w-full px-4 py-3 rounded-lg outline-none transition"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+                <button type="submit" class="btn btn-primary w-full py-3 rounded-lg transition font-medium">Зарегистрироваться</button>
+            </form>
+
+            <div class="mt-6 text-center text-sm" style="color: var(--color-text-secondary);">
+                Уже есть аккаунт? <a href="/auth/login" style="color: var(--color-primary);">Войти</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

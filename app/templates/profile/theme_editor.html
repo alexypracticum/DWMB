@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Редактор темы - DWMB{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-4xl">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">Редактор темы: {{ theme.theme_name }}</h1>
+        <a href="/profile/" class="btn btn-outline px-4 py-2 rounded-lg transition text-sm">Назад</a>
+    </div>
+
+    <form action="/profile/theme-editor/{{ theme.theme_id }}/save" method="post" class="space-y-6">
+
+        <!-- Presets -->
+        <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Готовые схемы</h2>
+            <div class="flex flex-wrap gap-3">
+                {% for key, preset in presets.items() %}
+                <form action="/profile/theme-editor/{{ theme.theme_id }}/apply-preset" method="post" class="inline">
+                    <input type="hidden" name="preset_key" value="{{ key }}">
+                    <button type="submit" class="flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm"
+                            style="border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text);">
+                        <span class="w-4 h-4 rounded-full" style="background: {{ preset.colors.primary }};"></span>
+                        <span class="w-4 h-4 rounded-full" style="background: {{ preset.colors.background }};"></span>
+                        {{ preset.name }}
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Dark Mode Toggle -->
+        <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
+            <div class="flex items-center gap-3">
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="is_dark" value="true" {% if theme.is_dark %}checked{% endif %}
+                           class="sr-only peer" onchange="this.closest('form').submit()">
+                    <div class="w-11 h-6 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"
+                         style="background: var(--color-border);"></div>
+                </label>
+                <span class="text-sm font-medium" style="color: var(--color-text);">Тёмная тема</span>
+            </div>
+        </div>
+
+        <!-- Color Pickers -->
+        <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Цвета</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% set color_fields = [
+                    ("primary", "Основной", "primary"),
+                    ("secondary", "Вторичный", "secondary"),
+                    ("accent", "Акцент", "accent"),
+                    ("background", "Фон", "background"),
+                    ("surface", "Поверхность", "surface"),
+                    ("text", "Текст", "text"),
+                    ("text_secondary", "Вторичный текст", "text_secondary"),
+                    ("border", "Граница", "border"),
+                    ("error", "Ошибка", "error"),
+                    ("success", "Успех", "success"),
+                ] %}
+                {% for key, label, var_name in color_fields %}
+                <div class="flex items-center gap-3">
+                    <label for="color-{{ key }}" class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">{{ label }}</label>
+                    <input type="color" id="color-{{ key }}" name="{{ key }}"
+                           value="{{ theme.colors[key] if theme.colors and theme.colors.get(key) else '#3b82f6' }}"
+                           class="w-10 h-10 rounded cursor-pointer border-0"
+                           style="background: transparent;">
+                    <input type="text" value="{{ theme.colors[key] if theme.colors and theme.colors.get(key) else '#3b82f6' }}"
+                           class="form-input w-24 px-2 py-1 rounded text-xs font-mono"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);"
+                           oninput="document.getElementById('color-{{ key }}').value=this.value"
+                           onchange="document.getElementById('color-{{ key }}').value=this.value">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Fonts -->
+        <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Шрифты</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex items-center gap-3">
+                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">Заголовки</label>
+                    <input type="text" name="font_heading" value="{{ theme.fonts['heading'] if theme.fonts else 'Inter, sans-serif' }}"
+                           class="form-input flex-1 px-3 py-2 rounded-lg text-sm"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">Основной</label>
+                    <input type="text" name="font_body" value="{{ theme.fonts['body'] if theme.fonts else 'Inter, sans-serif' }}"
+                           class="form-input flex-1 px-3 py-2 rounded-lg text-sm"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">Моноширинный</label>
+                    <input type="text" name="font_mono" value="{{ theme.fonts['mono'] if theme.fonts else 'JetBrains Mono, monospace' }}"
+                           class="form-input flex-1 px-3 py-2 rounded-lg text-sm"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">Размер заголовков</label>
+                    <input type="text" name="heading_size" value="{{ theme.fonts['heading_size'] if theme.fonts else '1.5rem' }}"
+                           class="form-input flex-1 px-3 py-2 rounded-lg text-sm"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">Размер текста</label>
+                    <input type="text" name="body_size" value="{{ theme.fonts['body_size'] if theme.fonts else '0.875rem' }}"
+                           class="form-input flex-1 px-3 py-2 rounded-lg text-sm"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Предпросмотр</h2>
+            <div id="preview-box" class="rounded-lg p-6 space-y-4" style="border: 1px solid var(--color-border);">
+                <h3 class="text-xl font-bold" id="preview-heading">Заголовок</h3>
+                <p id="preview-text">Это пример текста с основным шрифтом. Здесь показаны основные элементы интерфейса.</p>
+                <div class="flex gap-2">
+                    <button type="button" class="btn btn-primary px-4 py-2 rounded-lg text-sm">Основная кнопка</button>
+                    <button type="button" class="btn btn-outline px-4 py-2 rounded-lg text-sm">Контурная</button>
+                    <button type="button" class="badge-success px-3 py-1 rounded-full text-xs">Успех</button>
+                    <button type="button" class="badge-error px-3 py-1 rounded-full text-xs">Ошибка</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="badge-primary px-2 py-1 rounded-full text-xs">Primary</span>
+                    <span class="badge-accent px-2 py-1 rounded-full text-xs">Accent</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <a href="/profile/" class="btn btn-outline px-6 py-2 rounded-lg transition">Отмена</a>
+            <button type="submit" class="btn btn-primary px-6 py-2 rounded-lg transition">Сохранить</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Live preview update
+document.querySelectorAll('input[type="color"]').forEach(input => {
+    input.addEventListener('input', function() {
+        const key = this.name;
+        const value = this.value;
+        document.documentElement.style.setProperty('--color-' + key.replace('_', '-'), value);
+        updatePreview();
+    });
+});
+
+function updatePreview() {
+    const s = getComputedStyle(document.documentElement);
+    const box = document.getElementById('preview-box');
+    box.style.background = s.getPropertyValue('--color-surface');
+    box.style.borderColor = s.getPropertyValue('--color-border');
+    document.getElementById('preview-heading').style.color = s.getPropertyValue('--color-text');
+    document.getElementById('preview-text').style.color = s.getPropertyValue('--color-text-secondary');
+}
+</script>
+{% endblock %}

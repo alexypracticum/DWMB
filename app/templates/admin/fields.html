@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Реестр полей - Админ DWMB{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Реестр полей данных</h1>
+        <a href="/admin" class="text-sm text-blue-600 hover:text-blue-800">← Назад</a>
+    </div>
+
+    <!-- Category management -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-800">Категории</h2>
+            <button onclick="document.getElementById('addCatForm').classList.toggle('hidden')" class="text-sm px-3 py-1 bg-green-50 text-green-700 rounded-lg border border-green-200 hover:bg-green-100 transition">+ Добавить</button>
+        </div>
+        <!-- Add category form (hidden) -->
+        <div id="addCatForm" class="hidden mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+            <form action="/admin/fields/categories/create" method="post" class="flex items-end gap-3">
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-500 mb-1">Ключ (лат.)</label>
+                    <input type="text" name="category_key" required placeholder="my_category" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs text-gray-500 mb-1">Название</label>
+                    <input type="text" name="category_name" required placeholder="Моя категория" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition">Создать</button>
+            </form>
+        </div>
+        <!-- Category filter pills -->
+        <div class="flex flex-wrap gap-2">
+            <a href="/admin/fields" class="px-3 py-1 rounded-full text-xs font-medium transition {% if not active_category %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">Все</a>
+            {% for ck, cn in categories %}
+            <div class="flex items-center gap-1">
+                <a href="/admin/fields?category={{ ck }}" class="px-3 py-1 rounded-full text-xs font-medium transition {% if active_category == ck %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">{{ cn }}</a>
+                <form action="/admin/fields/categories/delete" method="post" class="inline" onsubmit="return confirm('Удалить категорию «{{ cn }}»? Все поля будут перемещены в «Общие».')">
+                    <input type="hidden" name="category_key" value="{{ ck }}">
+                    <button type="submit" class="text-red-400 hover:text-red-600 text-xs" title="Удалить">×</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Create form -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Новое поле</h2>
+        <form action="/admin/fields/create" method="post" class="flex flex-wrap items-end gap-3">
+            <div class="flex-1 min-w-[150px]">
+                <label class="block text-xs text-gray-500 mb-1">Ключ *</label>
+                <input type="text" name="field_key" required placeholder="my_field" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div class="flex-1 min-w-[150px]">
+                <label class="block text-xs text-gray-500 mb-1">Название *</label>
+                <input type="text" name="field_label" required placeholder="Мое поле" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div class="w-40">
+                <label class="block text-xs text-gray-500 mb-1">Тип</label>
+                <select name="field_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    {% for tkey, tname in field_types %}
+                    <option value="{{ tkey }}">{{ tname }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-36">
+                <label class="block text-xs text-gray-500 mb-1">Категория</label>
+                <select name="category" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    {% for ckey, cname in categories %}
+                    <option value="{{ ckey }}" {% if active_category == ckey %}selected{% endif %}>{{ cname }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-32">
+                <label class="block text-xs text-gray-500 mb-1">По умолчанию</label>
+                <input type="text" name="default_value" placeholder="-" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">Добавить</button>
+        </form>
+    </div>
+
+    <!-- Fields list -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">
+            {% if active_category %}
+            {% for ck, cn in categories %}{% if ck == active_category %}{{ cn }}{% endif %}{% endfor %}
+            ({{ fields | length }})
+            {% else %}
+            Все поля ({{ fields | length }})
+            {% endif %}
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-gray-500 border-b">
+                        <th class="pb-2">Ключ</th>
+                        <th class="pb-2">Название</th>
+                        <th class="pb-2">Тип</th>
+                        <th class="pb-2">Категория</th>
+                        <th class="pb-2">По умолчанию</th>
+                        <th class="pb-2">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set ns = namespace(prev_cat='') %}
+                    {% for field in fields %}
+                    {% if not active_category and field.category != ns.prev_cat %}
+                        {% set ns.prev_cat = field.category %}
+                        <tr><td colspan="6" class="pt-4 pb-1">
+                            <span class="text-xs font-semibold text-gray-400 uppercase">
+                                {% for ck, cn in categories %}{% if ck == field.category %}{{ cn }}{% endif %}{% endfor %}
+                            </span>
+                        </td></tr>
+                    {% endif %}
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-2 font-mono text-xs">{{ field.field_key }}</td>
+                        <td class="py-2 font-medium">{{ field.field_label }}</td>
+                        <td class="py-2">
+                            {% for tkey, tname in field_types %}{% if tkey == field.field_type %}
+                            <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">{{ tname }}</span>
+                            {% endif %}{% endfor %}
+                        </td>
+                        <td class="py-2">
+                            {% for ck, cn in categories %}{% if ck == field.category %}
+                            <span class="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">{{ cn }}</span>
+                            {% endif %}{% endfor %}
+                        </td>
+                        <td class="py-2 text-xs text-gray-400">{{ field.default_value or '-' }}</td>
+                        <td class="py-2">
+                            <div class="flex gap-2">
+                                <button onclick="toggleEditField('{{ field.field_id }}')" class="text-xs text-blue-600 hover:text-blue-800">Ред.</button>
+                                <form action="/admin/fields/{{ field.field_id }}/delete" method="post" class="inline" onsubmit="return confirm('Удалить поле?')">
+                                    <button type="submit" class="text-xs text-red-600 hover:text-red-800">Удал.</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Edit form (hidden by default) -->
+                    <tr id="edit_{{ field.field_id }}" class="hidden bg-blue-50">
+                        <td colspan="6" class="p-4">
+                            <form action="/admin/fields/{{ field.field_id }}/edit" method="post" class="flex flex-wrap items-end gap-3">
+                                <input type="text" name="field_key" value="{{ field.field_key }}" required class="flex-1 min-w-[120px] px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input type="text" name="field_label" value="{{ field.field_label }}" required class="flex-1 min-w-[120px] px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <select name="field_type" class="w-36 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    {% for tkey, tname in field_types %}
+                                    <option value="{{ tkey }}" {% if field.field_type == tkey %}selected{% endif %}>{{ tname }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select name="category" class="w-36 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                    {% for ck, cn in categories %}
+                                    <option value="{{ ck }}" {% if field.category == ck %}selected{% endif %}>{{ cn }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="text" name="default_value" value="{{ field.default_value or '' }}" class="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm">OK</button>
+                                <button type="button" onclick="toggleEditField('{{ field.field_id }}')" class="px-4 py-2 bg-gray-200 rounded-lg text-sm">Отмена</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleEditField(id) {
+    const row = document.getElementById('edit_' + id);
+    if (row) row.classList.toggle('hidden');
+}
+</script>
+{% endblock %}

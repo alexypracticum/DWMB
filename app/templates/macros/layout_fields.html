@@ -1,0 +1,400 @@
+{# Macro: dynamic field editor with +/- buttons and registry dropdown.
+   Renders a list of fields (key, label, type) with add/remove controls.
+   Stores result as JSON in a hidden input. #}
+{% macro render_field_editor(input_name, fields_json='[]') %}
+<div class="field-editor" data-name="{{ input_name }}">
+    <input type="hidden" name="{{ input_name }}" id="{{ input_name }}" value="{{ fields_json }}">
+    <div id="{{ input_name }}_rows" class="space-y-2">
+    </div>
+    <div class="mt-2 flex items-center gap-2">
+        <select id="{{ input_name }}_registry" class="px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none max-w-xs"
+                onchange="pickRegistryField('{{ input_name }}', this)">
+            <option value="">-- выбрать из реестра --</option>
+        </select>
+        <button type="button" onclick="addFieldEditor('{{ input_name }}')" class="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 text-xs border border-green-200">+ Вручную</button>
+    </div>
+</div>
+<script>
+(function() {
+    const editorId = '{{ input_name }}';
+    const hidden = document.getElementById(editorId);
+    let fields = [];
+    try { fields = JSON.parse(hidden.value || '[]'); } catch(e) { fields = []; }
+    let REGISTRY = [];
+
+    fetch('/admin/api/fields').then(r => r.json()).then(data => {
+        REGISTRY = data;
+        const sel = document.getElementById(editorId + '_registry');
+        if (!sel || !data.length) return;
+        const cats = {};
+        data.forEach(f => {
+            if (!cats[f.category]) cats[f.category] = [];
+            cats[f.category].push(f);
+        });
+        let opts = '';
+        Object.entries(cats).forEach(([cat, fields]) => {
+            opts += '<optgroup label="' + esc(cat) + '">';
+            fields.forEach(f => {
+                opts += '<option value="' + esc(f.key) + '" data-label="' + esc(f.label) + '" data-type="' + esc(f.type) + '">' + esc(f.label) + ' (' + f.key + ')</option>';
+            });
+            opts += '</optgroup>';
+        });
+        sel.innerHTML = '<option value="">-- выбрать из реестра --</option>' + opts;
+    }).catch(() => {});
+
+    window.pickRegistryField = function(id, selectEl) {
+        const key = selectEl.value;
+        if (!key) return;
+        const opt = selectEl.options[selectEl.selectedIndex];
+        const label = opt.dataset.label || key;
+        const type = opt.dataset.type || 'string';
+        fields.push({key: key, label: label, type: type});
+        render();
+        selectEl.value = '';
+    };
+
+    function render() {
+        const container = document.getElementById(editorId + '_rows');
+        container.innerHTML = '';
+        fields.forEach(function(f, i) {
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2';
+            row.innerHTML =
+                '<input type="text" value="' + esc(f.key || '') + '" placeholder="key" ' +
+                    'onchange="updateField(\'' + editorId + '\',' + i + ',\'key\',this.value)" ' +
+                    'class="w-28 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none">' +
+                '<input type="text" value="' + esc(f.label || '') + '" placeholder="Метка" ' +
+                    'onchange="updateField(\'' + editorId + '\',' + i + ',\'label\',this.value)" ' +
+                    'class="flex-1 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none">' +
+                '<select onchange="updateField(\'' + editorId + '\',' + i + ',\'type\',this.value)" ' +
+                    'class="w-24 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none">' +
+                    '<option value="string"' + (f.type === 'string' ? ' selected' : '') + '>Строка</option>' +
+                    '<option value="integer"' + (f.type === 'integer' ? ' selected' : '') + '>Целое</option>' +
+                    '<option value="number"' + (f.type === 'number' ? ' selected' : '') + '>Дробное</option>' +
+                    '<option value="currency"' + (f.type === 'currency' ? ' selected' : '') + '>Деньги</option>' +
+                    '<option value="boolean"' + (f.type === 'boolean' ? ' selected' : '') + '>Да/Нет</option>' +
+                    '<option value="date"' + (f.type === 'date' ? ' selected' : '') + '>Дата</option>' +
+                    '<option value="datetime"' + (f.type === 'datetime' ? ' selected' : '') + '>Дата+время</option>' +
+                    '<option value="email"' + (f.type === 'email' ? ' selected' : '') + '>Email</option>' +
+                    '<option value="url"' + (f.type === 'url' ? ' selected' : '') + '>URL</option>' +
+                    '<option value="textarea"' + (f.type === 'textarea' ? ' selected' : '') + '>Текст</option>' +
+                    '<option value="select"' + (f.type === 'select' ? ' selected' : '') + '>Выбор</option>' +
+                '</select>' +
+                '<button type="button" onclick="removeField(\'' + editorId + '\',' + i + ')" ' +
+                    'class="px-2 py-1 text-red-500 hover:bg-red-50 rounded text-xs">✕</button>';
+            container.appendChild(row);
+        });
+        hidden.value = JSON.stringify(fields);
+    }
+
+    function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g, '&quot;'); }
+
+    window.updateField = function(id, idx, key, val) {
+        fields[idx][key] = val;
+        document.getElementById(id).value = JSON.stringify(fields);
+    };
+    window.removeField = function(id, idx) {
+        fields.splice(idx, 1);
+        render();
+    };
+    window.addFieldEditor = function(id) {
+        fields.push({key: '', label: '', type: 'string'});
+        render();
+        const rows = document.getElementById(id + '_rows');
+        const lastRow = rows.lastElementChild;
+        if (lastRow) lastRow.querySelector('input').focus();
+    };
+
+    render();
+})();
+</script>
+{% endmacro %}
+
+{# Macro: render layout block as editable form.
+   Each state_field input uses state_key as name so POST handler can read it directly.
+   state_data dict provides pre-filled values for edit mode. #}
+{% macro render_block_form(block, index, schema_fields=[], state_data={}) %}
+{% set btype = block.type | default('text_block') %}
+{% set bid = block.id | default('block_' ~ index) %}
+{% set config = block.config | default({}) %}
+
+{% set block_meta = {
+    'hero_image': {'icon': '🖼️', 'name': 'Главное изображение'},
+    'image': {'icon': '📷', 'name': 'Изображение'},
+    'image_data_row': {'icon': '📸', 'name': 'Изображение + данные'},
+    'gallery': {'icon': '🖼️', 'name': 'Галерея'},
+    'markdown': {'icon': '📝', 'name': 'Текст (Markdown)'},
+    'video': {'icon': '🎬', 'name': 'Видео'},
+    'audio': {'icon': '🎵', 'name': 'Аудио'},
+    'info_table': {'icon': '📊', 'name': 'Таблица'},
+    'relation_list': {'icon': '🔗', 'name': 'Связи'},
+    'text_block': {'icon': '📄', 'name': 'Текстовый блок'},
+    'divider': {'icon': '➖', 'name': 'Разделитель'},
+    'spacer': {'icon': '↕️', 'name': 'Отступ'},
+    'file_link': {'icon': '📎', 'name': 'Файл-ссылка'},
+    'file_upload': {'icon': '📤', 'name': 'Загрузка файла'},
+    'custom_html': {'icon': '💻', 'name': 'HTML'},
+    'horizontal_row': {'icon': '↔️', 'name': 'Горизонт. ряд'}
+} %}
+{% set meta = block_meta.get(btype, {'icon': '?', 'name': btype}) %}
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center gap-2">
+        <span class="text-lg">{{ meta.icon }}</span>
+        <span class="font-semibold text-sm text-gray-700">{{ meta.name }}</span>
+        <span class="text-xs text-gray-400">#{{ index }}</span>
+    </div>
+    <div class="p-4">
+
+        {# ===== HERO IMAGE ===== #}
+        {% if btype == 'hero_image' %}
+        {% set sk = config.get('source', 'poster_url') %}
+        {% set sv = state_data.get(sk, '') %}
+        <div class="flex items-center border-b border-gray-100 py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Изображение</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1 flex items-center gap-2">
+                <input type="text" name="{{ sk }}" value="{{ sv }}" placeholder="{{ sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="upload-group"><button type="button" onclick="triggerUpload(this, 'image')" class="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-xs border border-blue-200 whitespace-nowrap">📤</button></div>
+            </div>
+        </div>
+        {% if sv %}<img src="{{ sv }}" class="mt-2 rounded-lg max-h-40 object-contain">{% endif %}
+
+        {# ===== IMAGE ===== #}
+        {% elif btype == 'image' %}
+        {% set sk = config.get('source', 'image_url') %}
+        {% set sv = state_data.get(sk, '') %}
+        <div class="flex items-center border-b border-gray-100 py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Изображение</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1 flex items-center gap-2">
+                <input type="text" name="{{ sk }}" value="{{ sv }}" placeholder="{{ sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="upload-group"><button type="button" onclick="triggerUpload(this, 'image')" class="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-xs border border-blue-200 whitespace-nowrap">📤</button></div>
+            </div>
+        </div>
+        {% if sv %}<img src="{{ sv }}" class="mt-2 rounded-lg max-h-40 object-contain">{% endif %}
+        {% set ck = config.get('caption', 'image_caption') %}
+        <div class="flex items-center border-b border-gray-100 py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Подпись</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1"><input type="text" name="{{ ck }}" value="{{ state_data.get(ck, '') }}" placeholder="Подпись" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+        </div>
+        {% set hk = 'block_height_' ~ bid %}
+        <div class="flex items-center py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Высота (px)</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1"><input type="text" name="{{ hk }}" value="{{ config.get('height', '400') }}" class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+        </div>
+
+        {# ===== IMAGE + DATA ROW ===== #}
+        {% elif btype == 'image_data_row' %}
+        {% set img_sk = config.get('image_source', 'poster_url') %}
+        {% set img_sv = state_data.get(img_sk, '') %}
+        <div class="flex items-center border-b border-gray-100 py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Изображение</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1 flex items-center gap-2">
+                <input type="text" name="{{ img_sk }}" value="{{ img_sv }}" placeholder="{{ img_sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="upload-group"><button type="button" onclick="triggerUpload(this, 'image')" class="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-xs border border-blue-200 whitespace-nowrap">📤</button></div>
+            </div>
+        </div>
+        {% if img_sv %}<img src="{{ img_sv }}" class="mt-2 rounded-lg max-h-40 object-contain">{% endif %}
+
+        {# ===== GALLERY ===== #}
+        {% elif btype == 'gallery' %}
+        {% set sk = config.get('source', 'images') %}
+        {% set sv = state_data.get(sk, '') %}
+        {% if sv is iterable and sv is not string %}{% set sv = sv | join('\n') %}{% endif %}
+        <div class="flex items-center border-b border-gray-100 py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Заголовок</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1"><input type="text" name="block_title_{{ bid }}" value="{{ config.get('title', '') }}" placeholder="Заголовок галереи (необязательно)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+        </div>
+        <div class="flex items-center border-b border-gray-100 py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Изображения</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1">
+                <textarea name="{{ sk }}" rows="3" placeholder="URL изображений, по одному на строку" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">{{ sv }}</textarea>
+                <div class="mt-2 flex gap-2">
+                    <div class="upload-group"><button type="button" onclick="triggerGalleryUpload(this, '{{ sk }}')" class="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-xs border border-blue-200">📤 Добавить фото</button></div>
+                    <button type="button" onclick="clearGallery(this, '{{ sk }}')" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-xs border border-red-200">Очистить</button>
+                </div>
+            </div>
+        </div>
+        {% set hk = 'block_height_' ~ bid %}
+        <div class="flex items-center py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Высота (px)</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1"><input type="text" name="{{ hk }}" value="{{ config.get('height', '300') }}" class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+        </div>
+
+        {# ===== MARKDOWN ===== #}
+        {% elif btype == 'markdown' %}
+        {% set sk = config.get('source', 'content') %}
+        {% set sv = state_data.get(sk, '') %}
+        <div class="flex items-center py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Контент (Markdown)</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1"><textarea name="{{ sk }}" rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">{{ sv }}</textarea></div>
+        </div>
+
+        {# ===== VIDEO ===== #}
+        {% elif btype == 'video' %}
+        {% set sk = config.get('source', 'video_url') %}
+        {% set sv = state_data.get(sk, '') %}
+        <div class="flex items-center py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Видео (URL)</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1 flex items-center gap-2">
+                <input type="text" name="{{ sk }}" value="{{ sv }}" placeholder="{{ sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="upload-group"><button type="button" onclick="triggerUpload(this, 'video')" class="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-xs border border-blue-200 whitespace-nowrap">📤</button></div>
+            </div>
+        </div>
+        {% if sv %}<video controls class="mt-2 rounded-lg max-h-48"><source src="{{ sv }}"></video>{% endif %}
+
+        {# ===== AUDIO ===== #}
+        {% elif btype == 'audio' %}
+        {% set sk = config.get('source', 'audio_url') %}
+        {% set sv = state_data.get(sk, '') %}
+        <div class="flex items-center border-b border-gray-100 py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Аудио (URL)</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1 flex items-center gap-2">
+                <input type="text" name="{{ sk }}" value="{{ sv }}" placeholder="{{ sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="upload-group"><button type="button" onclick="triggerUpload(this, 'audio')" class="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-xs border border-blue-200 whitespace-nowrap">📤</button></div>
+            </div>
+        </div>
+        {% if sv %}<audio controls class="mt-2 w-full max-w-md"><source src="{{ sv }}"></audio>{% endif %}
+        {% set tk = config.get('title', 'audio_title') %}
+        <div class="flex items-center py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Название</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1"><input type="text" name="{{ tk }}" value="{{ state_data.get(tk, '') }}" placeholder="{{ tk }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+        </div>
+
+        {# ===== INFO TABLE ===== #}
+        {% elif btype == 'info_table' %}
+        {% set fk = 'block_fields_' ~ bid %}
+        <div class="flex items-center border-b border-gray-100 py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Поля</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1">
+                {{ render_field_editor(fk, config.get('fields', '[]')) }}
+            </div>
+        </div>
+        {% set sk = 'block_style_' ~ bid %}
+        <div class="flex items-center py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Стиль</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1">
+                <select name="{{ sk }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="table" {% if config.get('style') == 'table' %}selected{% endif %}>Таблица</option>
+                    <option value="cards" {% if config.get('style') == 'cards' %}selected{% endif %}>Карточки</option>
+                    <option value="inline" {% if config.get('style') == 'inline' %}selected{% endif %}>В строку</option>
+                </select>
+            </div>
+        </div>
+
+        {# ===== TEXT BLOCK (Описание) ===== #}
+        {% elif btype == 'text_block' %}
+        <div class="flex items-center py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Описание</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1 text-sm text-gray-400 italic">Автоматически из поля «Описание» в данных сущности</div>
+        </div>
+
+        {# ===== FILE LINK ===== #}
+        {% elif btype == 'file_link' %}
+        {% set sk = config.get('source', 'file_url') %}
+        {% set tk = config.get('title', 'file_title') %}
+        <div class="flex items-center border-b border-gray-100 py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Файл (URL)</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1 flex items-center gap-2">
+                <input type="text" name="{{ sk }}" value="{{ state_data.get(sk, '') }}" placeholder="{{ sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="upload-group"><button type="button" onclick="triggerUpload(this, 'file')" class="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-xs border border-blue-200 whitespace-nowrap">📤</button></div>
+            </div>
+        </div>
+        <div class="flex items-center py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Название</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1"><input type="text" name="{{ tk }}" value="{{ state_data.get(tk, '') }}" placeholder="Название файла" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+        </div>
+
+        {# ===== FILE UPLOAD ===== #}
+        {% elif btype == 'file_upload' %}
+        {% set sk = config.get('source', 'uploaded_file_url') %}
+        {% set tk = config.get('title', 'uploaded_file_title') %}
+        <div class="flex items-center border-b border-gray-100 py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Файл (URL)</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1 flex items-center gap-2">
+                <input type="text" name="{{ sk }}" value="{{ state_data.get(sk, '') }}" placeholder="{{ sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="upload-group"><button type="button" onclick="triggerUpload(this, 'any')" class="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-xs border border-blue-200 whitespace-nowrap">📤</button></div>
+            </div>
+        </div>
+        <div class="flex items-center py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Название</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1"><input type="text" name="{{ tk }}" value="{{ state_data.get(tk, '') }}" placeholder="Название файла" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+        </div>
+
+        {# ===== DIVIDER ===== #}
+        {% elif btype == 'divider' %}
+        <p class="text-sm text-gray-400 text-center">───</p>
+
+        {# ===== SPACER ===== #}
+        {% elif btype == 'spacer' %}
+        <div class="flex items-center py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Высота (px)</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1"><input type="text" name="block_height_{{ bid }}" value="{{ config.get('height', '40') }}" class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+        </div>
+
+        {# ===== CUSTOM HTML ===== #}
+        {% elif btype == 'custom_html' %}
+        <div class="flex items-center py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">HTML</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1"><textarea name="block_html_{{ bid }}" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">{{ config.get('html', '') }}</textarea></div>
+        </div>
+
+        {# ===== RELATION LIST ===== #}
+        {% elif btype == 'relation_list' %}
+        {% set rk = 'block_reltype_' ~ bid %}
+        <div class="flex items-center border-b border-gray-100 py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Тип связи</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1"><input type="text" name="{{ rk }}" value="{{ config.get('relation_type', '') }}" placeholder="acted_in, directed_by..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+        </div>
+        {% set dk = 'block_display_' ~ bid %}
+        <div class="flex items-center py-2">
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Отображение</div>
+            <div class="text-gray-400 pr-3">:</div>
+            <div class="flex-1">
+                <select name="{{ dk }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="list" {% if config.get('display') == 'list' %}selected{% endif %}>Список</option>
+                    <option value="cards" {% if config.get('display') == 'cards' %}selected{% endif %}>Карточки</option>
+                </select>
+            </div>
+        </div>
+
+        {# ===== HORIZONTAL ROW ===== #}
+        {% elif btype == 'horizontal_row' %}
+        <p class="text-sm text-gray-500 text-center">Горизонтальный ряд: {{ config.get('columns', '2') }} колонки</p>
+
+        {% else %}
+        <p class="text-sm text-gray-400 text-center">Блок: {{ btype }}</p>
+        {% endif %}
+    </div>
+</div>
+
+{# Children for horizontal_row #}
+{% if btype == 'horizontal_row' and block.children %}
+<div class="ml-6 pl-4 border-l-2 border-blue-200 space-y-3 mt-3">
+    {% for child in block.children %}
+    {{ render_block_form(child, index ~ '.' ~ loop.index, schema_fields) }}
+    {% endfor %}
+</div>
+{% endif %}
+{% endmacro %}

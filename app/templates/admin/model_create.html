@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Создать модель - Админ DWMB{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-2xl">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Создать онтологическую модель</h1>
+        <a href="/admin/models" class="text-sm text-blue-600 hover:text-blue-800">← Назад</a>
+    </div>
+
+    <form action="/admin/models/create" method="post" class="space-y-6">
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Основная информация</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Код модели *</label>
+                    <input type="text" name="model_code" required placeholder="my_model"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <p class="text-xs text-gray-400 mt-1">Уникальный идентификатор модели</p>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Домен *</label>
+                    <input type="text" name="domain" required placeholder="meta" value="meta"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <p class="text-xs text-gray-400 mt-1">Область применения (meta, cinema, music...)</p>
+                </div>
+            </div>
+            <div class="mt-4">
+                <label class="block text-xs text-gray-500 mb-1">Описание</label>
+                <input type="text" name="description" placeholder="Описание модели"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <a href="/admin/models" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">Отмена</a>
+            <button type="submit" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Создать</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

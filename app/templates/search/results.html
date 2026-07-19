@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Поиск - DWMB{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
+    <a href="/" class="hover:underline" style="color: var(--color-primary);">Главная</a>
+    <span class="mx-2">/</span>
+    <span style="color: var(--color-text);">Поиск</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">Расширенный поиск</h1>
+
+    <!-- Search Form -->
+    <div class="card rounded-xl p-6 shadow-sm mb-6" style="border: 1px solid var(--color-border);">
+        <form action="/search" method="get" class="space-y-4">
+            <div class="flex gap-3">
+                <input type="text" name="q" value="{{ query }}" placeholder="Поиск по названию, описанию, коду..."
+                       class="form-input flex-1 px-4 py-3 rounded-lg outline-none transition text-lg"
+                       style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                <button type="submit" class="btn btn-primary px-8 py-3 rounded-lg transition font-medium">Найти</button>
+            </div>
+
+            <!-- Basic Filters -->
+            <div class="flex flex-wrap gap-3 items-center">
+                <span class="text-sm" style="color: var(--color-text-secondary);">Тип:</span>
+                <select name="kind" class="form-select px-3 py-1.5 rounded-lg text-sm outline-none"
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                    <option value="">Все типы</option>
+                    {% for kind in kinds %}
+                    <option value="{{ kind.kind_code }}" {% if current_kind == kind.kind_code %}selected{% endif %}>{{ kind.kind_code }}</option>
+                    {% endfor %}
+                </select>
+
+                <span class="text-sm" style="color: var(--color-text-secondary);">Год от:</span>
+                <input type="number" name="year_from" value="{{ year_from or '' }}" placeholder="1900"
+                       class="form-input w-24 px-3 py-1.5 rounded-lg text-sm outline-none"
+                       style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+
+                <span class="text-sm" style="color: var(--color-text-secondary);">до:</span>
+                <input type="number" name="year_to" value="{{ year_to or '' }}" placeholder="2026"
+                       class="form-input w-24 px-3 py-1.5 rounded-lg text-sm outline-none"
+                       style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+
+                <span class="text-sm" style="color: var(--color-text-secondary);">Рейтинг от:</span>
+                <input type="number" name="rating_min" value="{{ rating_min or '' }}" placeholder="0" min="0" max="10" step="0.1"
+                       class="form-input w-20 px-3 py-1.5 rounded-lg text-sm outline-none"
+                       style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+
+                <span class="text-sm" style="color: var(--color-text-secondary);">Сортировка:</span>
+                <select name="sort_by" class="form-select px-3 py-1.5 rounded-lg text-sm outline-none"
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                    <option value="relevance" {% if sort_by == 'relevance' %}selected{% endif %}>По релевантности</option>
+                    <option value="name" {% if sort_by == 'name' %}selected{% endif %}>По имени</option>
+                    <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Сначала новые</option>
+                </select>
+
+                <input type="hidden" name="search_type" value="{{ search_type }}">
+            </div>
+
+            <!-- Advanced Filters -->
+            <details class="group" {% if genre or language or source or date_from or date_to %}open{% endif %}>
+                <summary class="cursor-pointer text-sm font-medium" style="color: var(--color-text-secondary);">
+                    Расширенные фильтры <span class="group-open:rotate-90 transition-transform inline-block">▶</span>
+                </summary>
+                <div class="flex flex-wrap gap-3 items-center mt-3">
+                    <span class="text-sm" style="color: var(--color-text-secondary);">Жанр:</span>
+                    <input type="text" name="genre" value="{{ genre or '' }}" placeholder="sci-fi, drama..."
+                           class="form-input w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+
+                    <span class="text-sm" style="color: var(--color-text-secondary);">Язык:</span>
+                    <input type="text" name="language" value="{{ language or '' }}" placeholder="Russian, English..."
+                           class="form-input w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+
+                    <span class="text-sm" style="color: var(--color-text-secondary);">Источник:</span>
+                    <input type="text" name="source" value="{{ source or '' }}" placeholder="manual, import..."
+                           class="form-input w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+
+                    <span class="text-sm" style="color: var(--color-text-secondary);">Создано от:</span>
+                    <input type="date" name="date_from" value="{{ date_from or '' }}"
+                           class="form-input px-3 py-1.5 rounded-lg text-sm outline-none"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+
+                    <span class="text-sm" style="color: var(--color-text-secondary);">до:</span>
+                    <input type="date" name="date_to" value="{{ date_to or '' }}"
+                           class="form-input px-3 py-1.5 rounded-lg text-sm outline-none"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+
+                    <label class="flex items-center gap-2 text-sm" style="color: var(--color-text-secondary);">
+                        <input type="checkbox" name="use_ai" value="true" {% if use_ai %}checked{% endif %}
+                               class="rounded border-gray-300">
+                        AI-парсинг запроса
+                    </label>
+                </div>
+            </details>
+        </form>
+    </div>
+
+    <!-- AI parsed info -->
+    {% if ai_parsed %}
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-sm" style="color: #1e40af;">
+        <strong>AI распознал:</strong>
+        {% if ai_parsed.kind %}Тип: {{ ai_parsed.kind }}{% endif %}
+        {% if ai_parsed.year %}, Год: {{ ai_parsed.year }}{% endif %}
+        {% if ai_parsed.genre %}, Жанр: {{ ai_parsed.genre }}{% endif %}
+        {% if ai_parsed.rating_min %}, Рейтинг ≥ {{ ai_parsed.rating_min }}{% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Results -->
+    {% if query %}
+    <div class="mb-4 text-sm" style="color: var(--color-text-secondary);">
+        Найдено: {{ results | length }} результат(ов) по запросу "{{ query }}"
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for item in results %}
+        <a href="/entity/{{ item.entity.entity_id }}" class="card block rounded-xl p-5 shadow-sm hover:shadow-md transition-all"
+           style="border: 1px solid var(--color-border);" onmouseover="this.style.borderColor='var(--color-primary)'" onmouseout="this.style.borderColor='var(--color-border)'">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="badge-primary px-2 py-0.5 text-xs rounded-full">{{ item.kind_label }}</span>
+                {% if item.state_data.get('year') %}
+                <span class="text-xs" style="color: var(--color-text-secondary);">{{ item.state_data.year }}</span>
+                {% endif %}
+                {% if item.state_data.get('rating') %}
+                <span class="text-xs" style="color: var(--color-accent);">★ {{ item.state_data.rating }}</span>
+                {% endif %}
+            </div>
+            <div class="font-semibold text-lg mb-1" style="color: var(--color-text);">{{ item.label.label }}</div>
+            <div class="text-sm line-clamp-2" style="color: var(--color-text-secondary);">{{ item.label.description or '' }}</div>
+            {% if item.state_data.get('genre') %}
+            <div class="mt-2 text-xs" style="color: var(--color-text-secondary);">{{ item.state_data.genre }}</div>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+
+    {% if query and not results %}
+    <div class="text-center py-12" style="color: var(--color-text-secondary);">
+        <div class="text-4xl mb-4">?</div>
+        <div>Ничего не найдено по запросу "{{ query }}"</div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

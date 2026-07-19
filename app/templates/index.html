@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}DWMB - Метасистема{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Hero Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 card-hover transition-all">
+            <div class="text-3xl font-bold text-blue-600">{{ entity_count }}</div>
+            <div class="text-sm text-gray-500 mt-1">Сущностей</div>
+        </div>
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 card-hover transition-all">
+            <div class="text-3xl font-bold text-green-600">{{ kind_count }}</div>
+            <div class="text-sm text-gray-500 mt-1">Типов сущностей</div>
+        </div>
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 card-hover transition-all">
+            <div class="text-3xl font-bold text-purple-600">{{ relation_count }}</div>
+            <div class="text-sm text-gray-500 mt-1">Связей</div>
+        </div>
+    </div>
+
+    <!-- Quick Search -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-8">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Быстрый поиск</h2>
+        <form action="/search" method="get" class="flex gap-3">
+            <input type="text" name="q" placeholder="Найти сущность..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Найти</button>
+        </form>
+    </div>
+
+    <!-- Recent Entities -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-800">Последние сущности</h2>
+            <a href="/entities" class="text-sm text-blue-600 hover:text-blue-800">Показать все &rarr;</a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {% for item in recent %}
+            <a href="/entity/{{ item.entity.entity_id }}" class="block p-4 border border-gray-100 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">{{ item.kind_label }}</span>
+                </div>
+                <div class="font-medium text-gray-800">{{ item.label.label }}</div>
+                <div class="text-sm text-gray-500 mt-1 line-clamp-2">{{ item.label.description or '' }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

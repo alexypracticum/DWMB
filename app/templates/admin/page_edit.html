@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование страницы - Админ{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-3xl">
+    <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">
+        {% if page %}Редактирование страницы{% else %}Новая страница{% endif %}
+    </h1>
+
+    <form action="{% if page %}/admin/pages/{{ page.page_id }}/update{% else %}/admin/pages/create{% endif %}" method="post" class="space-y-4">
+        <!-- Basic Info -->
+        <div class="card rounded-xl p-6 shadow-sm space-y-4" style="border: 1px solid var(--color-border);">
+            <h2 class="text-lg font-semibold" style="color: var(--color-text);">Основная информация</h2>
+
+            <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Код</div>
+                <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
+                <div class="flex-1">
+                    <input type="text" name="page_code" value="{{ page.page_code if page else '' }}" required pattern="[a-z0-9\-]+"
+                        class="form-input w-full px-3 py-2 rounded-lg outline-none text-sm"
+                        placeholder="about, contact, etc."
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+            </div>
+
+            <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Название</div>
+                <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
+                <div class="flex-1">
+                    <input type="text" name="title" value="{{ page.title if page else '' }}" required
+                        class="form-input w-full px-3 py-2 rounded-lg outline-none text-sm"
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+            </div>
+
+            <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Статус</div>
+                <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
+                <div class="flex-1">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" name="is_published" value="true" {% if page and page.is_published %}checked{% endif %} class="rounded" style="border-color: var(--color-border);">
+                        <span class="text-sm" style="color: var(--color-text-secondary);">Опубликована</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Содержимое (JSON)</h2>
+            <textarea name="content" rows="20"
+                class="form-textarea w-full px-3 py-2 rounded-lg font-mono text-sm outline-none"
+                style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">{% if page.content %}{{ page.content }}{% else %}{}{% endif %}</textarea>
+            <p class="text-xs mt-2" style="color: var(--color-text-secondary);">JSON формат с блоками контента</p>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <a href="/admin/pages/" class="btn btn-outline px-6 py-2 rounded-lg transition">Отмена</a>
+            <button type="submit" class="btn btn-primary px-6 py-2 rounded-lg transition">Сохранить</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

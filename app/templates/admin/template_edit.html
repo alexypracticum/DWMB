@@ -1,0 +1,555 @@
+{% extends "base.html" %}
+{% block title %}Редактирование шаблона - Админ DWMB{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-5xl">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Редактирование шаблона: {{ template.template_name }}</h1>
+
+    <form action="/admin/templates/{{ template.template_id }}/edit" method="post" id="templateForm">
+        <input type="hidden" name="layout_definition" id="layoutJson" value="{{ layout_json }}">
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left: Template settings -->
+            <div class="lg:col-span-1 space-y-4">
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Настройки</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Тип сущности</label>
+                            <select name="kind_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">— все типы —</option>
+                                {% for k in all_kinds %}
+                                <option value="{{ k.kind_id }}" {% if template.kind_id == k.kind_id %}selected{% endif %}>{{ k.kind_code }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Модель</label>
+                            <select name="model_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                {% for m in models %}
+                                <option value="{{ m.model_id }}" {% if m.model_id == model.model_id %}selected{% endif %}>
+                                    {{ m.model_code }} ({{ m.domain }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Код</label>
+                            <input type="text" name="template_code" value="{{ template.template_code }}" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Название</label>
+                            <input type="text" name="template_name" value="{{ template.template_name }}" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
+                            <input type="text" name="description" value="{{ template.description or '' }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schema definition -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Схема данных (JSON)</h2>
+                    <textarea id="schemaJson" name="schema_definition" rows="8"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">{{ schema_json }}</textarea>
+                </div>
+
+                <!-- Add block buttons -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Добавить блок</h2>
+                    <div class="grid grid-cols-2 gap-2" id="blockPalette">
+                        <button type="button" onclick="addBlock('image_data_row')" class="px-3 py-2 text-xs bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition border border-indigo-200 font-semibold">📸 Фото + данные</button>
+                        <button type="button" onclick="addBlock('hero_image')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">🖼️ Главное фото</button>
+                        <button type="button" onclick="addBlock('image')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">📷 Изображение</button>
+                        <button type="button" onclick="addBlock('gallery')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">🖼️ Галерея</button>
+                        <button type="button" onclick="addBlock('markdown')" class="px-3 py-2 text-xs bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition border border-green-200">📝 Текст Markdown</button>
+                        <button type="button" onclick="addBlock('video')" class="px-3 py-2 text-xs bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition border border-red-200">🎬 Видео</button>
+                        <button type="button" onclick="addBlock('audio')" class="px-3 py-2 text-xs bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition border border-purple-200">🎵 Аудио</button>
+                        <button type="button" onclick="addBlock('info_table')" class="px-3 py-2 text-xs bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition border border-orange-200">📊 Таблица</button>
+                        <button type="button" onclick="addBlock('relation_list')" class="px-3 py-2 text-xs bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition border border-teal-200">🔗 Связи</button>
+                        <button type="button" onclick="addBlock('file_link')" class="px-3 py-2 text-xs bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">📎 Файл-ссылка</button>
+                        <button type="button" onclick="addBlock('file_upload')" class="px-3 py-2 text-xs bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">📤 Загрузка файла</button>
+                        <button type="button" onclick="addBlock('horizontal_row')" class="px-3 py-2 text-xs bg-cyan-50 text-cyan-700 rounded-lg hover:bg-cyan-100 transition border border-cyan-200">↔️ Горизонт. ряд</button>
+                        <button type="button" onclick="addBlock('text_block')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">📄 Текстовый блок</button>
+                        <button type="button" onclick="addBlock('divider')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">➖ Разделитель</button>
+                        <button type="button" onclick="addBlock('spacer')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">↕️ Отступ</button>
+                        <button type="button" onclick="addBlock('custom_html')" class="px-3 py-2 text-xs bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition border border-yellow-200">💻 HTML</button>
+                    </div>
+                    <button type="button" onclick="syncSchemaToBlocks()" class="w-full mt-3 px-3 py-2 text-xs bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">🔄 Обновить данные схемы</button>
+                </div>
+            </div>
+
+            <!-- Right: Layout editor -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-800">Макет страницы</h2>
+                        <span class="text-xs text-gray-400" id="blockCount">0 блоков</span>
+                    </div>
+                    <div id="layoutCanvas" class="space-y-3 min-h-[200px] border-2 border-dashed border-gray-200 rounded-lg p-4">
+                        <div id="emptyState" class="text-center py-12 text-gray-400">
+                            <div class="text-4xl mb-3">📋</div>
+                            <div class="text-sm">Добавьте блоки из палитры слева</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mt-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Превью</h2>
+                    <div id="layoutPreview" class="bg-gray-50 rounded-lg p-4 min-h-[100px] text-sm text-gray-500">
+                        Макет пуст
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-3 mt-6">
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Сохранить шаблон</button>
+            <a href="/admin/templates" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Отмена</a>
+        </div>
+    </form>
+</div>
+
+<script>
+const BLOCK_TYPES = {
+    hero_image: {name: 'Главное фото', icon: '🖼️', fields: [{key:'source',label:'Поле данных',def:'poster_url'},{key:'alt_field',label:'Alt-текст',def:'title'}]},
+    image: {name: 'Изображение', icon: '📷', fields: [{key:'source',label:'Поле данных',def:'image_url'},{key:'alt_field',label:'Alt-текст',def:'title'},{key:'caption',label:'Подпись',def:''},{key:'height',label:'Высота (px)',def:''}]},
+    image_data_row: {name: 'Фото + данные', icon: '📸', fields: [{key:'image_source',label:'Поле изображения',def:'poster'},{key:'alt_field',label:'Alt-текст',def:'title'},{key:'fields',label:'Поля данных',def:'[]',type:'field_editor'}]},
+    gallery: {name: 'Галерея', icon: '🖼️', fields: [{key:'source',label:'Поле (массив)',def:'images'},{key:'title',label:'Заголовок',def:''},{key:'height',label:'Высота (px)',def:'300'}]},
+    markdown: {name: 'Текст Markdown', icon: '📝', fields: [{key:'title',label:'Заголовок',def:''},{key:'source',label:'Поле данных',def:''},{key:'content',label:'Текст (статический)',def:''}]},
+    video: {name: 'Видео', icon: '🎬', fields: [{key:'source',label:'Поле (URL)',def:'video_url'}]},
+    audio: {name: 'Аудио', icon: '🎵', fields: [{key:'source',label:'Поле (URL)',def:'audio_url'},{key:'title',label:'Название',def:'title'}]},
+    info_table: {name: 'Таблица', icon: '📊', fields: [{key:'fields',label:'Поля данных',def:'[]',type:'field_editor'},{key:'style',label:'Стиль',def:'table'}]},
+    relation_list: {name: 'Связи', icon: '🔗', fields: [{key:'relation_type',label:'Тип связи',def:''},{key:'display',label:'Стиль',def:'list'}]},
+    file_link: {name: 'Файл-ссылка', icon: '📎', fields: [{key:'source',label:'Поле (URL)',def:'file_url'},{key:'title',label:'Название',def:'file_title'}]},
+    file_upload: {name: 'Загрузка файла', icon: '📤', fields: [{key:'source',label:'Поле (URL)',def:'uploaded_file_url'},{key:'title',label:'Название',def:'uploaded_file_title'}]},
+    horizontal_row: {name: 'Горизонт. ряд', icon: '↔️', fields: [{key:'columns',label:'Колонок (2-5)',def:'2'}], hasChildren: true},
+    text_block: {name: 'Описание', icon: '📄', fields: []},
+    richtext: {name: 'Текстовый блок', icon: '📝', fields: [{key:'title',label:'Заголовок',def:''},{key:'source',label:'Поле данных',def:''},{key:'content',label:'Текст (статический)',def:''}]},
+    divider: {name: 'Разделитель', icon: '➖', fields: []},
+    spacer: {name: 'Отступ', icon: '↕️', fields: [{key:'height',label:'Высота (px)',def:'40'}]},
+    custom_html: {name: 'HTML', icon: '💻', fields: [{key:'html',label:'HTML-код',def:''}]},
+};
+
+let blocks = {{ layout_blocks_json | safe }};
+let blockIdCounter = blocks.length;
+let FIELD_REGISTRY = [];
+
+// Load field registry from API
+fetch('/admin/api/fields').then(r => r.json()).then(data => { FIELD_REGISTRY = data; }).catch(() => {});
+
+function renderBlocks() {
+    const canvas = document.getElementById('layoutCanvas');
+    const empty = document.getElementById('emptyState');
+    const countEl = document.getElementById('blockCount');
+
+    if (blocks.length === 0) {
+        canvas.innerHTML = '';
+        canvas.appendChild(createEmptyState());
+        countEl.textContent = '0 блоков';
+        syncJson();
+        return;
+    }
+
+    canvas.innerHTML = '';
+    countEl.textContent = blocks.length + ' блок(ов)';
+
+    blocks.forEach((block, idx) => {
+        const bt = BLOCK_TYPES[block.type] || {name: block.type, icon: '?', fields: []};
+        const el = document.createElement('div');
+        el.className = 'bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition cursor-move';
+        el.draggable = true;
+        el.dataset.idx = idx;
+
+        let fieldsHtml = '';
+        bt.fields.forEach(f => {
+            const val = (block.config || {})[f.key] || f.def || '';
+            if (f.type === 'field_editor') {
+                // Dynamic field editor with +/- buttons
+                const editorId = 'feditor_' + idx + '_' + f.key;
+                let parsedFields = [];
+                try { parsedFields = typeof val === 'string' ? JSON.parse(val || '[]') : (val || []); } catch(e) { parsedFields = []; }
+                const rowsHtml = parsedFields.map((pf, fi) => `<div class="flex items-center gap-1 bg-white rounded px-2 py-1 text-xs" data-fi="${fi}">
+                    <input type="text" value="${esc(pf.key||'')}" placeholder="key" data-fi="${fi}" data-fk="key" onchange="updateFieldEditor('${editorId}',${fi},'key',this.value)" class="w-24 px-1 py-0.5 border border-gray-200 rounded text-xs">
+                    <input type="text" value="${esc(pf.label||'')}" placeholder="Метка" data-fi="${fi}" data-fk="label" onchange="updateFieldEditor('${editorId}',${fi},'label',this.value)" class="flex-1 px-1 py-0.5 border border-gray-200 rounded text-xs">
+                    <select data-fi="${fi}" data-fk="type" onchange="updateFieldEditor('${editorId}',${fi},'type',this.value)" class="px-1 py-0.5 border border-gray-200 rounded text-xs">
+                        <option value="string"${pf.type==='string'?' selected':''}>Строка</option>
+                        <option value="integer"${pf.type==='integer'?' selected':''}>Целое</option>
+                        <option value="number"${pf.type==='number'?' selected':''}>Дробное</option>
+                        <option value="currency"${pf.type==='currency'?' selected':''}>Деньги</option>
+                        <option value="boolean"${pf.type==='boolean'?' selected':''}>Да/Нет</option>
+                        <option value="date"${pf.type==='date'?' selected':''}>Дата</option>
+                        <option value="datetime"${pf.type==='datetime'?' selected':''}>Дата+время</option>
+                        <option value="email"${pf.type==='email'?' selected':''}>Email</option>
+                        <option value="url"${pf.type==='url'?' selected':''}>URL</option>
+                        <option value="textarea"${pf.type==='textarea'?' selected':''}>Текст</option>
+                        <option value="select"${pf.type==='select'?' selected':''}>Выбор</option>
+                    </select>
+                    <button type="button" onclick="removeFieldEditor('${editorId}',${fi})" class="text-red-400 hover:text-red-600 px-1">✕</button>
+                </div>`).join('');
+                fieldsHtml += `<div class="mt-2"><label class="text-xs text-gray-500">${f.label}</label>
+                    <input type="hidden" id="${editorId}" value='${typeof val === 'string' ? val : JSON.stringify(val || [])}'>
+                    <div id="${editorId}_rows" class="space-y-1 mt-1">${rowsHtml}</div>
+                    <button type="button" onclick="addFieldEditor('${editorId}')" class="mt-1 px-2 py-0.5 bg-green-50 text-green-700 rounded text-xs border border-green-200 hover:bg-green-100">+ Добавить поле</button>
+                </div>`;
+            } else {
+                const isLong = f.key === 'html';
+                if (isLong) {
+                    fieldsHtml += `<div class="mt-2"><label class="text-xs text-gray-500">${f.label}</label>
+                        <textarea data-idx="${idx}" data-key="${f.key}" onchange="updateConfig(this)"
+                        class="w-full px-2 py-1 border border-gray-200 rounded text-xs font-mono mt-1" rows="3">${esc(val)}</textarea></div>`;
+                } else {
+                    fieldsHtml += `<div class="mt-2"><label class="text-xs text-gray-500">${f.label}</label>
+                        <input type="text" data-idx="${idx}" data-key="${f.key}" value="${esc(val)}" onchange="updateConfig(this)"
+                        class="w-full px-2 py-1 border border-gray-200 rounded text-xs mt-1"></div>`;
+                }
+            }
+        });
+
+        let childrenHtml = '';
+        if (bt.hasChildren && block.children) {
+            childrenHtml = '<div class="mt-3 pl-4 border-l-2 border-blue-200 space-y-2">';
+            block.children.forEach((child, ci) => {
+                const cbt = BLOCK_TYPES[child.type] || {name: child.type, icon: '?'};
+                childrenHtml += `<div class="flex items-center gap-2 bg-white rounded p-2 text-xs">
+                    <span>${cbt.icon}</span><span class="text-gray-700">${cbt.name}</span>
+                    <button type="button" onclick="removeChild(${idx},${ci})" class="ml-auto text-red-400 hover:text-red-600">✕</button>
+                </div>`;
+            });
+            childrenHtml += `<select onchange="addChildBlock(${idx}, this.value); this.value='';" class="mt-1 px-2 py-1 border border-gray-200 rounded text-xs">
+                <option value="">+ добавить блок...</option>`;
+            Object.entries(BLOCK_TYPES).forEach(([k,v]) => {
+                if (k !== 'horizontal_row') childrenHtml += `<option value="${k}">${v.icon} ${v.name}</option>`;
+            });
+            childrenHtml += '</select></div>';
+        }
+
+        el.innerHTML = `
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="cursor-grab text-gray-400">⠿</span>
+                    <span class="text-lg">${bt.icon}</span>
+                    <span class="font-medium text-sm text-gray-700">${bt.name}</span>
+                    <span class="text-xs text-gray-400">#${idx + 1}</span>
+                    ${block.type === 'image_data_row' ? `<button type="button" onclick="syncBlockFromSchema(${idx})" class="px-2 py-0.5 text-xs bg-emerald-50 text-emerald-700 rounded border border-emerald-200 hover:bg-emerald-100" title="Обновить поля из схемы">🔄 Из схемы</button>` : ''}
+                </div>
+                <div class="flex gap-1">
+                    ${idx > 0 ? `<button type="button" onclick="moveBlock(${idx},-1)" class="px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 rounded">↑</button>` : ''}
+                    ${idx < blocks.length - 1 ? `<button type="button" onclick="moveBlock(${idx},1)" class="px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 rounded">↓</button>` : ''}
+                    <button type="button" onclick="removeBlock(${idx})" class="px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded">✕</button>
+                </div>
+            </div>
+            ${fieldsHtml}
+            ${childrenHtml}
+        `;
+
+        // Drag and drop
+        el.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', idx);
+            el.classList.add('opacity-50');
+        });
+        el.addEventListener('dragend', () => el.classList.remove('opacity-50'));
+        el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.add('border-blue-500'); });
+        el.addEventListener('dragleave', () => el.classList.remove('border-blue-500'));
+        el.addEventListener('drop', (e) => {
+            e.preventDefault();
+            el.classList.remove('border-blue-500');
+            const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+            const toIdx = idx;
+            if (fromIdx !== toIdx) {
+                const [moved] = blocks.splice(fromIdx, 1);
+                blocks.splice(toIdx, 0, moved);
+                renderBlocks();
+            }
+        });
+
+        canvas.appendChild(el);
+    });
+
+    syncJson();
+}
+
+function createEmptyState() {
+    const d = document.createElement('div');
+    d.id = 'emptyState';
+    d.className = 'text-center py-12 text-gray-400';
+    d.innerHTML = '<div class="text-4xl mb-3">📋</div><div class="text-sm">Добавьте блоки из палитры слева</div>';
+    return d;
+}
+
+function addBlock(type) {
+    const bt = BLOCK_TYPES[type];
+    const config = {};
+    (bt.fields || []).forEach(f => {
+        if (f.key === 'fields' && type === 'image_data_row') {
+            // Auto-populate from schema JSON if available
+            config[f.key] = autoFieldsFromSchema();
+        } else {
+            config[f.key] = f.def || '';
+        }
+    });
+    const block = {id: 'block_' + (++blockIdCounter), type: type, config: config};
+    if (bt.hasChildren) block.children = [];
+    blocks.push(block);
+    renderBlocks();
+}
+
+function autoFieldsFromSchema() {
+    // Try to parse schema JSON from the textarea
+    const schemaEl = document.getElementById('schemaJson');
+    if (!schemaEl) return '[]';
+    try {
+        const schema = JSON.parse(schemaEl.value || '{}');
+        const props = schema.properties || schema;
+        const fields = [];
+        const skipKeys = new Set(['poster_url','poster','images','video_url','audio_url','file_url','file_title','uploaded_file_url','uploaded_file_title','content','description','image_url']);
+        const labelMap = {
+            title:'Название',year:'Год',genre:'Жанр',director:'Режиссёр',rating:'Рейтинг',
+            duration:'Длительность',budget:'Бюджет',revenue:'Сборы',runtime:'Хронометраж',
+            tagline:'Слоган',mpaa_rating:'MPAA',author:'Автор',pages:'Страниц',isbn:'ISBN',
+            publisher:'Издательство',artist:'Исполнитель',label:'Лейбл',tracks:'Треков',
+            first_name:'Имя',last_name:'Фамилия',birth_year:'Год рождения',birth_date:'Дата рождения',
+            birthplace:'Место рождения',birth_place:'Место рождения',nationality:'Национальность',
+            height_cm:'Рост',nickname:'Псевдоним',death_date:'Дата смерти',death_year:'Год смерти',
+            occupation:'Профессия',notable_works:'Знаковые работы',
+            city:'Город',country:'Страна',population:'Население',area:'Площадь',
+            latitude:'Широта',longitude:'Долгота',timezone:'Часовой пояс',
+            founded:'Год основания',industry:'Отрасль',headquarters:'Штаб-квартира',
+            founders:'Основатели',name:'Название',type:'Тип',
+            symbol:'Символ',element:'Элемент',atomic_number:'Атомный номер',
+            atomic_mass:'Атомная масса',category:'Категория',
+            electron_configuration:'Эл. конфигурация',melting_point:'Темп. плавления',boiling_point:'Темп. кипения',
+            description:'Описание',origins:'Происхождение',subfields:'Подобласти',
+            key_works:'Ключевые произведения',variants:'Варианты',
+            subgenres:'Поджанры',periods:'Периоды',
+            common_name:'Название',scientific_name:'Научное название',class:'Класс',
+            order:'Отряд',family:'Семейство',habitat:'Среда обитания',conservation:'Охрана',
+            album:'Альбом',key:'Тональность',op:'Opus',
+        };
+        for (const [key, prop] of Object.entries(props)) {
+            if (skipKeys.has(key)) continue;
+            const type = prop.type === 'integer' || prop.type === 'number' ? prop.type : (prop.type === 'boolean' ? 'boolean' : 'string');
+            fields.push({key, label: prop.title || labelMap[key] || key, type});
+        }
+        return JSON.stringify(fields);
+    } catch(e) { return '[]'; }
+}
+
+function removeBlock(idx) {
+    blocks.splice(idx, 1);
+    renderBlocks();
+}
+
+function syncSchemaToBlocks() {
+    const fieldsStr = autoFieldsFromSchema();
+    let updated = 0;
+    blocks.forEach(b => {
+        if (b.type === 'image_data_row') {
+            b.config.fields = fieldsStr;
+            updated++;
+        }
+    });
+    if (updated === 0) {
+        alert('Нет блоков "Фото + данные" для обновления.');
+    } else {
+        alert('Обновлено блоков: ' + updated);
+    }
+    renderBlocks();
+    syncJson();
+}
+
+function syncBlockFromSchema(idx) {
+    const fieldsStr = autoFieldsFromSchema();
+    blocks[idx].config.fields = fieldsStr;
+    renderBlocks();
+    syncJson();
+}
+
+let childIdCounter = 1000;
+
+function addChildBlock(parentIdx, type) {
+    if (!type) return;
+    const bt = BLOCK_TYPES[type];
+    const config = {};
+    (bt.fields || []).forEach(f => { config[f.key] = f.def || ''; });
+    if (!blocks[parentIdx].children) blocks[parentIdx].children = [];
+    blocks[parentIdx].children.push({id: 'child_' + (++childIdCounter), type: type, config: config});
+    renderBlocks();
+}
+
+function removeChild(parentIdx, childIdx) {
+    blocks[parentIdx].children.splice(childIdx, 1);
+    renderBlocks();
+}
+
+function moveBlock(idx, dir) {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= blocks.length) return;
+    [blocks[idx], blocks[newIdx]] = [blocks[newIdx], blocks[idx]];
+    renderBlocks();
+}
+
+function updateConfig(el) {
+    const idx = parseInt(el.dataset.idx);
+    const key = el.dataset.key;
+    if (!blocks[idx].config) blocks[idx].config = {};
+    blocks[idx].config[key] = el.value;
+    syncJson();
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function getFieldEditorData(editorId) {
+    const hidden = document.getElementById(editorId);
+    try { return JSON.parse(hidden.value || '[]'); } catch(e) { return []; }
+}
+
+function setFieldEditorData(editorId, data) {
+    const hidden = document.getElementById(editorId);
+    hidden.value = JSON.stringify(data);
+    // Also update the block config
+    const parts = editorId.replace('feditor_', '').split('_');
+    const blockIdx = parseInt(parts[0]);
+    const fieldKey = parts.slice(1).join('_');
+    if (blocks[blockIdx] && blocks[blockIdx].config) {
+        blocks[blockIdx].config[fieldKey] = hidden.value;
+    }
+    syncJson();
+}
+
+function renderFieldEditorRows(editorId) {
+    const data = getFieldEditorData(editorId);
+    const container = document.getElementById(editorId + '_rows');
+    const types = [
+        ['string','Строка'],['integer','Целое'],['number','Дробное'],['currency','Деньги'],
+        ['boolean','Да/Нет'],['date','Дата'],['datetime','Дата+время'],
+        ['email','Email'],['url','URL'],['textarea','Текст'],['select','Выбор']
+    ];
+    // Build registry options grouped by category
+    const cats = {};
+    FIELD_REGISTRY.forEach(f => {
+        if (!cats[f.category]) cats[f.category] = [];
+        cats[f.category].push(f);
+    });
+    let regOpts = '<option value="">— из реестра —</option>';
+    Object.entries(cats).forEach(([cat, fields]) => {
+        regOpts += `<optgroup label="${esc(cat)}">`;
+        fields.forEach(f => {
+            regOpts += `<option value="${esc(f.key)}" data-label="${esc(f.label)}" data-type="${esc(f.type)}">${esc(f.label)} (${f.key})</option>`;
+        });
+        regOpts += '</optgroup>';
+    });
+
+    container.innerHTML = data.map((f, i) => `<div class="flex items-center gap-1 bg-white rounded px-2 py-1 text-xs drag-field-row" draggable="true" data-fi="${i}">
+        <span class="cursor-grab text-gray-300 hover:text-gray-500 px-0.5" title="Перетащить для изменения порядка">⠿</span>
+        <select onchange="pickRegistryField('${editorId}',${i},this)" class="w-36 px-1 py-0.5 border border-gray-200 rounded text-xs text-gray-400">${regOpts}</select>
+        <input type="text" value="${esc(f.key||'')}" placeholder="key" onchange="updateFieldEditor('${editorId}',${i},'key',this.value)" class="w-24 px-1 py-0.5 border border-gray-200 rounded text-xs">
+        <input type="text" value="${esc(f.label||'')}" placeholder="Метка" onchange="updateFieldEditor('${editorId}',${i},'label',this.value)" class="flex-1 px-1 py-0.5 border border-gray-200 rounded text-xs">
+        <select onchange="updateFieldEditor('${editorId}',${i},'type',this.value)" class="px-1 py-0.5 border border-gray-200 rounded text-xs">
+            ${types.map(([v,n]) => `<option value="${v}"${f.type===v?' selected':''}>${n}</option>`).join('')}
+        </select>
+        <button type="button" onclick="removeFieldEditor('${editorId}',${i})" class="text-red-400 hover:text-red-600 px-1">✕</button>
+    </div>`).join('');
+
+    // Add drag-and-drop reordering
+    let dragIdx = null;
+    container.querySelectorAll('.drag-field-row').forEach(row => {
+        row.addEventListener('dragstart', e => {
+            dragIdx = parseInt(row.dataset.fi);
+            row.style.opacity = '0.4';
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        row.addEventListener('dragend', () => {
+            dragIdx = null;
+            row.style.opacity = '1';
+            container.querySelectorAll('.drag-field-row').forEach(r => r.classList.remove('border-t-2','border-blue-400'));
+        });
+        row.addEventListener('dragover', e => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            row.classList.add('border-t-2','border-blue-400');
+        });
+        row.addEventListener('dragleave', () => {
+            row.classList.remove('border-t-2','border-blue-400');
+        });
+        row.addEventListener('drop', e => {
+            e.preventDefault();
+            row.classList.remove('border-t-2','border-blue-400');
+            const dropIdx = parseInt(row.dataset.fi);
+            if (dragIdx === null || dragIdx === dropIdx) return;
+            const d = getFieldEditorData(editorId);
+            const [moved] = d.splice(dragIdx, 1);
+            d.splice(dropIdx, 0, moved);
+            setFieldEditorData(editorId, d);
+            renderFieldEditorRows(editorId);
+        });
+    });
+}
+
+function pickRegistryField(editorId, idx, selectEl) {
+    const key = selectEl.value;
+    if (!key) return;
+    const opt = selectEl.options[selectEl.selectedIndex];
+    const label = opt.dataset.label || key;
+    const type = opt.dataset.type || 'string';
+    updateFieldEditor(editorId, idx, 'key', key);
+    updateFieldEditor(editorId, idx, 'label', label);
+    updateFieldEditor(editorId, idx, 'type', type);
+    renderFieldEditorRows(editorId);
+    selectEl.value = '';
+}
+
+function addFieldEditor(editorId) {
+    const data = getFieldEditorData(editorId);
+    data.push({key: '', label: '', type: 'string'});
+    setFieldEditorData(editorId, data);
+    renderFieldEditorRows(editorId);
+    const rows = document.getElementById(editorId + '_rows');
+    if (rows.lastElementChild) rows.lastElementChild.querySelector('input').focus();
+}
+
+function removeFieldEditor(editorId, idx) {
+    const data = getFieldEditorData(editorId);
+    data.splice(idx, 1);
+    setFieldEditorData(editorId, data);
+    renderFieldEditorRows(editorId);
+}
+
+function updateFieldEditor(editorId, idx, key, val) {
+    const data = getFieldEditorData(editorId);
+    data[idx][key] = val;
+    setFieldEditorData(editorId, data);
+}
+
+function syncJson() {
+    document.getElementById('layoutJson').value = JSON.stringify(blocks);
+    // Preview
+    const preview = document.getElementById('layoutPreview');
+    if (blocks.length === 0) {
+        preview.innerHTML = '<span class="text-gray-400">Макет пуст</span>';
+        return;
+    }
+    let html = '<div class="space-y-2">';
+    blocks.forEach((b, i) => {
+        const bt = BLOCK_TYPES[b.type] || {name: b.type, icon: '?'};
+        const cfg = Object.entries(b.config || {}).map(([k,v]) => `${k}="${v}"`).join(' ');
+        html += `<div class="flex items-center gap-2 p-2 bg-white rounded border border-gray-100">
+            <span>${bt.icon}</span>
+            <span class="font-medium text-xs">${bt.name}</span>
+            ${cfg ? `<span class="text-xs text-gray-400 font-mono truncate max-w-xs">${cfg}</span>` : ''}
+        </div>`;
+    });
+    html += '</div>';
+    preview.innerHTML = html;
+}
+
+// Init
+renderBlocks();
+</script>
+{% endblock %}

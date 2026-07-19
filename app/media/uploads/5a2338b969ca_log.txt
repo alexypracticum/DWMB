@@ -1,0 +1,48 @@
+(.venv) darckwarrior@DWNPC:/media/darckwarrior/G/Yandex.Disk/PC/Dev/DWMB$ ./start.sh
+=== DWMB Meta-System Startup ===
+Starting services...
+WARN[0000] /media/darckwarrior/G/Yandex.Disk/PC/Dev/DWMB/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion
+[+] up 3/3
+ ✔ Container dwmb_minio Running                                                                                                                       0.0s
+ ✔ Container dwmb_db    Healthy                                                                                                                       0.5s
+ ✔ Container dwmb_app   Running                                                                                                                       0.0s
+Waiting for PostgreSQL to be ready...
+PostgreSQL is ready!
+Running seed data...
+  Created admin and user accounts
+SKIP: kind movie not found
+SKIP: kind actor not found
+SKIP: kind director not found
+SKIP: kind song not found
+SKIP: kind musician not found
+SKIP: kind book not found
+SKIP: kind writer not found
+SKIP: kind place not found
+SKIP: kind chemical_element not found
+SKIP: kind animal not found
+SKIP: kind plant not found
+SKIP: kind album not found
+SKIP: kind concept not found
+SKIP: kind genre not found
+SKIP: kind phenomenon not found
+SKIP: kind period not found
+SKIP: kind digital_file not found
+SKIP: kind movement not found
+SKIP: kind classifier not found
+SKIP: kind physical_item not found
+SKIP: kind photo not found
+SKIP: kind article not found
+SKIP: kind human not found
+SKIP: kind artist not found
+SKIP: kind scientist not found
+  Created 20 relation types
+  Created 0 semantic relations
+DONE!
+
+=== DWMB is running! ===
+  Web UI:  http://localhost:8000
+  API Doc: http://localhost:8000/docs
+  Admin:   admin / admin123
+  User:    user /
+
+  http://localhost:8000/ - Internal Server Error

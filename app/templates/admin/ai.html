@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}AI - Админ DWMB{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-4xl">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">AI Конфигурация</h1>
+        <a href="/admin" class="text-sm" style="color: var(--color-primary);">← Назад</a>
+    </div>
+
+    <!-- AI Config Form -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Настройки AI</h2>
+        <form action="/admin/ai/save" method="post" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Провайдер</label>
+                    <select name="provider" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="openai" {% if config and config.provider == 'openai' %}selected{% endif %}>OpenAI</option>
+                        <option value="azure" {% if config and config.provider == 'azure' %}selected{% endif %}>Azure OpenAI</option>
+                        <option value="ollama" {% if config and config.provider == 'ollama' %}selected{% endif %}>Ollama (local)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">API Base URL</label>
+                    <input type="text" name="api_base_url" value="{{ config.api_base_url if config else 'https://api.openai.com/v1' }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Модель для эмбеддингов</label>
+                    <input type="text" name="model_embedding" value="{{ config.model_embedding if config else 'text-embedding-3-small' }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Модель для чата</label>
+                    <input type="text" name="model_chat" value="{{ config.model_chat if config else 'gpt-4o-mini' }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
+                    <input type="password" name="api_key" placeholder="{% if config and config.api_key_enc %}Ключ сохранён (оставьте пустым для сохранения текущего){% else %}Введите API ключ{% endif %}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Макс. токенов</label>
+                    <input type="number" name="max_tokens" value="{{ config.max_tokens if config else 4096 }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">Сохранить</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Available AI Features -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Доступные AI-функции</h2>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 class="font-medium text-blue-800 text-sm mb-1">Поиск с AI-парсингом</h3>
+                <p class="text-xs text-blue-600">На странице поиска включите галочку "AI-парсинг запроса" для интеллектуального поиска</p>
+            </div>
+            <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                <h3 class="font-medium text-green-800 text-sm mb-1">Подсказки полей</h3>
+                <p class="text-xs text-green-600">API: POST /api/ai/suggest-fields/{entity_id} — AI предложит дополнительные поля для сущности</p>
+            </div>
+            <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <h3 class="font-medium text-purple-800 text-sm mb-1">Парсинг текста</h3>
+                <p class="text-xs text-purple-600">API: POST /api/ai/parse-text — преобразует свободный текст в структурированные данные</p>
+            </div>
+            <div class="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <h3 class="font-medium text-amber-800 text-sm mb-1">Похожие сущности</h3>
+                <p class="text-xs text-amber-600">API: GET /api/ai/similar/{entity_id} — найдёт похожие сущности по эмбеддингам</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Logs -->
+    {% if logs %}
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Последние AI-задачи</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="text-left py-2 px-3 text-gray-500 font-medium">Тип</th>
+                        <th class="text-left py-2 px-3 text-gray-500 font-medium">Модель</th>
+                        <th class="text-left py-2 px-3 text-gray-500 font-medium">Статус</th>
+                        <th class="text-left py-2 px-3 text-gray-500 font-medium">Токены</th>
+                        <th class="text-left py-2 px-3 text-gray-500 font-medium">Стоимость</th>
+                        <th class="text-left py-2 px-3 text-gray-500 font-medium">Дата</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="py-2 px-3 font-mono text-xs">{{ log.task_type }}</td>
+                        <td class="py-2 px-3 text-gray-600">{{ log.model_used or '-' }}</td>
+                        <td class="py-2 px-3">
+                            <span class="px-2 py-0.5 text-xs rounded-full {% if log.status == 'success' %}bg-green-100 text-green-700{% elif log.status == 'error' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-600{% endif %}">
+                                {{ log.status }}
+                            </span>
+                        </td>
+                        <td class="py-2 px-3 text-gray-500">{{ log.input_tokens + log.output_tokens if log.input_tokens and log.output_tokens else '-' }}</td>
+                        <td class="py-2 px-3 text-gray-500">${{ '%.4f' % log.cost_usd if log.cost_usd else '0.0000' }}</td>
+                        <td class="py-2 px-3 text-gray-400 text-xs">{{ log.created_at.strftime('%d.%m %H:%M') if log.created_at else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
