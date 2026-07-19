@@ -6,17 +6,17 @@ import pytest_asyncio
 
 
 @pytest.mark.asyncio
-async def test_entity_create_page(client):
+async def test_entity_create_page(auth_client):
     """Entity create page shows step 1 (kind selection)."""
-    resp = await client.get("/entity/create")
+    resp = await auth_client.get("/entity/create")
     assert resp.status_code == 200
     assert "Выберите тип" in resp.text or "Тип" in resp.text
 
 
 @pytest.mark.asyncio
-async def test_entity_create_step2(client):
+async def test_entity_create_step2(auth_client):
     """Entity create step 2 shows all templates grouped by kind."""
-    resp = await client.get("/entity/create?kind=movie")
+    resp = await auth_client.get("/entity/create?kind=movie")
     assert resp.status_code == 200
     # Should show templates from multiple kinds
     assert "template_ids" in resp.text

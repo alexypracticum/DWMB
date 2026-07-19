@@ -323,14 +323,14 @@ function addBlock(type) {
 }
 
 function autoFieldsFromSchema() {
-    // Try to parse schema JSON from the textarea
     const schemaEl = document.getElementById('schemaJson');
     if (!schemaEl) return '[]';
     try {
         const schema = JSON.parse(schemaEl.value || '{}');
         const props = schema.properties || schema;
         const fields = [];
-        const skipKeys = new Set(['poster_url','poster','images','video_url','audio_url','file_url','file_title','uploaded_file_url','uploaded_file_title','content','description','image_url']);
+        // Unified skip list matching server side (admin.py:689)
+        const skipKeys = new Set(['poster','poster_url','description','content']);
         const labelMap = {
             title:'Название',year:'Год',genre:'Жанр',director:'Режиссёр',rating:'Рейтинг',
             duration:'Длительность',budget:'Бюджет',revenue:'Сборы',runtime:'Хронометраж',
@@ -354,8 +354,13 @@ function autoFieldsFromSchema() {
             order:'Отряд',family:'Семейство',habitat:'Среда обитания',conservation:'Охрана',
             album:'Альбом',key:'Тональность',op:'Opus',
         };
-        for (const [key, prop] of Object.entries(props)) {
-            if (skipKeys.has(key)) continue;
+        // Use field_order if available, otherwise fall back to Object.entries
+        const orderedKeys = Array.isArray(schema.field_order) && schema.field_order.length
+            ? schema.field_order
+            : Object.keys(props);
+        for (const key of orderedKeys) {
+            if (!props[key] || skipKeys.has(key)) continue;
+            const prop = props[key];
             const type = prop.type === 'integer' || prop.type === 'number' ? prop.type : (prop.type === 'boolean' ? 'boolean' : 'string');
             fields.push({key, label: prop.title || labelMap[key] || key, type});
         }

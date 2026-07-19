@@ -61,13 +61,18 @@
             </div>
 
             <!-- Advanced Filters -->
-            <details class="group" {% if genre or language or source or date_from or date_to %}open{% endif %}>
+            <details class="group" {% if genre or production_company or language or source or date_from or date_to %}open{% endif %}>
                 <summary class="cursor-pointer text-sm font-medium" style="color: var(--color-text-secondary);">
                     Расширенные фильтры <span class="group-open:rotate-90 transition-transform inline-block">▶</span>
                 </summary>
                 <div class="flex flex-wrap gap-3 items-center mt-3">
                     <span class="text-sm" style="color: var(--color-text-secondary);">Жанр:</span>
                     <input type="text" name="genre" value="{{ genre or '' }}" placeholder="sci-fi, drama..."
+                           class="form-input w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
+                           style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+
+                    <span class="text-sm" style="color: var(--color-text-secondary);">Кинокомпания:</span>
+                    <input type="text" name="production_company" value="{{ production_company or '' }}" placeholder="Warner Bros..."
                            class="form-input w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
 

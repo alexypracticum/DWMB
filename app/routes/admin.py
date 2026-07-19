@@ -36,8 +36,28 @@ def _ensure_json_schema(fs):
                 if f.get("required"):
                     required.append(key)
                 props[key] = prop
-        return {"properties": props, "required": required}
+        return {"properties": props, "required": []}
     return {"properties": {}, "required": []}
+
+
+def _sync_layout_fields_from_schema(layout_blocks, schema_json):
+    """Update image_data_row block config.fields from schema properties using field_order.
+    Returns the modified layout_blocks list (same object)."""
+    SKIP_KEYS = {"poster", "poster_url", "description", "content"}
+    if not isinstance(layout_blocks, list) or not isinstance(schema_json, dict):
+        return layout_blocks
+    props = schema_json.get("properties", {})
+    field_order = schema_json.get("field_order", [])
+    ordered_keys = field_order if field_order else list(props.keys())
+    for block in layout_blocks:
+        if block.get("type") == "image_data_row" and "config" in block:
+            new_fields = []
+            for key in ordered_keys:
+                if key in props and key not in SKIP_KEYS:
+                    prop = props[key]
+                    new_fields.append({"key": key, "label": prop.get("title", key), "type": prop.get("type", "string")})
+            block["config"]["fields"] = new_fields
+    return layout_blocks
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -361,19 +381,8 @@ async def admin_template_edit(
             kind_obj.field_schema = schema_json
 
     # Sync layout block 'fields' config with schema properties
-    if isinstance(layout_json, list):
-        props = schema_json.get("properties", {}) if isinstance(schema_json, dict) else {}
-        field_order = schema_json.get("field_order", []) if isinstance(schema_json, dict) else []
-        for block in layout_json:
-            if block.get("type") == "image_data_row" and "config" in block:
-                new_fields = []
-                ordered_keys = field_order if field_order else list(props.keys())
-                for key in ordered_keys:
-                    if key in props and key not in ("poster", "poster_url", "description", "content"):
-                        prop = props[key]
-                        new_fields.append({"key": key, "label": prop.get("title", key), "type": prop.get("type", "string")})
-                block["config"]["fields"] = new_fields
-        tmpl.layout_definition = layout_json
+    layout_json = _sync_layout_fields_from_schema(layout_json, schema_json)
+    tmpl.layout_definition = layout_json
 
     # Sync entity state_data
     entity_result = await db.execute(
@@ -671,26 +680,12 @@ async def admin_kind_edit_save(
     )
     for tmpl in tmpl_result.scalars().all():
         tmpl.schema_definition = fs
-        # Also update layout block 'fields' config to match schema order
         _ld = tmpl.layout_definition
         if isinstance(_ld, str):
             try: _ld = json.loads(_ld)
             except: _ld = []
-        if isinstance(_ld, list):
-            for block in _ld:
-                if block.get("type") == "image_data_row" and "config" in block:
-                    # Rebuild fields list from schema properties using field_order
-                    props = fs.get("properties", {}) if isinstance(fs, dict) else {}
-                    field_order = fs.get("field_order", []) if isinstance(fs, dict) else []
-                    new_fields = []
-                    # Use field_order if available, otherwise fall back to properties keys
-                    ordered_keys = field_order if field_order else list(props.keys())
-                    for key in ordered_keys:
-                        if key in props and key not in ("poster", "poster_url", "description", "content"):
-                            prop = props[key]
-                            new_fields.append({"key": key, "label": prop.get("title", key), "type": prop.get("type", "string")})
-                    block["config"]["fields"] = new_fields
-            tmpl.layout_definition = _ld
+        _ld = _sync_layout_fields_from_schema(_ld, fs)
+        tmpl.layout_definition = _ld
 
     # Update labels
     if label_ru:
@@ -1235,9 +1230,12 @@ async def api_save_template_schema(
     db: AsyncSession = Depends(get_db),
     user: UserAccount = Depends(require_admin),
 ):
-    """Save schema_definition and layout_definition for a template."""
+    """Save schema_definition and layout_definition for a template.
+    Also syncs back to the linked EntityKind if present."""
     from app.models.projections import OntologyTemplate
+    from app.models.kinds import EntityKind
     from uuid import UUID
+    import json
 
     body = await request.json()
 
@@ -1249,7 +1247,24 @@ async def api_save_template_schema(
         return {"ok": False, "error": "Template not found"}
 
     if "schema_definition" in body:
-        template.schema_definition = body["schema_definition"]
+        schema_json = body["schema_definition"]
+        template.schema_definition = schema_json
+        # Sync back to linked kind
+        if template.kind_id:
+            kind_result = await db.execute(
+                select(EntityKind).where(EntityKind.kind_id == template.kind_id)
+            )
+            kind_obj = kind_result.scalar_one_or_none()
+            if kind_obj:
+                kind_obj.field_schema = schema_json
+                # Also update layout blocks in the template to match schema order
+                _ld = template.layout_definition
+                if isinstance(_ld, str):
+                    try: _ld = json.loads(_ld)
+                    except: _ld = []
+                _ld = _sync_layout_fields_from_schema(_ld, schema_json)
+                template.layout_definition = _ld
+
     if "layout_definition" in body:
         template.layout_definition = body["layout_definition"]
 
