@@ -148,6 +148,7 @@ class TMDBService:
                 "name": person.get("name", ""),
                 "character": person.get("character", ""),
                 "order": person.get("order", 99),
+                "profile_path": person.get("profile_path"),
             })
 
         crew = []
@@ -157,6 +158,7 @@ class TMDBService:
                 "name": person.get("name", ""),
                 "job": person.get("job", ""),
                 "department": person.get("department", ""),
+                "profile_path": person.get("profile_path"),
             })
 
         return {"cast": cast, "crew": crew}

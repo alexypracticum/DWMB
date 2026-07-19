@@ -33,6 +33,9 @@
             <button type="button" onclick="openTmdbImport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
                 Импортировать
             </button>
+            <button type="button" onclick="importTmdbCredits()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm">
+                Импорт связей
+            </button>
         </div>
     </div>
 
@@ -161,6 +164,13 @@
                     {% if p.state %}
                     <span class="text-xs text-gray-400">{{ p.state.state_data | length }} полей</span>
                     {% endif %}
+                    <form action="/entity/{{ entity.entity_id }}/remove-projection" method="post"
+                          onsubmit="return confirm('Отвязать онтологию {{ p.projection.projection_name }}?')"
+                          class="inline">
+                        <input type="hidden" name="projection_id" value="{{ p.projection.projection_id }}">
+                        <button type="submit" class="text-red-400 hover:text-red-600 ml-2 text-lg leading-none"
+                                title="Отвязать">&times;</button>
+                    </form>
                 </div>
             </div>
             {% endfor %}
@@ -686,5 +696,57 @@
             </div>
         </div>
     </div>
+
+    <!-- Import Credits Report Modal -->
+    <div id="importCreditsModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Импорт связей</h3>
+                <button onclick="document.getElementById('importCreditsModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div id="importCreditsContent" class="text-sm text-gray-700">Загрузка...</div>
+            <div class="mt-4 flex justify-end">
+                <button onclick="document.getElementById('importCreditsModal').classList.add('hidden')" class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Закрыть</button>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+async function importTmdbCredits() {
+    const modal = document.getElementById('importCreditsModal');
+    const content = document.getElementById('importCreditsContent');
+    modal.classList.remove('hidden');
+    content.innerHTML = 'Импорт...';
+
+    try {
+        const entityId = '{{ entity.entity_id }}';
+        const resp = await fetch('/api/import/tmdb/import-credits/' + entityId, { method: 'POST' });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+            content.innerHTML = '<div class="text-red-600">' + (data.detail || 'Ошибка импорта') + '</div>';
+            return;
+        }
+
+        let html = '<div class="space-y-2">';
+        const r = data.imported || {};
+        const addRow = (label, counts) => {
+            if (counts.created > 0 || counts.linked > 0) {
+                html += '<div class="flex justify-between py-1 border-b border-gray-100"><span>' + label + '</span><span class="font-medium">создано: ' + counts.created + ', связано: ' + counts.linked + '</span></div>';
+            }
+        };
+        addRow('Актёры', r.actors || {});
+        addRow('Режиссёры', r.directors || {});
+        addRow('Компании', r.companies || {});
+        addRow('Страны', r.countries || {});
+        addRow('Языки', r.languages || {});
+        html += '</div>';
+        html += '<div class="mt-3 p-3 bg-green-50 rounded-lg text-green-700">' + data.message + '</div>';
+        content.innerHTML = html;
+    } catch (e) {
+        content.innerHTML = '<div class="text-red-600">Ошибка: ' + e.message + '</div>';
+    }
+}
+</script>
 {% endblock %}

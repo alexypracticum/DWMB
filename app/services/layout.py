@@ -184,6 +184,17 @@ BLOCK_TYPES = {
             {"key": "title", "label": "Название", "type": "state_field", "default": "uploaded_file_title"},
         ],
     },
+    "actor_character_row": {
+        "name": "Актёр — персонаж",
+        "icon": "user-group",
+        "description": "Строка: слева актёр, справа персонаж",
+        "config_fields": [
+            {"key": "acted_in_type", "label": "Тип связи актёр→фильм", "type": "relation_type_select", "default": "acted_in"},
+            {"key": "plays_type", "label": "Тип связи актёр→персонаж", "type": "relation_type_select", "default": "plays"},
+            {"key": "appears_in_type", "label": "Тип связи персонаж→фильм", "type": "relation_type_select", "default": "appears_in"},
+            {"key": "max_items", "label": "Макс. кол-во", "type": "text", "default": "20"},
+        ],
+    },
 }
 
 
@@ -426,7 +437,9 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
         for r in rels:
             rlabel = r.get("label", "?")
             eid = r.get("entity_id", "")
-            links.append(f'<a href="/entity/{eid}" class="text-blue-600 hover:underline text-sm">{rlabel}</a>')
+            role = r.get("role", "")
+            display = f"{rlabel} ({role})" if role else rlabel
+            links.append(f'<a href="/entity/{eid}" class="text-blue-600 hover:underline text-sm">{display}</a>')
         names = ", ".join(links)
         return f'<div class="my-2 text-sm"><span class="font-medium text-gray-700">{label}:</span> {names}</div>'
 
@@ -580,24 +593,22 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
                     f'<a href="/search?q={val_str}" class="text-blue-600 hover:underline text-sm font-medium">{val_str}</a>'
                 )
             elif key in _GENRE_KEYS:
-                # Split comma-separated genres and create individual links
                 genres = [g.strip() for g in val_str.split(",") if g.strip()]
                 if len(genres) > 1:
                     tags = []
                     for g in genres:
-                        tags.append(f'<a href="/search?q=&genre={g}" class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs hover:bg-blue-100 transition">{g}</a>')
+                        tags.append(f'<a href="/search?q=&genre={g}" class="text-blue-600 hover:underline text-sm">{g}</a>')
                     val_html = f'<div class="flex flex-wrap gap-1">{"".join(tags)}</div>'
                 else:
                     val_html = f'<a href="/search?q=&genre={val_str}" class="text-blue-600 hover:underline text-sm">{val_str}</a>'
             elif isinstance(val, list):
-                # Array values - render as linked tags
                 tags = []
                 for item in val:
                     item_str = str(item)
                     if key in _GENRE_KEYS:
-                        tags.append(f'<a href="/search?q=&genre={item_str}" class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs hover:bg-blue-100 transition">{item_str}</a>')
+                        tags.append(f'<a href="/search?q=&genre={item_str}" class="text-blue-600 hover:underline text-sm">{item_str}</a>')
                     else:
-                        tags.append(f'<span class="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs">{item_str}</span>')
+                        tags.append(f'<span class="text-sm text-gray-600">{item_str}</span>')
                 val_html = f'<div class="flex flex-wrap gap-1">{"".join(tags)}</div>'
             elif key in _PLACE_KEYS:
                 # Link to search by place
@@ -606,12 +617,11 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
                 # Link to search by language
                 val_html = f'<a href="/search?q=&language={val_str}" class="text-blue-600 hover:underline text-sm">{val_str}</a>'
             elif key in _COMPANY_KEYS:
-                # Split comma-separated companies and create individual links
                 companies = [c.strip() for c in val_str.split(",") if c.strip()]
                 if len(companies) > 1:
                     tags = []
                     for c in companies:
-                        tags.append(f'<a href="/search?q={c}" class="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full text-xs hover:bg-purple-100 transition">{c}</a>')
+                        tags.append(f'<a href="/search?q={c}" class="text-blue-600 hover:underline text-sm">{c}</a>')
                     val_html = f'<div class="flex flex-wrap gap-1">{"".join(tags)}</div>'
                 else:
                     val_html = f'<a href="/search?q={val_str}" class="text-blue-600 hover:underline text-sm">{val_str}</a>'
@@ -647,6 +657,37 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
             f'<div class="md:w-3/5"><table class="w-full">{rows}</table></div>'
             f'</div>'
         )
+
+    elif btype == "actor_character_row":
+        acted_in_type = config.get("acted_in_type", "acted_in")
+        max_items = int(config.get("max_items", "20") or "20")
+        acted_rels = (relations or {}).get(acted_in_type, [])
+        if not acted_rels:
+            return ""
+        rows = ""
+        for ar in acted_rels[:max_items]:
+            actor_label = ar.get("label", "?")
+            actor_id = ar.get("entity_id", "")
+            role = ar.get("role", "")
+            if not role:
+                rows += (
+                    f'<div class="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">'
+                    f'<div class="flex-1"><a href="/entity/{actor_id}" class="text-blue-600 hover:underline text-sm font-medium">{actor_label}</a></div>'
+                    f'<div class="text-sm text-gray-400">—</div>'
+                    f'</div>'
+                )
+                continue
+            rows += (
+                f'<div class="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">'
+                f'<div class="flex-1"><a href="/entity/{actor_id}" class="text-blue-600 hover:underline text-sm font-medium">{actor_label}</a></div>'
+                f'<div class="text-sm text-gray-400">→</div>'
+                f'<div class="flex-1"><span class="text-gray-700 text-sm">{role}</span></div>'
+                f'</div>'
+            )
+        if not rows:
+            return ""
+        label = config.get("label", "Актёры и персонажи")
+        return f'<div class="my-4"><h3 class="text-sm font-semibold text-gray-700 mb-2">{label}</h3>{rows}</div>'
 
     elif btype == "file_link":
         url = get_state_field(state_data, config.get("source", "")) or ""

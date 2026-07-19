@@ -29,6 +29,7 @@ async def search_page(
     rating_min: float = Query(None),
     genre: str = Query(None),
     production_company: str = Query(None),
+    country: str = Query(None),
     language: str = Query(None),
     source: str = Query(None),
     date_from: str = Query(None),
@@ -147,6 +148,9 @@ async def search_page(
                 if production_company and state_data.get("production_company"):
                     if production_company.lower() not in str(state_data["production_company"]).lower():
                         continue
+                if country and state_data.get("country"):
+                    if country.lower() not in str(state_data["country"]).lower():
+                        continue
                 if language and state_data.get("language"):
                     if language.lower() not in str(state_data["language"]).lower():
                         continue
@@ -206,6 +210,7 @@ async def search_page(
         "rating_min": rating_min,
         "genre": genre,
         "production_company": production_company,
+        "country": country,
         "language": language,
         "source": source,
         "date_from": date_from,

@@ -223,15 +223,26 @@ async def entity_create_page(
                             for key, prop in props.items():
                                 if key not in seen_keys:
                                     seen_keys.add(key)
-                                    all_schema_fields.append({
-                                        "key": key,
-                                        "label": prop.get("title", key),
-                                        "type": prop.get("type", "string"),
-                                        "description": prop.get("description", ""),
-                                        "required": key in required,
-                                        "default": prop.get("default", ""),
-                                        "enum": prop.get("enum", []),
-                                    })
+                                    if isinstance(prop, dict):
+                                        all_schema_fields.append({
+                                            "key": key,
+                                            "label": prop.get("title", key),
+                                            "type": prop.get("type", "string"),
+                                            "description": prop.get("description", ""),
+                                            "required": key in required,
+                                            "default": prop.get("default", ""),
+                                            "enum": prop.get("enum", []),
+                                        })
+                                    elif isinstance(prop, str):
+                                        all_schema_fields.append({
+                                            "key": key,
+                                            "label": key.replace("_", " ").title(),
+                                            "type": prop,
+                                            "description": "",
+                                            "required": key in required,
+                                            "default": "",
+                                            "enum": [],
+                                        })
                         # Collect layout blocks
                         _ld = tmpl.layout_definition
                         if isinstance(_ld, str):
@@ -516,13 +527,22 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
                 for key, prop in props.items():
                     if key in _skip_keys:
                         continue
-                    schema_fields.append({
-                        "key": key,
-                        "label": prop.get("title", key),
-                        "type": prop.get("type", "string"),
-                        "description": prop.get("description", ""),
-                        "required": key in required,
-                    })
+                    if isinstance(prop, dict):
+                        schema_fields.append({
+                            "key": key,
+                            "label": prop.get("title", key),
+                            "type": prop.get("type", "string"),
+                            "description": prop.get("description", ""),
+                            "required": key in required,
+                        })
+                    elif isinstance(prop, str):
+                        schema_fields.append({
+                            "key": key,
+                            "label": key.replace("_", " ").title(),
+                            "type": prop,
+                            "description": "",
+                            "required": key in required,
+                        })
             # Layout rendering - handle invalid JSON gracefully
             if template_obj.layout_definition:
                 ld = template_obj.layout_definition
@@ -543,6 +563,7 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
                     rels_by_type[rtype_code].append({
                         "label": r["label"].label,
                         "entity_id": str(r["target"].entity_id),
+                        "role": ((r["relation"].metadata_ or {}) if hasattr(r["relation"], 'metadata_') else {}).get("role", "") if r.get("relation") else "",
                     })
                 layout_html = render_layout(layout_blocks, state_data, rels_by_type, str(entity_id))
 
@@ -613,15 +634,26 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
                 for key, prop in props.items():
                     if key not in seen_keys:
                         seen_keys.add(key)
-                        all_schema_fields.append({
-                            "key": key,
-                            "label": prop.get("title", key),
-                            "type": prop.get("type", "string"),
-                            "description": prop.get("description", ""),
-                            "required": key in required,
-                            "default": prop.get("default", ""),
-                            "enum": prop.get("enum", []),
-                        })
+                        if isinstance(prop, dict):
+                            all_schema_fields.append({
+                                "key": key,
+                                "label": prop.get("title", key),
+                                "type": prop.get("type", "string"),
+                                "description": prop.get("description", ""),
+                                "required": key in required,
+                                "default": prop.get("default", ""),
+                                "enum": prop.get("enum", []),
+                            })
+                        elif isinstance(prop, str):
+                            all_schema_fields.append({
+                                "key": key,
+                                "label": key.replace("_", " ").title(),
+                                "type": prop,
+                                "description": "",
+                                "required": key in required,
+                                "default": "",
+                                "enum": [],
+                            })
             # Merge layout blocks
             if tmpl and tmpl.layout_definition:
                 _ld = tmpl.layout_definition
@@ -797,6 +829,42 @@ async def entity_add_projection(
     db.add(ps)
     await db.commit()
 
+    return RedirectResponse(url=f"/entity/{entity_id}/edit", status_code=303)
+
+
+@router.post("/entity/{entity_id}/remove-projection")
+async def entity_remove_projection(
+    entity_id: str,
+    projection_id: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_auth),
+):
+    from uuid import UUID
+    from app.models.relations import SemanticRelation
+
+    eid = UUID(entity_id)
+    pid = UUID(projection_id)
+
+    proj = await db.get(EntityProjection, pid)
+    if not proj or proj.entity_id != eid:
+        raise HTTPException(404)
+
+    rels = await db.execute(
+        select(SemanticRelation).where(
+            (SemanticRelation.source_projection_id == pid) | (SemanticRelation.target_projection_id == pid)
+        )
+    )
+    for rel in rels.scalars().all():
+        await db.delete(rel)
+
+    states = await db.execute(
+        select(ProjectionState).where(ProjectionState.projection_id == pid)
+    )
+    for st in states.scalars().all():
+        await db.delete(st)
+
+    await db.delete(proj)
+    await db.commit()
     return RedirectResponse(url=f"/entity/{entity_id}/edit", status_code=303)
 
 
@@ -980,7 +1048,8 @@ async def entity_edit(
                     for key in props:
                         val = form.get(key)
                         if val is not None:
-                            prop_type = props[key].get("type", "string")
+                            p = props[key]
+                            prop_type = p.get("type", "string") if isinstance(p, dict) else "string"
                             if prop_type == "integer":
                                 try: val = int(val)
                                 except: pass

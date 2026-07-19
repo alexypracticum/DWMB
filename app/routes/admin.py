@@ -55,7 +55,10 @@ def _sync_layout_fields_from_schema(layout_blocks, schema_json):
             for key in ordered_keys:
                 if key in props and key not in SKIP_KEYS:
                     prop = props[key]
-                    new_fields.append({"key": key, "label": prop.get("title", key), "type": prop.get("type", "string")})
+                    if isinstance(prop, dict):
+                        new_fields.append({"key": key, "label": prop.get("title", key), "type": prop.get("type", "string")})
+                    elif isinstance(prop, str):
+                        new_fields.append({"key": key, "label": key.replace("_", " ").title(), "type": prop})
             block["config"]["fields"] = new_fields
     return layout_blocks
 

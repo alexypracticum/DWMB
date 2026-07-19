@@ -110,6 +110,70 @@ def test_block_types_complete():
             assert key in meta, f"Block type '{btype}' missing '{key}'"
 
 
+def test_render_actor_character_row():
+    block = {
+        "type": "actor_character_row",
+        "config": {
+            "acted_in_type": "acted_in",
+            "max_items": "10",
+            "label": "Актёры"
+        }
+    }
+    relations = {
+        "acted_in": [
+            {"label": "Keanu Reeves", "entity_id": "id-1", "role": "Neo"},
+            {"label": "Carrie-Anne Moss", "entity_id": "id-2", "role": "Trinity"},
+            {"label": "Laurence Fishburne", "entity_id": "id-3", "role": ""},
+        ]
+    }
+    html = render_block_html(block, {}, relations)
+    assert "Keanu Reeves" in html
+    assert "Neo" in html
+    assert "Carrie-Anne Moss" in html
+    assert "Trinity" in html
+    assert "Laurence Fishburne" in html
+    assert "→" in html
+    assert "/entity/id-1" in html
+    assert "/entity/id-2" in html
+    assert "/entity/id-3" in html
+
+
+def test_render_actor_character_row_empty():
+    block = {"type": "actor_character_row", "config": {}}
+    assert render_block_html(block, {}, {}) == ""
+    assert render_block_html(block, {}, {"acted_in": []}) == ""
+
+
+def test_render_actor_character_row_no_role():
+    block = {"type": "actor_character_row", "config": {"acted_in_type": "acted_in"}}
+    relations = {"acted_in": [{"label": "Keanu Reeves", "entity_id": "id-1", "role": ""}]}
+    html = render_block_html(block, {}, relations)
+    assert "Keanu Reeves" in html
+    assert "—" in html
+
+
+def test_render_actor_character_row_custom_label():
+    block = {"type": "actor_character_row", "config": {
+        "acted_in_type": "acted_in",
+        "label": "Персонажи"
+    }}
+    relations = {"acted_in": [{"label": "Keanu Reeves", "entity_id": "id-1", "role": "Neo"}]}
+    html = render_block_html(block, {}, relations)
+    assert "Персонажи" in html
+
+
+def test_block_type_actor_character_row_config():
+    """actor_character_row block type must be registered in BLOCK_TYPES."""
+    assert "actor_character_row" in BLOCK_TYPES
+    meta = BLOCK_TYPES["actor_character_row"]
+    assert meta["name"] == "Актёр — персонаж"
+    keys = {f["key"] for f in meta["config_fields"]}
+    assert "acted_in_type" in keys
+    assert "plays_type" in keys
+    assert "appears_in_type" in keys
+    assert "max_items" in keys
+
+
 def test_ru_labels_cover_common_keys():
     """RU_LABELS should cover common field keys."""
     common_keys = ["year", "genre", "title", "director", "rating", "description"]
