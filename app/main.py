@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.routes import auth, entities, search, admin, stats, ai, editor_api, profile, page_management, theme_editor
+from app.routes import auth, entities, search, admin, stats, ai, editor_api, profile, page_management, theme_editor, import_api
 from app.middleware.theme import ThemeMiddleware
 from app.middleware.kinds import KindsMiddleware
 from app.config import get_settings
@@ -48,3 +48,4 @@ app.include_router(editor_api.router)
 app.include_router(profile.router)
 app.include_router(page_management.router)
 app.include_router(theme_editor.router)
+app.include_router(import_api.router)

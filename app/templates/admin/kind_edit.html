@@ -80,6 +80,14 @@
 <script>
 let schema = {{ field_schema_json | safe }};
 if (!schema || !schema.properties) schema = {properties: {}, required: []};
+// Initialize field_order from existing keys or properties
+if (!schema.field_order) {
+    schema.field_order = Object.keys(schema.properties);
+}
+// Ensure field_order covers all properties (add missing, remove deleted)
+const currentKeys = Object.keys(schema.properties);
+schema.field_order = schema.field_order.filter(k => currentKeys.includes(k));
+currentKeys.forEach(k => { if (!schema.field_order.includes(k)) schema.field_order.push(k); });
 let REGISTRY = [];
 
 fetch('/admin/api/fields').then(r => r.json()).then(data => {
@@ -101,6 +109,8 @@ document.getElementById('registrySelect').addEventListener('change', function() 
     const key = this.value; if (!key) return;
     const opt = this.options[this.selectedIndex];
     schema.properties[key] = {type: opt.dataset.type || 'string', title: opt.dataset.label || key};
+    if (!schema.field_order) schema.field_order = [];
+    if (!schema.field_order.includes(key)) schema.field_order.push(key);
     syncJson(); renderFields(); this.value = '';
 });
 
@@ -109,7 +119,7 @@ const FIELD_TYPES = [
     ['date','Дата'],['url','URL'],['email','Email'],['array','Массив'],
 ];
 
-function fieldKeys() { return Object.keys(schema.properties); }
+function fieldKeys() { return schema.field_order || Object.keys(schema.properties); }
 
 function renderFields() {
     const c = document.getElementById('fieldsEditor'); c.innerHTML = '';
@@ -119,8 +129,10 @@ function renderFields() {
         const isReq = (schema.required || []).includes(key);
         const row = document.createElement('div');
         row.className = 'flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200';
+        row.draggable = true;
+        row.dataset.idx = i;
         row.innerHTML = `
-            <span class="cursor-grab text-gray-400 px-1">⠿</span>
+            <span class="cursor-grab text-gray-400 px-1" title="Перетащить для перемещения">⠿</span>
             <input type="text" value="${esc(key)}" placeholder="key" onchange="renameKey('${esc(key)}',this.value)" class="w-28 px-2 py-1 border border-gray-200 rounded text-xs font-mono">
             <input type="text" value="${esc(prop.title||'')}" placeholder="Метка" onchange="schema.properties['${esc(key)}'].title=this.value;syncJson()" class="flex-1 px-2 py-1 border border-gray-200 rounded text-xs">
             <select onchange="schema.properties['${esc(key)}'].type=this.value;syncJson()" class="w-28 px-2 py-1 border border-gray-200 rounded text-xs">
@@ -128,6 +140,28 @@ function renderFields() {
             </select>
             <label class="flex items-center gap-1 text-xs text-gray-500"><input type="checkbox" ${isReq?'checked':''} onchange="toggleRequired('${esc(key)}',this.checked)"> *</label>
             <button type="button" onclick="removeField('${esc(key)}')" class="text-red-400 hover:text-red-600 text-xs px-1">✕</button>`;
+
+        // Drag-and-drop handlers
+        row.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', i);
+            row.classList.add('opacity-50', 'border-blue-400');
+        });
+        row.addEventListener('dragend', () => row.classList.remove('opacity-50', 'border-blue-400'));
+        row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('border-blue-400', 'bg-blue-50'); });
+        row.addEventListener('dragleave', () => row.classList.remove('border-blue-400', 'bg-blue-50'));
+        row.addEventListener('drop', (e) => {
+            e.preventDefault();
+            row.classList.remove('border-blue-400', 'bg-blue-50');
+            const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+            const toIdx = i;
+            if (fromIdx !== toIdx) {
+                // Reorder field_order array
+                const moved = schema.field_order.splice(fromIdx, 1)[0];
+                schema.field_order.splice(toIdx, 0, moved);
+                syncJson(); renderFields();
+            }
+        });
+
         c.appendChild(row);
     });
 }
@@ -140,6 +174,9 @@ function renameKey(oldKey, newKey) {
     const req = schema.required || [];
     const ri = req.indexOf(oldKey);
     if (ri >= 0) req[ri] = newKey;
+    // Update field_order
+    const fi = schema.field_order.indexOf(oldKey);
+    if (fi >= 0) schema.field_order[fi] = newKey;
     syncJson(); renderFields();
 }
 
@@ -153,12 +190,15 @@ function toggleRequired(key, on) {
 function removeField(key) {
     delete schema.properties[key];
     schema.required = (schema.required || []).filter(k => k !== key);
+    schema.field_order = (schema.field_order || []).filter(k => k !== key);
     syncJson(); renderFields();
 }
 
 function addField() {
     const key = 'new_field';
     schema.properties[key] = {type: 'string', title: ''};
+    if (!schema.field_order) schema.field_order = [];
+    schema.field_order.push(key);
     syncJson(); renderFields();
 }
 

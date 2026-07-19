@@ -199,6 +199,15 @@
             </div>
         </div>
         {% if img_sv %}<img src="{{ img_sv }}" class="mt-2 rounded-lg max-h-40 object-contain">{% endif %}
+        {# Render fields from layout config in order defined by template #}
+        {% set layout_fields_raw = config.get('fields', '[]') %}
+        {% if layout_fields_raw is string %}
+            {% set layout_fields = layout_fields_raw | tojson if false else [] %}
+            {% set layout_fields = [] %}
+            {% set _dummy = layout_fields.append(layout_fields_raw) %}
+        {% else %}
+            {% set layout_fields = layout_fields_raw %}
+        {% endif %}
 
         {# ===== GALLERY ===== #}
         {% elif btype == 'gallery' %}

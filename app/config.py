@@ -23,9 +23,13 @@ class Settings(BaseSettings):
     AI_MODEL_CHAT: str = "gpt-4o-mini"
     AI_EMBEDDING_DIM: int = 1536
 
+    # TMDB (The Movie Database)
+    TMDB_API_KEY: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"
 
 
 @lru_cache()

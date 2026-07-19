@@ -71,6 +71,7 @@
                         <button type="button" onclick="addBlock('audio')" class="px-3 py-2 text-xs bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition border border-purple-200">🎵 Аудио</button>
                         <button type="button" onclick="addBlock('info_table')" class="px-3 py-2 text-xs bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition border border-orange-200">📊 Таблица</button>
                         <button type="button" onclick="addBlock('relation_list')" class="px-3 py-2 text-xs bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition border border-teal-200">🔗 Связи</button>
+                        <button type="button" onclick="addBlock('aggregated_relations')" class="px-3 py-2 text-xs bg-violet-50 text-violet-700 rounded-lg hover:bg-violet-100 transition border border-violet-200">👥 Агрегир. связи</button>
                         <button type="button" onclick="addBlock('file_link')" class="px-3 py-2 text-xs bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">📎 Файл-ссылка</button>
                         <button type="button" onclick="addBlock('file_upload')" class="px-3 py-2 text-xs bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">📤 Загрузка файла</button>
                         <button type="button" onclick="addBlock('horizontal_row')" class="px-3 py-2 text-xs bg-cyan-50 text-cyan-700 rounded-lg hover:bg-cyan-100 transition border border-cyan-200">↔️ Горизонт. ряд</button>
@@ -127,6 +128,7 @@ const BLOCK_TYPES = {
     audio: {name: 'Аудио', icon: '🎵', fields: [{key:'source',label:'Поле (URL)',def:'audio_url'},{key:'title',label:'Название',def:'title'}]},
     info_table: {name: 'Таблица', icon: '📊', fields: [{key:'fields',label:'Поля данных',def:'[]',type:'field_editor'},{key:'style',label:'Стиль',def:'table'}]},
     relation_list: {name: 'Связи', icon: '🔗', fields: [{key:'relation_type',label:'Тип связи',def:''},{key:'display',label:'Стиль',def:'list'}]},
+    aggregated_relations: {name: 'Агрегир. связи', icon: '👥', fields: [{key:'relation_type',label:'Тип связи',def:''},{key:'label',label:'Заголовок',def:''},{key:'max_items',label:'Макс. кол-во',def:'10'}]},
     file_link: {name: 'Файл-ссылка', icon: '📎', fields: [{key:'source',label:'Поле (URL)',def:'file_url'},{key:'title',label:'Название',def:'file_title'}]},
     file_upload: {name: 'Загрузка файла', icon: '📤', fields: [{key:'source',label:'Поле (URL)',def:'uploaded_file_url'},{key:'title',label:'Название',def:'uploaded_file_title'}]},
     horizontal_row: {name: 'Горизонт. ряд', icon: '↔️', fields: [{key:'columns',label:'Колонок (2-5)',def:'2'}], hasChildren: true},
@@ -198,6 +200,26 @@ function renderBlocks() {
                     <div id="${editorId}_rows" class="space-y-1 mt-1">${rowsHtml}</div>
                     <button type="button" onclick="addFieldEditor('${editorId}')" class="mt-1 px-2 py-0.5 bg-green-50 text-green-700 rounded text-xs border border-green-200 hover:bg-green-100">+ Добавить поле</button>
                 </div>`;
+            } else if (f.type === 'relation_type_select') {
+                // Relation type dropdown loaded from API
+                const selectId = 'rt_select_' + idx + '_' + f.key;
+                fieldsHtml += `<div class="mt-2"><label class="text-xs text-gray-500">${f.label}</label>
+                    <select id="${selectId}" data-idx="${idx}" data-key="${f.key}" onchange="updateConfig(this)"
+                    class="w-full px-2 py-1 border border-gray-200 rounded text-xs mt-1">
+                        <option value="">— загрузка...</option>
+                    </select></div>`;
+                // Load relation types after render
+                setTimeout(() => {
+                    fetch('/admin/api/relation-types').then(r => r.json()).then(data => {
+                        const sel = document.getElementById(selectId);
+                        if (!sel) return;
+                        sel.innerHTML = '<option value="">— выбрать тип связи —</option>';
+                        data.forEach(rt => {
+                            const selected = val === rt.relation_code ? ' selected' : '';
+                            sel.innerHTML += `<option value="${rt.relation_code}"${selected}>${rt.relation_name} (${rt.relation_code})</option>`;
+                        });
+                    }).catch(() => {});
+                }, 100);
             } else {
                 const isLong = f.key === 'html';
                 if (isLong) {

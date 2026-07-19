@@ -21,6 +21,12 @@
             <div class="flex items-center gap-2 mb-2">
                 <a href="/entities?kind={{ kind.kind_code }}" class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition">{{ kind_label }}</a>
                 <span class="text-xs text-gray-400">{{ entity.entity_code }}</span>
+                {% if state_data.get('imdb_id') %}
+                <a href="https://www.imdb.com/title/{{ state_data.imdb_id }}" target="_blank" class="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition">IMDb</a>
+                {% endif %}
+                {% if state_data.get('tmdb_id') %}
+                <a href="https://www.themoviedb.org/movie/{{ state_data.tmdb_id }}" target="_blank" class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition">TMDB</a>
+                {% endif %}
             </div>
             <h1 class="text-3xl font-bold text-gray-800">
                 {% for label in labels %}{% if label.language == 'ru' %}{{ label.label }}{% endif %}{% endfor %}

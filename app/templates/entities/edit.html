@@ -17,6 +17,25 @@
 <div class="fade-in max-w-4xl">
     <h1 class="text-2xl font-bold text-gray-800 mb-6">Редактирование сущности</h1>
 
+    <!-- TMDB Import Button -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white text-lg font-bold">TM</div>
+            <div>
+                <div class="text-sm font-semibold text-gray-800">Импорт из TMDB</div>
+                <div class="text-xs text-gray-500">Обновить данные из The Movie Database</div>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button type="button" onclick="openFillMissing()" class="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition text-sm">
+                Заполнить недостающее
+            </button>
+            <button type="button" onclick="openTmdbImport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                Импортировать
+            </button>
+        </div>
+    </div>
+
     <form action="/entity/{{ entity.entity_id }}/edit" method="post" enctype="multipart/form-data" class="space-y-6">
         <!-- Layout blocks as editable forms -->
         {% if layout_blocks %}
@@ -414,6 +433,258 @@
         document.getElementById('entityResults').classList.add('hidden');
         document.getElementById('entitySearch').value = '';
     }
+
+    // Fill Missing
+    function openFillMissing() {
+        const modal = document.getElementById('fillMissingModal');
+        const list = document.getElementById('emptyFieldsList');
+        list.innerHTML = '';
+
+        // Find all empty fields in the form
+        const form = document.querySelector('form');
+        const inputs = form.querySelectorAll('input[name], textarea[name], select[name]');
+        const emptyFields = [];
+
+        inputs.forEach(input => {
+            const name = input.name;
+            if (!name || name.startsWith('template_ids') || name.startsWith('block_') || name === 'viewport') return;
+            if (!input.value || input.value.trim() === '') {
+                // Find the label for this field
+                const row = input.closest('.flex');
+                let label = name;
+                if (row) {
+                    const labelDiv = row.querySelector('.text-gray-500, .text-sm.font-medium');
+                    if (labelDiv) label = labelDiv.textContent.replace('*', '').trim();
+                }
+                emptyFields.push({ name, label });
+            }
+        });
+
+        if (emptyFields.length === 0) {
+            list.innerHTML = '<div class="text-center py-4 text-green-600 text-sm">Все поля заполнены!</div>';
+        } else {
+            list.innerHTML = `
+                <div class="text-sm text-gray-500 mb-2">Незаполненных полей: ${emptyFields.length}</div>
+                ${emptyFields.map(f => `
+                    <div class="flex items-center justify-between p-2 bg-amber-50 rounded-lg border border-amber-200">
+                        <span class="text-sm text-gray-700">${f.label} <span class="text-xs text-gray-400">(${f.name})</span></span>
+                        <button onclick="fillFromTmdb('${f.name}')" class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition">Заполнить</button>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        modal.classList.remove('hidden');
+    }
+
+    async function fillFromTmdb(fieldName) {
+        // Get TMDB ID from the form
+        const tmdbIdField = document.querySelector('[name="tmdb_id"]');
+        if (!tmdbIdField || !tmdbIdField.value) {
+            alert('Сначала заполните TMDB ID');
+            return;
+        }
+
+        try {
+            const resp = await fetch(`/api/import/tmdb/movie/${tmdbIdField.value}`);
+            if (!resp.ok) throw new Error('TMDB API error');
+            const data = await resp.json();
+
+            // Map field names to TMDB data
+            const fieldMap = {
+                'title': 'title', 'year': 'year', 'genre': 'genre',
+                'rating': 'rating', 'description': 'description',
+                'budget': 'budget', 'country': 'country', 'tagline': 'tagline',
+                'director': 'director', 'duration': 'runtime',
+                'language': 'language', 'production_company': 'production_company',
+                'poster': 'poster', 'imdb_id': 'imdb_id',
+            };
+
+            const tmdbKey = fieldMap[fieldName];
+            if (tmdbKey && data[tmdbKey]) {
+                let value = data[tmdbKey];
+                if (fieldName === 'budget' && value) value = (value / 1000000).toFixed(1) + 'M';
+                if (fieldName === 'duration' && value) value = value + ' мин';
+                setFieldValue(fieldName, value);
+                document.getElementById('fillMissingModal').classList.add('hidden');
+            } else {
+                alert('Поле не найдено в данных TMDB');
+            }
+        } catch (e) {
+            alert('Ошибка загрузки: ' + e.message);
+        }
+    }
+
+    // TMDB Import
+    let tmdbTab = 'movie';
+    let tmdbSearchTimeout = null;
+
+    function openTmdbImport() {
+        document.getElementById('tmdbModal').classList.remove('hidden');
+        document.getElementById('tmdbSearchInput').focus();
+    }
+
+    function closeTmdbModal() {
+        document.getElementById('tmdbModal').classList.add('hidden');
+        document.getElementById('tmdbResults').innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>';
+    }
+
+    function switchTmdbTab(tab) {
+        tmdbTab = tab;
+        document.getElementById('tabMovie').className = tab === 'movie' ? 'px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600' : 'px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700';
+        document.getElementById('tabPerson').className = tab === 'person' ? 'px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600' : 'px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700';
+        document.getElementById('tmdbResults').innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>';
+    }
+
+    function debounceTmdbSearch() {
+        clearTimeout(tmdbSearchTimeout);
+        tmdbSearchTimeout = setTimeout(tmdbSearch, 400);
+    }
+
+    async function tmdbSearch() {
+        const query = document.getElementById('tmdbSearchInput').value.trim();
+        if (!query) return;
+
+        const resultsDiv = document.getElementById('tmdbResults');
+        resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Загрузка...</div>';
+
+        try {
+            const endpoint = tmdbTab === 'movie' ? '/api/import/tmdb/search/movie' : '/api/import/tmdb/search/person';
+            const resp = await fetch(`${endpoint}?q=${encodeURIComponent(query)}`);
+            const data = await resp.json();
+
+            if (data.detail) {
+                resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">${data.detail}</div>`;
+                return;
+            }
+
+            if (!data.results || data.results.length === 0) {
+                resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Ничего не найдено</div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = data.results.map(item => `
+                <div class="p-3 border border-gray-200 rounded-lg mb-2 hover:border-blue-300 hover:bg-blue-50 transition cursor-pointer"
+                     onclick="selectTmdbItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                    <div class="flex gap-3">
+                        ${item.poster ? `<img src="${item.poster}" class="w-12 h-18 object-cover rounded" onerror="this.style.display='none'">` : ''}
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-gray-800 text-sm">${item.title || item.name}</div>
+                            <div class="text-xs text-gray-500 mt-0.5">
+                                ${item.year ? item.year + ' • ' : ''}${item.genre || item.known_for || ''}
+                            </div>
+                            ${item.rating ? `<div class="text-xs text-amber-600 mt-0.5">★ ${item.rating}</div>` : ''}
+                            ${item.description ? `<div class="text-xs text-gray-400 mt-1 line-clamp-2">${item.description}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">Ошибка: ${e.message}</div>`;
+        }
+    }
+
+    function selectTmdbItem(item) {
+        // Fill form fields immediately from search data
+        fillTmdbFields(item);
+        closeTmdbModal();
+        // Then fetch full details in background and update
+        if (tmdbTab === 'movie' && item.tmdb_id) {
+            fetch(`/api/import/tmdb/movie/${item.tmdb_id}`)
+                .then(r => r.ok ? r.json() : null)
+                .then(full => { if (full) fillTmdbFields(full); })
+                .catch(() => {});
+        }
+    }
+
+    function fillTmdbFields(item) {
+        if (tmdbTab === 'movie') {
+            setFieldValue('label_ru', item.title || '');
+            setFieldValue('label_en', item.original_title || '');
+            setFieldValue('description_ru', item.description || '');
+            setFieldValue('title', item.title || '');
+            setFieldValue('year', item.year || '');
+            setFieldValue('genre', item.genre || '');
+            setFieldValue('rating', item.rating || '');
+            setFieldValue('description', item.description || '');
+            setFieldValue('tagline', item.tagline || '');
+            setFieldValue('duration', item.runtime ? item.runtime + ' мин' : '');
+            setFieldValue('country', item.country || '');
+            setFieldValue('language', item.language || '');
+            setFieldValue('production_company', item.production_company || '');
+            setFieldValue('poster', item.poster || '');
+            setFieldValue('tmdb_id', item.tmdb_id || '');
+            setFieldValue('imdb_id', item.imdb_id || '');
+            setFieldValue('director', item.director || '');
+            if (item.budget) setFieldValue('budget', (item.budget / 1000000).toFixed(1) + 'M');
+            if (item.revenue) setFieldValue('revenue', (item.revenue / 1000000).toFixed(1) + 'M');
+        } else if (tmdbTab === 'person') {
+            const nameParts = (item.name || '').split(' ');
+            setFieldValue('first_name', nameParts[0] || '');
+            setFieldValue('last_name', nameParts.slice(1).join(' ') || '');
+            setFieldValue('label_ru', item.name || '');
+            setFieldValue('birth_date', item.birthday || '');
+            setFieldValue('birthplace', item.birthplace || '');
+            setFieldValue('description', item.biography || '');
+            setFieldValue('poster', item.poster || '');
+            setFieldValue('tmdb_id', item.tmdb_id || '');
+        }
+    }
+
+    function setFieldValue(name, value) {
+        const field = document.querySelector(`[name="${name}"]`);
+        if (field && value) {
+            field.value = value;
+            field.dispatchEvent(new Event('change'));
+        }
+    }
     </script>
+
+    <!-- Fill Missing Modal -->
+    <div id="fillMissingModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">Заполнить недостающее</h3>
+                <button onclick="document.getElementById('fillMissingModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="p-4 overflow-y-auto flex-1">
+                <div id="emptyFieldsList" class="space-y-2"></div>
+            </div>
+            <div class="p-4 border-t border-gray-200 flex justify-end">
+                <button onclick="document.getElementById('fillMissingModal').classList.add('hidden')" class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TMDB Import Modal -->
+    <div id="tmdbModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">TM</div>
+                    <h3 class="text-lg font-semibold text-gray-800">Импорт из TMDB</h3>
+                </div>
+                <button onclick="closeTmdbModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+
+            <div class="flex border-b border-gray-200">
+                <button onclick="switchTmdbTab('movie')" id="tabMovie" class="px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">Фильмы</button>
+                <button onclick="switchTmdbTab('person')" id="tabPerson" class="px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700">Люди</button>
+            </div>
+
+            <div class="p-4">
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="tmdbSearchInput" placeholder="Поиск в TMDB..."
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                           oninput="debounceTmdbSearch()" onkeydown="if(event.key==='Enter'){event.preventDefault();tmdbSearch();}">
+                    <button onclick="tmdbSearch()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">Найти</button>
+                </div>
+
+                <div id="tmdbResults" class="max-h-[50vh] overflow-y-auto">
+                    <div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

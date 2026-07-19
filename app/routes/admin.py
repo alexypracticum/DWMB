@@ -360,6 +360,21 @@ async def admin_template_edit(
         if kind_obj:
             kind_obj.field_schema = schema_json
 
+    # Sync layout block 'fields' config with schema properties
+    if isinstance(layout_json, list):
+        props = schema_json.get("properties", {}) if isinstance(schema_json, dict) else {}
+        field_order = schema_json.get("field_order", []) if isinstance(schema_json, dict) else []
+        for block in layout_json:
+            if block.get("type") == "image_data_row" and "config" in block:
+                new_fields = []
+                ordered_keys = field_order if field_order else list(props.keys())
+                for key in ordered_keys:
+                    if key in props and key not in ("poster", "poster_url", "description", "content"):
+                        prop = props[key]
+                        new_fields.append({"key": key, "label": prop.get("title", key), "type": prop.get("type", "string")})
+                block["config"]["fields"] = new_fields
+        tmpl.layout_definition = layout_json
+
     # Sync entity state_data
     entity_result = await db.execute(
         select(Entity).where(Entity.entity_code == f"onttemplate_{template_code}", Entity.status == "active")
@@ -656,6 +671,26 @@ async def admin_kind_edit_save(
     )
     for tmpl in tmpl_result.scalars().all():
         tmpl.schema_definition = fs
+        # Also update layout block 'fields' config to match schema order
+        _ld = tmpl.layout_definition
+        if isinstance(_ld, str):
+            try: _ld = json.loads(_ld)
+            except: _ld = []
+        if isinstance(_ld, list):
+            for block in _ld:
+                if block.get("type") == "image_data_row" and "config" in block:
+                    # Rebuild fields list from schema properties using field_order
+                    props = fs.get("properties", {}) if isinstance(fs, dict) else {}
+                    field_order = fs.get("field_order", []) if isinstance(fs, dict) else []
+                    new_fields = []
+                    # Use field_order if available, otherwise fall back to properties keys
+                    ordered_keys = field_order if field_order else list(props.keys())
+                    for key in ordered_keys:
+                        if key in props and key not in ("poster", "poster_url", "description", "content"):
+                            prop = props[key]
+                            new_fields.append({"key": key, "label": prop.get("title", key), "type": prop.get("type", "string")})
+                    block["config"]["fields"] = new_fields
+            tmpl.layout_definition = _ld
 
     # Update labels
     if label_ru:
@@ -1021,6 +1056,15 @@ async def api_kinds(db: AsyncSession = Depends(get_db)):
             "field_schema": _ensure_json_schema(k.field_schema),
         })
     return out
+
+
+@router.get("/api/relation-types")
+async def api_relation_types(db: AsyncSession = Depends(get_db)):
+    """JSON API для получения списка типов связей."""
+    from app.models.relations import RelationType
+    result = await db.execute(select(RelationType).order_by(RelationType.relation_code))
+    types = result.scalars().all()
+    return [{"relation_type_id": str(rt.relation_type_id), "relation_code": rt.relation_code, "relation_name": rt.relation_name} for rt in types]
 
 
 @router.get("/api/fields")

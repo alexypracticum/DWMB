@@ -54,16 +54,14 @@
         <p class="text-xs text-gray-400 mb-4">Можно выбрать шаблоны из любых типов сущностей — каждый добавит свои поля.</p>
 
         {% if templates_by_kind %}
-        <form action="/entity/create" method="post" class="space-y-6">
-            <input type="hidden" name="kind_code" value="{{ selected_kind_obj.kind_code }}">
-
+        <div class="space-y-6">
             {% for kind_group in templates_by_kind %}
             <div class="border border-gray-200 rounded-lg p-4">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                     <span class="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">{{ kind_group.kind_code }}</span>
                     {{ kind_group.kind_label }}
                 </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2" id="templateCheckboxes">
                     {% for item in kind_group.templates %}
                     <label class="flex items-start gap-2 p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition cursor-pointer">
                         <input type="checkbox" name="template_ids" value="{{ item.template.template_id }}"
@@ -83,9 +81,19 @@
 
             <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
                 <a href="/entity/create" class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Отмена</a>
-                <button type="submit" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Далее →</button>
+                <button type="button" onclick="goToStep3()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Далее →</button>
             </div>
-        </form>
+        </div>
+
+        <script>
+        function goToStep3() {
+            const checked = document.querySelectorAll('input[name="template_ids"]:checked');
+            const ids = Array.from(checked).map(cb => cb.value);
+            const kindCode = '{{ selected_kind_obj.kind_code }}';
+            const url = '/entity/create?kind=' + kindCode + '&template_ids=' + ids.join(',');
+            window.location.href = url;
+        }
+        </script>
         {% else %}
         <p class="text-gray-500 text-sm">Нет активных шаблонов. Создайте в <a href="/admin/templates" class="text-blue-600 hover:underline">админке</a>.</p>
         <div class="mt-4">
@@ -100,11 +108,25 @@
 
     <!-- STEP 3: Fill Data -->
     {% if step == 3 %}
-    <form action="/entity/create" method="post" enctype="multipart/form-data" class="space-y-6">
+    <form action="/entity/create" method="post" enctype="multipart/form-data" class="space-y-6" id="entityForm">
         <input type="hidden" name="kind_code" value="{{ selected_kind_obj.kind_code }}">
         {% for tmpl in selected_templates %}
         <input type="hidden" name="template_ids" value="{{ tmpl.template_id }}">
         {% endfor %}
+
+        <!-- TMDB Import Button -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white text-lg font-bold">TM</div>
+                <div>
+                    <div class="text-sm font-semibold text-gray-800">Импорт из TMDB</div>
+                    <div class="text-xs text-gray-500">Автозаполнение полей из The Movie Database</div>
+                </div>
+            </div>
+            <button type="button" onclick="openTmdbImport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                Импортировать
+            </button>
+        </div>
 
         <!-- Always show label_ru and description_ru -->
         <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
@@ -193,10 +215,184 @@
         {% endif %}
 
         <div class="flex gap-3">
-            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Создать</button>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition" onclick="return validateCreateForm()">Создать</button>
             <a href="/entity/create?kind={{ selected_kind_obj.kind_code }}" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Назад</a>
         </div>
     </form>
+
+    <script>
+    function validateCreateForm() {
+        const form = document.getElementById('entityForm');
+        const labelRu = form.querySelector('[name="label_ru"]');
+        if (!labelRu || !labelRu.value.trim()) {
+            alert('Заполните поле "Название (RU)"');
+            if (labelRu) labelRu.focus();
+            return false;
+        }
+        return true;
+    }
+    </script>
+
+    <!-- TMDB Import Modal -->
+    <div id="tmdbModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">TM</div>
+                    <h3 class="text-lg font-semibold text-gray-800">Импорт из TMDB</h3>
+                </div>
+                <button onclick="closeTmdbModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+
+            <!-- Search tabs -->
+            <div class="flex border-b border-gray-200">
+                <button onclick="switchTmdbTab('movie')" id="tabMovie" class="px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">Фильмы</button>
+                <button onclick="switchTmdbTab('person')" id="tabPerson" class="px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700">Люди</button>
+            </div>
+
+            <div class="p-4">
+                <!-- Search input -->
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="tmdbSearchInput" placeholder="Поиск в TMDB..."
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                           oninput="debounceTmdbSearch()" onkeydown="if(event.key==='Enter'){event.preventDefault();tmdbSearch();}">
+                    <button onclick="tmdbSearch()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">Найти</button>
+                </div>
+
+                <!-- Results -->
+                <div id="tmdbResults" class="max-h-[50vh] overflow-y-auto">
+                    <div class="text-center py-8 text-gray-400 text-sm">
+                        Введите запрос для поиска
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let tmdbTab = 'movie';
+    let tmdbSearchTimeout = null;
+
+    function openTmdbImport() {
+        document.getElementById('tmdbModal').classList.remove('hidden');
+        document.getElementById('tmdbSearchInput').focus();
+    }
+
+    function closeTmdbModal() {
+        document.getElementById('tmdbModal').classList.add('hidden');
+        document.getElementById('tmdbResults').innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>';
+    }
+
+    function switchTmdbTab(tab) {
+        tmdbTab = tab;
+        document.getElementById('tabMovie').className = tab === 'movie' ? 'px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600' : 'px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700';
+        document.getElementById('tabPerson').className = tab === 'person' ? 'px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600' : 'px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700';
+        document.getElementById('tmdbResults').innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>';
+    }
+
+    function debounceTmdbSearch() {
+        clearTimeout(tmdbSearchTimeout);
+        tmdbSearchTimeout = setTimeout(tmdbSearch, 400);
+    }
+
+    async function tmdbSearch() {
+        const query = document.getElementById('tmdbSearchInput').value.trim();
+        if (!query) return;
+
+        const resultsDiv = document.getElementById('tmdbResults');
+        resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Загрузка...</div>';
+
+        try {
+            const endpoint = tmdbTab === 'movie' ? '/api/import/tmdb/search/movie' : '/api/import/tmdb/search/person';
+            const resp = await fetch(`${endpoint}?q=${encodeURIComponent(query)}`);
+            const data = await resp.json();
+
+            if (data.detail) {
+                resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">${data.detail}</div>`;
+                return;
+            }
+
+            if (!data.results || data.results.length === 0) {
+                resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Ничего не найдено</div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = data.results.map(item => `
+                <div class="p-3 border border-gray-200 rounded-lg mb-2 hover:border-blue-300 hover:bg-blue-50 transition cursor-pointer"
+                     onclick="selectTmdbItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
+                    <div class="flex gap-3">
+                        ${item.poster ? `<img src="${item.poster}" class="w-12 h-18 object-cover rounded" onerror="this.style.display='none'">` : ''}
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-gray-800 text-sm">${item.title || item.name}</div>
+                            <div class="text-xs text-gray-500 mt-0.5">
+                                ${item.year ? item.year + ' • ' : ''}${item.genre || item.known_for || ''}
+                            </div>
+                            ${item.rating ? `<div class="text-xs text-amber-600 mt-0.5">★ ${item.rating}</div>` : ''}
+                            ${item.description ? `<div class="text-xs text-gray-400 mt-1 line-clamp-2">${item.description}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">Ошибка: ${e.message}</div>`;
+        }
+    }
+
+    function selectTmdbItem(item) {
+        // Fill form fields immediately from search data
+        fillTmdbFields(item);
+        closeTmdbModal();
+        // Then fetch full details in background and update
+        if (tmdbTab === 'movie' && item.tmdb_id) {
+            fetch(`/api/import/tmdb/movie/${item.tmdb_id}`)
+                .then(r => r.ok ? r.json() : null)
+                .then(full => { if (full) fillTmdbFields(full); })
+                .catch(() => {});
+        }
+    }
+
+    function fillTmdbFields(item) {
+        if (tmdbTab === 'movie') {
+            setFieldValue('label_ru', item.title || '');
+            setFieldValue('label_en', item.original_title || '');
+            setFieldValue('description_ru', item.description || '');
+            setFieldValue('title', item.title || '');
+            setFieldValue('year', item.year || '');
+            setFieldValue('genre', item.genre || '');
+            setFieldValue('rating', item.rating || '');
+            setFieldValue('description', item.description || '');
+            setFieldValue('tagline', item.tagline || '');
+            setFieldValue('duration', item.runtime ? item.runtime + ' мин' : '');
+            setFieldValue('country', item.country || '');
+            setFieldValue('language', item.language || '');
+            setFieldValue('production_company', item.production_company || '');
+            setFieldValue('poster', item.poster || '');
+            setFieldValue('tmdb_id', item.tmdb_id || '');
+            setFieldValue('imdb_id', item.imdb_id || '');
+            setFieldValue('director', item.director || '');
+            if (item.budget) setFieldValue('budget', (item.budget / 1000000).toFixed(1) + 'M');
+            if (item.revenue) setFieldValue('revenue', (item.revenue / 1000000).toFixed(1) + 'M');
+        } else if (tmdbTab === 'person') {
+            const nameParts = (item.name || '').split(' ');
+            setFieldValue('first_name', nameParts[0] || '');
+            setFieldValue('last_name', nameParts.slice(1).join(' ') || '');
+            setFieldValue('label_ru', item.name || '');
+            setFieldValue('birth_date', item.birthday || '');
+            setFieldValue('birthplace', item.birthplace || '');
+            setFieldValue('description', item.biography || '');
+            setFieldValue('poster', item.poster || '');
+            setFieldValue('tmdb_id', item.tmdb_id || '');
+        }
+    }
+
+    function setFieldValue(name, value) {
+        const field = document.querySelector(`[name="${name}"]`);
+        if (field && value) {
+            field.value = value;
+            field.dispatchEvent(new Event('change'));
+        }
+    }
+    </script>
     {% endif %}
 </div>
 {% endblock %}

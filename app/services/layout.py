@@ -99,6 +99,16 @@ BLOCK_TYPES = {
             {"key": "max_items", "label": "Макс. кол-во", "type": "text", "default": "20"},
         ],
     },
+    "aggregated_relations": {
+        "name": "Агрегированные связи",
+        "icon": "users",
+        "description": "Компактный список связанных сущностей через запятую (Актёры, Режиссёры и т.д.)",
+        "config_fields": [
+            {"key": "relation_type", "label": "Тип связи", "type": "relation_type_select", "default": ""},
+            {"key": "label", "label": "Заголовок (напр. Актёры)", "type": "text", "default": ""},
+            {"key": "max_items", "label": "Макс. кол-во", "type": "text", "default": "10"},
+        ],
+    },
     "text_block": {
         "name": "Описание",
         "icon": "text",
@@ -405,6 +415,21 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
             items += f'<a href="/entity/{eid}" class="block px-3 py-2 bg-gray-50 rounded-lg hover:bg-blue-50 transition text-sm">{label}</a>'
         return f'<div class="space-y-2 my-4">{items}</div>'
 
+    elif btype == "aggregated_relations":
+        rel_type = config.get("relation_type", "")
+        label = config.get("label", rel_type)
+        max_items = int(config.get("max_items", "10") or "10")
+        rels = (relations or {}).get(rel_type, [])[:max_items]
+        if not rels:
+            return ""
+        links = []
+        for r in rels:
+            rlabel = r.get("label", "?")
+            eid = r.get("entity_id", "")
+            links.append(f'<a href="/entity/{eid}" class="text-blue-600 hover:underline text-sm">{rlabel}</a>')
+        names = ", ".join(links)
+        return f'<div class="my-2 text-sm"><span class="font-medium text-gray-700">{label}:</span> {names}</div>'
+
     elif btype == "text_block":
         content = get_state_field(state_data, "description") or ""
         if content:
@@ -468,6 +493,9 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
         _PERSON_KEYS = {"director", "author", "artist", "composer", "narrator", "producer", "screenwriter", "operator", "actor", "starring"}
         _GENRE_KEYS = {"genre", "genres", "subgenres"}
         _DATE_KEYS = {"year", "release_date", "birth_date", "death_date", "birth_year", "death_year", "founded", "start_year", "end_year"}
+        _PLACE_KEYS = {"country", "country_origin", "birthplace", "birth_place", "location", "filming_locations"}
+        _LANGUAGE_KEYS = {"language"}
+        _COMPANY_KEYS = {"production_company", "production_companies", "studio", "publisher"}
         _TYPE_MAP = {
             "director": "director", "author": "writer", "artist": "musician",
             "composer": "musician", "actor": "actor", "starring": "actor",
@@ -552,8 +580,15 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
                     f'<a href="/search?q={val_str}" class="text-blue-600 hover:underline text-sm font-medium">{val_str}</a>'
                 )
             elif key in _GENRE_KEYS:
-                # Link to search with genre filter
-                val_html = f'<a href="/search?q=&genre={val_str}" class="text-blue-600 hover:underline text-sm">{val_str}</a>'
+                # Split comma-separated genres and create individual links
+                genres = [g.strip() for g in val_str.split(",") if g.strip()]
+                if len(genres) > 1:
+                    tags = []
+                    for g in genres:
+                        tags.append(f'<a href="/search?q=&genre={g}" class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs hover:bg-blue-100 transition">{g}</a>')
+                    val_html = f'<div class="flex flex-wrap gap-1">{"".join(tags)}</div>'
+                else:
+                    val_html = f'<a href="/search?q=&genre={val_str}" class="text-blue-600 hover:underline text-sm">{val_str}</a>'
             elif isinstance(val, list):
                 # Array values - render as linked tags
                 tags = []
@@ -564,6 +599,22 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
                     else:
                         tags.append(f'<span class="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs">{item_str}</span>')
                 val_html = f'<div class="flex flex-wrap gap-1">{"".join(tags)}</div>'
+            elif key in _PLACE_KEYS:
+                # Link to search by place
+                val_html = f'<a href="/search?q={val_str}" class="text-blue-600 hover:underline text-sm">{val_str}</a>'
+            elif key in _LANGUAGE_KEYS:
+                # Link to search by language
+                val_html = f'<a href="/search?q=&language={val_str}" class="text-blue-600 hover:underline text-sm">{val_str}</a>'
+            elif key in _COMPANY_KEYS:
+                # Split comma-separated companies and create individual links
+                companies = [c.strip() for c in val_str.split(",") if c.strip()]
+                if len(companies) > 1:
+                    tags = []
+                    for c in companies:
+                        tags.append(f'<a href="/search?q={c}" class="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-full text-xs hover:bg-purple-100 transition">{c}</a>')
+                    val_html = f'<div class="flex flex-wrap gap-1">{"".join(tags)}</div>'
+                else:
+                    val_html = f'<a href="/search?q={val_str}" class="text-blue-600 hover:underline text-sm">{val_str}</a>'
             else:
                 val_html = f'<span class="text-sm">{val}</span>'
 
