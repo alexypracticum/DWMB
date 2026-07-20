@@ -4,7 +4,7 @@
 {% block content %}
 <div class="fade-in">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold" style="color: var(--color-text);">Панель администратора</h1>
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">{{ request.state.t.admin_dashboard }}</h1>
         <div class="flex gap-2">
             <a href="/entities" class="px-4 py-2 rounded-lg transition text-sm font-medium" style="background: var(--color-primary); color: #fff;">Каталог</a>
             <a href="/admin/fields" class="btn btn-outline px-4 py-2 rounded-lg transition text-sm" style="border-color: var(--color-secondary); color: var(--color-secondary);">Поля</a>
@@ -22,11 +22,11 @@
     <!-- Stats -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         {% for stat_item in [
-            {"value": entity_count, "label": "Сущностей", "color": "var(--color-primary)"},
-            {"value": kind_count, "label": "Типов", "color": "var(--color-success)"},
-            {"value": template_count, "label": "Шаблонов", "color": "var(--color-secondary)"},
-            {"value": relation_count, "label": "Типов связей", "color": "var(--color-accent)"},
-            {"value": user_count, "label": "Пользователей", "color": "var(--color-error)"}
+            {"value": entity_count, "label": request.state.t.admin_entities, "color": "var(--color-primary)"},
+            {"value": kind_count, "label": request.state.t.admin_types, "color": "var(--color-success)"},
+            {"value": template_count, "label": request.state.t.admin_templates_count, "color": "var(--color-secondary)"},
+            {"value": relation_count, "label": request.state.t.admin_relations_count, "color": "var(--color-accent)"},
+            {"value": user_count, "label": request.state.t.admin_users_count, "color": "var(--color-error)"}
         ] %}
         <div class="card rounded-xl p-4 shadow-sm text-center" style="border: 1px solid var(--color-border);">
             <div class="text-2xl font-bold" style="color: {{ stat_item.color }};">{{ stat_item.value }}</div>
@@ -37,7 +37,7 @@
 
     <!-- Kind Distribution -->
     <div class="card rounded-xl p-6 shadow-sm mb-6" style="border: 1px solid var(--color-border);">
-        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Распределение по типам</h2>
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.admin_recent_entities }}</h2>
         <div class="space-y-2">
             {% for stat in kind_stats %}
             <div class="flex items-center gap-3">
