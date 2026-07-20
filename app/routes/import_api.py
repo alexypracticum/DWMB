@@ -300,9 +300,18 @@ async def tmdb_import_credits(
     if not ps or not ps.state_data:
         raise HTTPException(400, "Нет данных TMDB у сущности")
 
-    tmdb_id = ps.state_data.get("tmdb_id")
-    if not tmdb_id:
+    tmdb_id_raw = ps.state_data.get("tmdb_id")
+    if not tmdb_id_raw:
         raise HTTPException(400, "У сущности нет tmdb_id")
+    
+    # Handle multilingual tmdb_id (dict or string)
+    if isinstance(tmdb_id_raw, dict):
+        tmdb_id = tmdb_id_raw.get("ru") or tmdb_id_raw.get("en") or next((v for v in tmdb_id_raw.values() if v), None)
+    else:
+        tmdb_id = tmdb_id_raw
+    
+    if not tmdb_id:
+        raise HTTPException(400, "tmdb_id пустой")
 
     credits = await tmdb_service.get_movie_credits(int(tmdb_id))
     if not credits:
