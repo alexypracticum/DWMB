@@ -16,6 +16,19 @@ router = APIRouter(tags=["search"])
 templates = Jinja2Templates(directory="app/templates")
 
 
+async def _get_kind_label(db, kind_id, lang="ru"):
+    """Get kind label with language fallback: current → 'ru' → kind_code."""
+    result = await db.execute(
+        select(EntityKindLabel.label).where(
+            EntityKindLabel.kind_id == kind_id,
+            or_(EntityKindLabel.language == lang, EntityKindLabel.language == "ru")
+        ).order_by(
+            (EntityKindLabel.language == lang).desc()
+        ).limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
 @router.get("/search", response_class=HTMLResponse)
 async def search_page(
     request: Request,
@@ -114,13 +127,11 @@ async def search_page(
 
         result = await db.execute(base_query.limit(100), {"q": q} if search_type == "fts" else {})
         seen = set()
+        lang = getattr(request.state, "lang", "ru")
         for entity, label, kind in result.unique():
             if entity.entity_id not in seen:
                 seen.add(entity.entity_id)
-                kind_label_r = await db.execute(
-                    select(EntityKindLabel.label).where(EntityKindLabel.kind_id == kind.kind_id, EntityKindLabel.language == "ru")
-                )
-                kl = kind_label_r.scalar_one_or_none() or kind.kind_code
+                kl = await _get_kind_label(db, kind.kind_id, lang) or kind.kind_code
 
                 # Get state_data for metadata
                 state_result = await db.execute(

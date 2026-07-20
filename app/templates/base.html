@@ -149,7 +149,7 @@
                                 {% if request.state.kinds %}
                                 {% for kind in request.state.kinds %}
                                 <a href="/entities?kind={{ kind.kind_code }}" class="block px-3 py-1.5 text-sm rounded-md transition hover:bg-blue-50" style="color: var(--color-text-secondary);">
-                                    {{ kind.kind_code }}
+                                    {{ kind._display_label if kind._display_label else kind.kind_code }}
                                 </a>
                                 {% endfor %}
                                 {% endif %}
@@ -198,7 +198,7 @@
                     </a>
                     {% for kind in kinds %}
                     <a href="/entities?kind={{ kind.kind_code }}" class="sidebar-item block px-3 py-2 text-sm rounded-md {% if current_kind == kind.kind_code %}active{% endif %}">
-                        {{ kind.kind_code }}
+                        {{ kind._display_label if kind._display_label else kind.kind_code }}
                     </a>
                     {% endfor %}
                 </div>

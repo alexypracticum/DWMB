@@ -17,6 +17,26 @@ router = APIRouter(tags=["entities"])
 templates = Jinja2Templates(directory="app/templates")
 
 
+async def _get_kind_label(db, kind_id, lang="ru"):
+    """Get kind label with language fallback: current → 'ru' → kind_code."""
+    from sqlalchemy import or_
+    result = await db.execute(
+        select(EntityKindLabel.label).where(
+            EntityKindLabel.kind_id == kind_id,
+            or_(EntityKindLabel.language == lang, EntityKindLabel.language == "ru")
+        ).order_by(
+            (EntityKindLabel.language == lang).desc()
+        ).limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
+async def _get_entity_label_filter(lang="ru"):
+    """Return SQLAlchemy filter for entity label with language fallback."""
+    from sqlalchemy import or_
+    return or_(EntityLabel.language == lang, EntityLabel.language == "ru")
+
+
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(get_current_user)):
     # Stats
@@ -25,20 +45,19 @@ async def index(request: Request, db: AsyncSession = Depends(get_db), user: User
     relation_count = await db.scalar(select(func.count(SemanticRelation.relation_id)))
 
     # Recent entities
+    lang = getattr(request.state, "lang", "ru")
     result = await db.execute(
         select(Entity, EntityLabel, EntityKind)
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
-        .where(Entity.status == "active", EntityLabel.language == "ru", EntityLabel.is_primary == True)
+        .where(Entity.status == "active", or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
         .order_by(Entity.updated_at.desc())
         .limit(12)
     )
     recent = []
+    lang = getattr(request.state, "lang", "ru")
     for entity, label, ek in result.unique():
-        kind_label = await db.execute(
-            select(EntityKindLabel.label).where(EntityKindLabel.kind_id == ek.kind_id, EntityKindLabel.language == "ru")
-        )
-        kl = kind_label.scalar_one_or_none() or ek.kind_code
+        kl = await _get_kind_label(db, ek.kind_id, lang) or ek.kind_code
         recent.append({"entity": entity, "label": label, "kind": ek, "kind_label": kl})
 
     # Kinds for sidebar
@@ -69,19 +88,20 @@ async def list_entities(
 ):
     per_page = 20
     offset = (page - 1) * per_page
+    lang = getattr(request.state, "lang", "ru")
 
     query = (
         select(Entity, EntityLabel, EntityKind)
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
-        .where(Entity.status == "active", EntityLabel.language == "ru", EntityLabel.is_primary == True)
+        .where(Entity.status == "active", or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
     )
 
     count_query = (
         select(func.count(Entity.entity_id))
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
-        .where(Entity.status == "active", EntityLabel.language == "ru", EntityLabel.is_primary == True)
+        .where(Entity.status == "active", or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
     )
 
     if kind:
@@ -101,11 +121,9 @@ async def list_entities(
 
     result = await db.execute(query.order_by(EntityLabel.label).offset(offset).limit(per_page))
     entities = []
+    lang = getattr(request.state, "lang", "ru")
     for entity, label, ek in result.unique():
-        kind_label_r = await db.execute(
-            select(EntityKindLabel.label).where(EntityKindLabel.kind_id == ek.kind_id, EntityKindLabel.language == "ru")
-        )
-        kl = kind_label_r.scalar_one_or_none() or ek.kind_code
+        kl = await _get_kind_label(db, ek.kind_id, lang) or ek.kind_code
         entities.append({"entity": entity, "label": label, "kind": ek, "kind_label": kl})
 
     # Kinds for sidebar
@@ -117,12 +135,13 @@ async def list_entities(
     # Resolve current kind label
     current_kind_label = ""
     if kind:
+        lang = getattr(request.state, "lang", "ru")
         ck_result = await db.execute(
             select(EntityKindLabel.label).where(
                 EntityKind.kind_code == kind,
                 EntityKind.kind_id == EntityKindLabel.kind_id,
-                EntityKindLabel.language == "ru"
-            )
+                or_(EntityKindLabel.language == lang, EntityKindLabel.language == "ru")
+            ).order_by((EntityKindLabel.language == lang).desc()).limit(1)
         )
         current_kind_label = ck_result.scalar_one_or_none() or kind
 
@@ -140,17 +159,14 @@ async def list_entities(
     })
 
 
-async def _get_kinds_with_labels(db):
+async def _get_kinds_with_labels(db, lang="ru"):
     kinds_result = await db.execute(
         select(EntityKind).where(EntityKind.is_abstract == False).order_by(EntityKind.sort_order)
     )
     kinds = kinds_result.scalars().all()
     result = []
     for k in kinds:
-        kl_result = await db.execute(
-            select(EntityKindLabel.label).where(EntityKindLabel.kind_id == k.kind_id, EntityKindLabel.language == "ru")
-        )
-        kl = kl_result.scalar_one_or_none() or k.kind_code
+        kl = await _get_kind_label(db, k.kind_id, lang) or k.kind_code
         result.append({"kind": k, "label": kl})
     return result
 
@@ -160,7 +176,8 @@ async def entity_create_page(
     request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_auth),
     kind: str = Query(None), template_ids: str = Query(None), error: str = Query(None),
 ):
-    kinds_with_labels = await _get_kinds_with_labels(db)
+    lang = getattr(request.state, "lang", "ru")
+    kinds_with_labels = await _get_kinds_with_labels(db, lang)
     step = 1
     selected_kind_obj = None
     templates_by_kind = []
@@ -183,17 +200,11 @@ async def entity_create_page(
                 .order_by(EntityKind.sort_order, OntologyTemplate.template_code)
             )
             kind_groups = {}
+            lang = getattr(request.state, "lang", "ru")
             for tmpl, model, kind_obj in tmpl_result:
                 kc = kind_obj.kind_code
                 if kc not in kind_groups:
-                    # Get kind label
-                    kl_result = await db.execute(
-                        select(EntityKindLabel.label).where(
-                            EntityKindLabel.kind_id == kind_obj.kind_id,
-                            EntityKindLabel.language == "ru"
-                        )
-                    )
-                    kind_label = kl_result.scalar_one_or_none() or kind_obj.kind_code
+                    kind_label = await _get_kind_label(db, kind_obj.kind_id, lang) or kind_obj.kind_code
                     kind_groups[kc] = {"kind_code": kc, "kind_label": kind_label, "templates": []}
                 kind_groups[kc]["templates"].append({
                     "template": tmpl,
@@ -456,10 +467,8 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
 
     kind_label = None
     if kind:
-        kl_result = await db.execute(
-            select(EntityKindLabel.label).where(EntityKindLabel.kind_id == kind.kind_id, EntityKindLabel.language == "ru")
-        )
-        kind_label = kl_result.scalar_one_or_none() or kind.kind_code
+        lang = getattr(request.state, "lang", "ru")
+        kind_label = await _get_kind_label(db, kind.kind_id, lang) or kind.kind_code
 
     # Projections with states
     proj_result = await db.execute(
@@ -476,6 +485,7 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
         projections.append({"projection": proj, "model": model, "state": state})
 
     # Relations
+    lang = getattr(request.state, "lang", "ru")
     source_rels = await db.execute(
         select(SemanticRelation, RelationType, EntityProjection, Entity, EntityLabel)
         .join(RelationType, RelationType.relation_type_id == SemanticRelation.relation_type_id)
@@ -484,7 +494,7 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .where(SemanticRelation.source_projection_id.in_(
             select(EntityProjection.projection_id).where(EntityProjection.entity_id == eid)
-        ), EntityLabel.language == "ru", EntityLabel.is_primary == True)
+        ), or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
     )
     outgoing = []
     for rel, rtype, proj, ent, lbl in source_rels.unique():
@@ -498,7 +508,7 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .where(SemanticRelation.target_projection_id.in_(
             select(EntityProjection.projection_id).where(EntityProjection.entity_id == eid)
-        ), EntityLabel.language == "ru", EntityLabel.is_primary == True)
+        ), or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
     )
     incoming = []
     for rel, rtype, proj, ent, lbl in target_rels.unique():
@@ -687,13 +697,8 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
             continue
         kc = kind_obj.kind_code
         if kc not in avail_by_kind:
-            kl_result = await db.execute(
-                select(EntityKindLabel.label).where(
-                    EntityKindLabel.kind_id == kind_obj.kind_id,
-                    EntityKindLabel.language == "ru"
-                )
-            )
-            kind_label = kl_result.scalar_one_or_none() or kind_obj.kind_code
+            lang = getattr(request.state, "lang", "ru")
+            kind_label = await _get_kind_label(db, kind_obj.kind_id, lang) or kind_obj.kind_code
             avail_by_kind[kc] = {"kind_code": kc, "kind_label": kind_label, "templates": []}
         avail_by_kind[kc]["templates"].append({
             "template_id": tmpl.template_id,
@@ -707,6 +712,7 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
 
     # Get all projection IDs for this entity
     proj_ids = [p["projection"].projection_id for p in projections]
+    lang = getattr(request.state, "lang", "ru")
 
     # Outgoing relations
     outgoing = []
@@ -717,7 +723,7 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
             .join(EntityProjection, EntityProjection.projection_id == SemanticRelation.target_projection_id)
             .join(Entity, Entity.entity_id == EntityProjection.entity_id)
             .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
-            .where(SemanticRelation.source_projection_id.in_(proj_ids), EntityLabel.language == "ru", EntityLabel.is_primary == True)
+            .where(SemanticRelation.source_projection_id.in_(proj_ids), or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
         )
         for rel, rtype, proj, ent, lbl in out_result.unique():
             outgoing.append({"relation": rel, "type": rtype, "target": ent, "label": lbl})
@@ -731,7 +737,7 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
             .join(EntityProjection, EntityProjection.projection_id == SemanticRelation.source_projection_id)
             .join(Entity, Entity.entity_id == EntityProjection.entity_id)
             .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
-            .where(SemanticRelation.target_projection_id.in_(proj_ids), EntityLabel.language == "ru", EntityLabel.is_primary == True)
+            .where(SemanticRelation.target_projection_id.in_(proj_ids), or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
         )
         for rel, rtype, proj, ent, lbl in in_result.unique():
             incoming.append({"relation": rel, "type": rtype, "source": ent, "label": lbl})

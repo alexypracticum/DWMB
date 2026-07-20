@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Form, Query, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 import uuid
@@ -17,6 +17,19 @@ from app.services.auth import require_admin, get_password_hash
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
+
+
+async def _get_kind_label(db, kind_id, lang="ru"):
+    """Get kind label with language fallback: current → 'ru' → kind_code."""
+    result = await db.execute(
+        select(EntityKindLabel.label).where(
+            EntityKindLabel.kind_id == kind_id,
+            or_(EntityKindLabel.language == lang, EntityKindLabel.language == "ru")
+        ).order_by(
+            (EntityKindLabel.language == lang).desc()
+        ).limit(1)
+    )
+    return result.scalar_one_or_none()
 
 
 def _ensure_json_schema(fs):
@@ -106,14 +119,9 @@ async def admin_kinds(request: Request, db: AsyncSession = Depends(get_db), user
     kinds = result.scalars().all()
 
     kind_data = []
+    lang = getattr(request.state, "lang", "ru")
     for kind in kinds:
-        label_result = await db.execute(
-            select(EntityKindLabel.label).where(
-                EntityKindLabel.kind_id == kind.kind_id,
-                EntityKindLabel.language == "ru"
-            )
-        )
-        label = label_result.scalar_one_or_none() or kind.kind_code
+        label = await _get_kind_label(db, kind.kind_id, lang) or kind.kind_code
         fs = kind.field_schema if kind.field_schema else []
         kind_data.append({"kind": kind, "label": label, "field_count": len(fs)})
 
@@ -1036,17 +1044,14 @@ async def admin_model_delete(
 
 
 @router.get("/api/kinds")
-async def api_kinds(db: AsyncSession = Depends(get_db)):
+async def api_kinds(db: AsyncSession = Depends(get_db), lang: str = Query("ru")):
     """JSON API для получения списка типов сущностей с field_schema."""
     from app.models.kinds import EntityKind, EntityKindLabel
     result = await db.execute(select(EntityKind).order_by(EntityKind.sort_order))
     kinds = result.scalars().all()
     out = []
     for k in kinds:
-        lbl_result = await db.execute(
-            select(EntityKindLabel.label).where(EntityKindLabel.kind_id == k.kind_id, EntityKindLabel.language == "ru")
-        )
-        label = lbl_result.scalar_one_or_none() or k.kind_code
+        label = await _get_kind_label(db, k.kind_id, lang) or k.kind_code
         out.append({
             "kind_id": str(k.kind_id),
             "kind_code": k.kind_code,

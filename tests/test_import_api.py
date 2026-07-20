@@ -1,12 +1,14 @@
 """
-Unit tests for import_api helper functions.
+Unit tests for import_api helper functions and TMDB service.
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, call
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+
+# ─── _ensure_kind_and_relation ─────────────────────────────────
 
 @pytest.mark.asyncio
 async def test_ensure_kind_and_relation_returns_kind_and_rel():
@@ -30,6 +32,59 @@ async def test_ensure_kind_and_relation_returns_kind_and_rel():
     assert kind == mock_kind
     assert rel == mock_rel
 
+
+@pytest.mark.asyncio
+async def test_ensure_kind_and_relation_creates_missing_kind():
+    """_ensure_kind_and_relation creates a new EntityKind when missing."""
+    from app.routes.import_api import _ensure_kind_and_relation
+
+    mock_parent = MagicMock(kind_id=uuid4())
+    mock_kind = MagicMock(kind_id=uuid4(), kind_code="director")
+    mock_rel = MagicMock(relation_type_id=uuid4(), relation_code="directed_by")
+
+    db = AsyncMock(spec=AsyncSession)
+    db.execute = AsyncMock()
+    db.add = MagicMock()
+    db.flush = AsyncMock()
+
+    # kind NOT found, parent found, then rel found
+    db.execute.side_effect = [
+        AsyncMock(scalars=lambda: AsyncMock(first=lambda: None)),   # kind not found
+        AsyncMock(scalars=lambda: AsyncMock(first=lambda: mock_parent)),  # parent "entity" found
+        AsyncMock(scalars=lambda: AsyncMock(first=lambda: mock_rel)),  # rel found
+    ]
+
+    kind, rel = await _ensure_kind_and_relation(db, "director", "directed_by")
+    assert kind == mock_kind or kind.kind_code == "director"
+    # Verify db.add was called (for EntityKind and EntityKindLabel)
+    assert db.add.call_count >= 1
+
+
+@pytest.mark.asyncio
+async def test_ensure_kind_and_relation_creates_missing_rel():
+    """_ensure_kind_and_relation creates a new RelationType when missing."""
+    from app.routes.import_api import _ensure_kind_and_relation
+
+    mock_kind = MagicMock(kind_id=uuid4(), kind_code="actor")
+    mock_rel = MagicMock(relation_type_id=uuid4(), relation_code="acted_in")
+
+    db = AsyncMock(spec=AsyncSession)
+    db.execute = AsyncMock()
+    db.add = MagicMock()
+    db.flush = AsyncMock()
+
+    # kind found, rel NOT found
+    db.execute.side_effect = [
+        AsyncMock(scalars=lambda: AsyncMock(first=lambda: mock_kind)),   # kind found
+        AsyncMock(scalars=lambda: AsyncMock(first=lambda: None)),        # rel NOT found
+    ]
+
+    kind, rel = await _ensure_kind_and_relation(db, "actor", "acted_in")
+    assert kind == mock_kind
+    assert db.add.call_count >= 1
+
+
+# ─── _find_or_create_related_entity ────────────────────────────
 
 @pytest.mark.asyncio
 async def test_find_or_create_returns_none_when_no_kind():
@@ -84,3 +139,115 @@ async def test_find_or_create_returns_entity_id_when_existing():
     assert result["created"] is False
     assert result["linked"] is True
     assert result["entity_id"] == str(existing_entity_id)
+
+
+# ─── TMDBService retry logic ───────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_tmdb_request_retries_on_429():
+    """TMDBService._request retries on 429 rate limit."""
+    from app.services.importers.tmdb import TMDBService
+
+    service = TMDBService.__new__(TMDBService)
+    service.api_key = "test_key_123"
+    service.base_url = "https://api.themoviedb.org/3"
+    service.image_base = "https://image.tmdb.org/t/p"
+    service._is_v4 = False
+
+    mock_resp_429 = MagicMock(status_code=429, headers={"Retry-After": "0"}, text="rate limited")
+    mock_resp_200 = MagicMock(status_code=200)
+    mock_resp_200.json.return_value = {"results": []}
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(side_effect=[mock_resp_429, mock_resp_200])
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("app.services.importers.tmdb.httpx.AsyncClient", return_value=mock_client):
+        with patch("app.services.importers.tmdb.asyncio.sleep", new_callable=AsyncMock):
+            result = await service._request("/search/movie", {"query": "test"})
+
+    assert result == {"results": []}
+    assert mock_client.get.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_tmdb_request_returns_none_on_network_error():
+    """TMDBService._request returns None on network errors without retrying."""
+    import httpx
+    from app.services.importers.tmdb import TMDBService
+
+    service = TMDBService.__new__(TMDBService)
+    service.api_key = "test_key_123"
+    service.base_url = "https://api.themoviedb.org/3"
+    service.image_base = "https://image.tmdb.org/t/p"
+    service._is_v4 = False
+
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(side_effect=httpx.ConnectError("connection refused"))
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("app.services.importers.tmdb.httpx.AsyncClient", return_value=mock_client):
+        result = await service._request("/search/movie", {"query": "test"})
+
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_tmdb_request_returns_none_on_404():
+    """TMDBService._request returns None on 404 without retrying."""
+    from app.services.importers.tmdb import TMDBService
+
+    service = TMDBService.__new__(TMDBService)
+    service.api_key = "test_key_123"
+    service.base_url = "https://api.themoviedb.org/3"
+    service.image_base = "https://image.tmdb.org/t/p"
+    service._is_v4 = False
+
+    mock_resp = MagicMock(status_code=404, text="not found")
+    mock_client = AsyncMock()
+    mock_client.get = AsyncMock(return_value=mock_resp)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+
+    with patch("app.services.importers.tmdb.httpx.AsyncClient", return_value=mock_client):
+        result = await service._request("/movie/99999999")
+
+    assert result is None
+    assert mock_client.get.call_count == 1
+
+
+@pytest.mark.asyncio
+async def test_tmdb_request_returns_none_without_api_key():
+    """TMDBService._request returns None when no API key is set."""
+    from app.services.importers.tmdb import TMDBService
+
+    service = TMDBService.__new__(TMDBService)
+    service.api_key = ""
+    service.base_url = "https://api.themoviedb.org/3"
+    service.image_base = "https://image.tmdb.org/t/p"
+    service._is_v4 = False
+
+    result = await service._request("/search/movie", {"query": "test"})
+    assert result is None
+
+
+# ─── V4 key detection ──────────────────────────────────────────
+
+def test_tmdb_v4_key_detection():
+    """TMDBService correctly detects v4 JWT tokens."""
+    from app.services.importers.tmdb import TMDBService
+
+    service = TMDBService.__new__(TMDBService)
+    # JWT format: header.payload.signature
+    service.api_key = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjEyMzQ1Njc4OTB9.signature"
+    assert service._detect_v4_key() is True
+
+    # Regular API key
+    service.api_key = "abc123def456ghi789"
+    assert service._detect_v4_key() is False
+
+    # Empty key
+    service.api_key = ""
+    assert service._detect_v4_key() is False

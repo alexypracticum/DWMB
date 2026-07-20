@@ -12,7 +12,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="fade-in max-w-4xl">
+<div class="fade-in max-w-full">
     <h1 class="text-2xl font-bold text-gray-800 mb-6">Новая сущность</h1>
 
     {% if error == 'exists' %}
@@ -32,7 +32,7 @@
     {% if step == 1 %}
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <h2 class="text-lg font-semibold text-gray-800 mb-4">Выберите тип сущности</h2>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             {% for item in kinds %}
             <a href="/entity/create?kind={{ item.kind.kind_code }}"
                class="block p-4 rounded-xl border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition text-center">

@@ -1,6 +1,7 @@
 """
 API endpoints for external source imports (TMDB, etc.).
 """
+import logging
 from fastapi import APIRouter, Depends, Query, HTTPException, Form
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,45 +12,61 @@ from app.services.auth import require_auth
 from app.services.importers.tmdb import tmdb_service
 from uuid import uuid4
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/import", tags=["import"])
 
 
 async def _ensure_kind_and_relation(db, kind_code, relation_code, inverse_code=None):
-    from app.models.kinds import EntityKind
+    """Ensure entity kind and relation type exist, creating them if needed. Uses ORM to prevent SQL injection."""
+    from app.models.kinds import EntityKind, EntityKindLabel
     from app.models.relations import RelationType
-    from sqlalchemy import text
 
     kind = (await db.execute(select(EntityKind).where(EntityKind.kind_code == kind_code))).scalars().first()
     if not kind:
-        kind_id = await db.execute(
-            text(f"INSERT INTO meta.entity_kind (kind_code, parent_kind_id, description, is_abstract, sort_order, version_id) "
-                 f"VALUES ('{kind_code}', (SELECT kind_id FROM meta.entity_kind WHERE kind_code = 'entity'), 'Auto-created kind', false, 999, 1) RETURNING kind_id")
+        parent = (await db.execute(select(EntityKind).where(EntityKind.kind_code == "entity"))).scalars().first()
+        kind = EntityKind(
+            kind_code=kind_code,
+            parent_kind_id=parent.kind_id if parent else None,
+            description="Auto-created kind",
+            is_abstract=False,
+            sort_order=999,
+            version_id=1,
         )
-        kind_id = kind_id.scalar_one()
-        await db.execute(
-            text(f"INSERT INTO meta.entity_kind_label (kind_id, language, label, description) "
-                 f"VALUES ('{kind_id}', 'ru', UPPER(LEFT('{kind_code}', 1)) || SUBSTRING('{kind_code}', 2), 'Auto-created')")
-        )
-        kind = (await db.execute(select(EntityKind).where(EntityKind.kind_id == kind_id))).scalars().first()
+        db.add(kind)
+        await db.flush()
+        label_text = kind_code[0].upper() + kind_code[1:] if kind_code else kind_code
+        db.add(EntityKindLabel(kind_id=kind.kind_id, language="ru", label=label_text, description="Auto-created"))
+        await db.flush()
+        logger.info("Auto-created EntityKind '%s' (id=%s)", kind_code, kind.kind_id)
 
     rel = (await db.execute(select(RelationType).where(RelationType.relation_code == relation_code))).scalars().first()
     if not rel:
-        rid = uuid4()
-        await db.execute(
-            text(f"INSERT INTO meta.relation_type (relation_type_id, relation_code, relation_name, description, directionality, version_id) "
-                 f"VALUES ('{rid}', '{relation_code}', '{relation_code}', 'Auto-created', 'directed', 1)")
+        rel = RelationType(
+            relation_code=relation_code,
+            relation_name=relation_code,
+            description="Auto-created",
+            directionality="directed",
+            version_id=1,
         )
-        rel = (await db.execute(select(RelationType).where(RelationType.relation_type_id == rid))).scalars().first()
+        db.add(rel)
+        await db.flush()
+        logger.info("Auto-created RelationType '%s' (id=%s)", relation_code, rel.relation_type_id)
 
     if inverse_code:
         inv = (await db.execute(select(RelationType).where(RelationType.relation_code == inverse_code))).scalars().first()
         if not inv:
-            inv_id = uuid4()
-            await db.execute(
-                text(f"INSERT INTO meta.relation_type (relation_type_id, relation_code, relation_name, description, directionality, inverse_type_id, version_id) "
-                     f"VALUES ('{inv_id}', '{inverse_code}', '{inverse_code}', 'Auto-created inverse', 'directed', '{rel.relation_type_id}', 1)")
+            inv = RelationType(
+                relation_code=inverse_code,
+                relation_name=inverse_code,
+                description="Auto-created inverse",
+                directionality="directed",
+                inverse_type_id=rel.relation_type_id,
+                version_id=1,
             )
-            inv = (await db.execute(select(RelationType).where(RelationType.relation_type_id == inv_id))).scalars().first()
+            db.add(inv)
+            await db.flush()
+            logger.info("Auto-created inverse RelationType '%s' (id=%s)", inverse_code, inv.relation_type_id)
             rel.inverse_type_id = inv.relation_type_id
             await db.flush()
 
@@ -260,6 +277,7 @@ async def tmdb_import_credits(
     from app.models.relations import SemanticRelation, RelationType
 
     eid = UUID(entity_id)
+    logger.info("Starting TMDB credits import for entity %s by user %s", entity_id, user.user_id)
 
     proj = (await db.execute(select(EntityProjection).where(EntityProjection.entity_id == eid))).scalars().first()
     if not proj:
@@ -447,4 +465,5 @@ async def tmdb_import_credits(
         msg_parts.append(f"языков: {result['languages']['created']}")
     msg = f"Создано: {', '.join(msg_parts)}" if msg_parts else "Новых сущностей не создано (все уже существуют)"
 
+    logger.info("TMDB import completed for entity %s: %s", entity_id, msg)
     return {"imported": result, "message": msg}

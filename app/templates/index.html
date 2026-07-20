@@ -5,46 +5,105 @@
 <div class="fade-in">
     <!-- Hero Stats -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 card-hover transition-all">
-            <div class="text-3xl font-bold text-blue-600">{{ entity_count }}</div>
-            <div class="text-sm text-gray-500 mt-1">Сущностей</div>
+        <div class="rounded-xl p-6 shadow-sm border card-hover transition-all" style="background: var(--color-surface); border-color: var(--color-border);">
+            <div class="text-3xl font-bold" style="color: var(--color-primary);">{{ entity_count }}</div>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">Сущностей</div>
         </div>
-        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 card-hover transition-all">
-            <div class="text-3xl font-bold text-green-600">{{ kind_count }}</div>
-            <div class="text-sm text-gray-500 mt-1">Типов сущностей</div>
+        <div class="rounded-xl p-6 shadow-sm border card-hover transition-all" style="background: var(--color-surface); border-color: var(--color-border);">
+            <div class="text-3xl font-bold" style="color: var(--color-accent);">{{ kind_count }}</div>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">Типов сущностей</div>
         </div>
-        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 card-hover transition-all">
-            <div class="text-3xl font-bold text-purple-600">{{ relation_count }}</div>
-            <div class="text-sm text-gray-500 mt-1">Связей</div>
+        <div class="rounded-xl p-6 shadow-sm border card-hover transition-all" style="background: var(--color-surface); border-color: var(--color-border);">
+            <div class="text-3xl font-bold" style="color: var(--color-primary);">{{ relation_count }}</div>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">Связей</div>
         </div>
     </div>
 
     <!-- Quick Search -->
-    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-8">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Быстрый поиск</h2>
+    <div class="rounded-xl p-6 shadow-sm border mb-8" style="background: var(--color-surface); border-color: var(--color-border);">
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Быстрый поиск</h2>
         <form action="/search" method="get" class="flex gap-3">
-            <input type="text" name="q" placeholder="Найти сущность..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
-            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Найти</button>
+            <input type="text" name="q" placeholder="Найти сущность..." class="flex-1 px-4 py-2 rounded-lg outline-none transition text-sm" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+            <button type="submit" class="px-6 py-2 text-white rounded-lg transition" style="background: var(--color-primary);">Найти</button>
         </form>
     </div>
 
     <!-- Recent Entities -->
-    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+    <div class="rounded-xl p-6 shadow-sm border" style="background: var(--color-surface); border-color: var(--color-border);">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-800">Последние сущности</h2>
-            <a href="/entities" class="text-sm text-blue-600 hover:text-blue-800">Показать все &rarr;</a>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {% for item in recent %}
-            <a href="/entity/{{ item.entity.entity_id }}" class="block p-4 border border-gray-100 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all">
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">{{ item.kind_label }}</span>
+            <h2 class="text-lg font-semibold" style="color: var(--color-text);">Последние сущности</h2>
+            <div class="flex items-center gap-3">
+                <!-- View Mode Toggle -->
+                <div class="flex rounded-lg overflow-hidden" style="border: 1px solid var(--color-border);">
+                    <button onclick="setViewMode('grid')" id="btn-grid" class="px-2 py-1 text-sm transition" title="Плитки">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                    </button>
+                    <button onclick="setViewMode('list')" id="btn-list" class="px-2 py-1 text-sm transition" title="Список">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </button>
                 </div>
-                <div class="font-medium text-gray-800">{{ item.label.label }}</div>
-                <div class="text-sm text-gray-500 mt-1 line-clamp-2">{{ item.label.description or '' }}</div>
-            </a>
-            {% endfor %}
+                <a href="/entities" class="text-sm hover:underline" style="color: var(--color-primary);">Показать все &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Grid View -->
+        <div id="view-grid" class="entity-view">
+            <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+                {% for item in recent %}
+                <a href="/entity/{{ item.entity.entity_id }}" class="block p-4 border rounded-lg hover:shadow-sm transition-all" style="border-color: var(--color-border);">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
+                    </div>
+                    <div class="font-medium" style="color: var(--color-text);">{{ item.label.label }}</div>
+                    <div class="text-sm mt-1 line-clamp-2" style="color: var(--color-text-secondary);">{{ item.label.description or '' }}</div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- List View -->
+        <div id="view-list" class="entity-view hidden">
+            <div class="space-y-2">
+                {% for item in recent %}
+                <a href="/entity/{{ item.entity.entity_id }}" class="flex items-center gap-3 p-3 rounded-lg border hover:shadow-sm transition-all" style="border-color: var(--color-border);">
+                    <span class="px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
+                    <span class="font-medium" style="color: var(--color-text);">{{ item.label.label }}</span>
+                    <span class="text-sm truncate flex-1" style="color: var(--color-text-secondary);">{{ item.label.description or '' }}</span>
+                </a>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    const STORAGE_KEY = 'dwmb_entity_view';
+    let currentView = localStorage.getItem(STORAGE_KEY) || 'grid';
+
+    function applyView(view) {
+        document.querySelectorAll('.entity-view').forEach(el => el.classList.add('hidden'));
+        const target = document.getElementById('view-' + view);
+        if (target) target.classList.remove('hidden');
+
+        document.querySelectorAll('[id^="btn-"]').forEach(btn => {
+            btn.style.background = 'transparent';
+            btn.style.color = 'var(--color-text-secondary)';
+        });
+        const activeBtn = document.getElementById('btn-' + view);
+        if (activeBtn) {
+            activeBtn.style.background = 'var(--color-primary)';
+            activeBtn.style.color = '#fff';
+        }
+    }
+
+    window.setViewMode = function(view) {
+        currentView = view;
+        localStorage.setItem(STORAGE_KEY, view);
+        applyView(view);
+    };
+
+    applyView(currentView);
+})();
+</script>
 {% endblock %}

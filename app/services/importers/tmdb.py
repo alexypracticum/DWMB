@@ -6,13 +6,18 @@ Supports both v3 API keys and v4 JWT tokens.
 
 API docs: https://developer.themoviedb.org/reference/intro/getting-started
 """
+import asyncio
+import logging
 import httpx
 from typing import Optional
 from app.config import get_settings
 
+logger = logging.getLogger(__name__)
 
 TMDB_BASE_URL = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p"
+MAX_RETRIES = 3
+RETRY_BACKOFF = 1.0  # seconds, doubled each retry
 
 
 class TMDBService:
@@ -37,28 +42,43 @@ class TMDBService:
         return bool(self.api_key)
 
     async def _request(self, endpoint: str, params: dict = None) -> Optional[dict]:
-        """Make authenticated request to TMDB API."""
+        """Make authenticated request to TMDB API with retry and rate-limit handling."""
         if not self.api_key:
+            logger.warning("TMDB API key not configured, skipping request to %s", endpoint)
             return None
 
         url = f"{self.base_url}{endpoint}"
         params = params or {}
         params["language"] = "ru-RU"
 
-        # Use Bearer token for v4, api_key param for v3
         headers = {}
         if self._is_v4:
             headers["Authorization"] = f"Bearer {self.api_key}"
         else:
             params["api_key"] = self.api_key
 
-        async with httpx.AsyncClient(timeout=30) as client:
-            try:
-                resp = await client.get(url, params=params, headers=headers)
-                if resp.status_code == 200:
-                    return resp.json()
-            except httpx.RequestError:
-                pass
+        for attempt in range(MAX_RETRIES):
+            async with httpx.AsyncClient(timeout=30) as client:
+                try:
+                    resp = await client.get(url, params=params, headers=headers)
+                    if resp.status_code == 200:
+                        return resp.json()
+                    if resp.status_code == 429:
+                        retry_after = int(resp.headers.get("Retry-After", RETRY_BACKOFF * (2 ** attempt)))
+                        logger.warning("TMDB rate limit hit on %s, retrying after %ds (attempt %d/%d)",
+                                       endpoint, retry_after, attempt + 1, MAX_RETRIES)
+                        await asyncio.sleep(retry_after)
+                        continue
+                    logger.warning("TMDB API returned %d for %s: %s", resp.status_code, endpoint, resp.text[:200])
+                    return None
+                except httpx.TimeoutException:
+                    logger.warning("TMDB timeout on %s (attempt %d/%d)", endpoint, attempt + 1, MAX_RETRIES)
+                    await asyncio.sleep(RETRY_BACKOFF * (2 ** attempt))
+                except httpx.RequestError as e:
+                    logger.error("TMDB request error on %s: %s", endpoint, e)
+                    return None
+
+        logger.error("TMDB request failed after %d retries for %s", MAX_RETRIES, endpoint)
         return None
 
     # ─── Movies ───────────────────────────────────────────────
