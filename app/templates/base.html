@@ -203,7 +203,7 @@
                     <a href="/entities" class="sidebar-item block px-3 py-2 text-sm rounded-md {% if not current_kind %}active{% endif %}">
                         {{ request.state.t.sidebar_all }}
                     </a>
-                    {% for kind in kinds %}
+                    {% for kind in request.state.kinds %}
                     <a href="/entities?kind={{ kind.kind_code }}" class="sidebar-item block px-3 py-2 text-sm rounded-md {% if current_kind == kind.kind_code %}active{% endif %}">
                         {{ kind._display_label if kind._display_label else kind.kind_code }}
                     </a>
@@ -213,7 +213,7 @@
         </aside>
 
         <!-- Main Content -->
-        <main id="main-content" class="main-content flex-1 p-6 min-h-[calc(100vh-3.5rem)] transition-all duration-300" style="margin-left: 14rem;">
+        <main id="main-content" class="main-content flex-1 p-6 min-h-[calc(100vh-3.5rem)] transition-all duration-300 overflow-hidden" style="margin-left: 14rem;">
             {% block breadcrumbs %}{% endblock %}
             {% block content %}{% endblock %}
         </main>

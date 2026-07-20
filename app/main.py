@@ -41,8 +41,8 @@ app.state.limiter = limiter
 app.add_exception_handler(429, rate_limit_exceeded_handler)
 
 # ─── Middleware (order matters: outermost first) ───────────────
-app.add_middleware(KindsMiddleware)
 app.add_middleware(ThemeMiddleware)
+app.add_middleware(KindsMiddleware)
 
 # ─── Static files ──────────────────────────────────────────────
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

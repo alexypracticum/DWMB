@@ -17,6 +17,7 @@ class KindsMiddleware(BaseHTTPMiddleware):
 
         try:
             lang = getattr(request.state, "lang", "ru") if hasattr(request.state, "lang") else "ru"
+            print(f'KindsMiddleware: lang={lang}')
             cache_key = f"kinds:{lang}"
 
             # Try cache first
@@ -62,12 +63,19 @@ class KindsMiddleware(BaseHTTPMiddleware):
                             "sort_order": kind.sort_order,
                             "label": label,
                         })
+                    print(f'KindsMiddleware: loaded {len(kinds_with_labels)} kinds')
+                    for k in kinds_with_labels[:3]:
+                        print(f'  {k.kind_code}: {getattr(k, "_display_label", "NO_LABEL")}')
+                        print(f'  {k.kind_code}: {k._display_label}')
                     request.state.kinds = kinds_with_labels
 
                     # Cache for 5 minutes
                     await cache_set(cache_key, cache_data, ttl=300)
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f'KindsMiddleware error: {e}')
+            import traceback
+            traceback.print_exc()
 
         response = await call_next(request)
         return response
