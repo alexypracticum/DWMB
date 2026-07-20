@@ -10,20 +10,20 @@
 │   ├── config.py             # Настройки (Pydantic)
 │   ├── database.py           # Async SQLAlchemy
 │   ├── models/               # ORM-модели
-│   │   ├── entities.py       # Entity, EntityLabel, MediaAsset, EventLog
+│   │   ├── entities.py       # Entity (image_url), EntityLabel, MediaAsset, EventLog
 │   │   ├── kinds.py          # EntityKind, EntityKindLabel
 │   │   ├── projections.py    # EntityProjection, ProjectionState
 │   │   ├── relations.py      # SemanticRelation, RelationType
 │   │   ├── fields.py         # FieldRegistry
 │   │   ├── users.py          # UserAccount
 │   │   ├── themes.py         # UserTheme
-│   │   ├── ai.py             # AiConfig, AiTaskLog, AiSuggestion
+│   │   ├── ai.py             # AiConfig, AiConfigProfile, AiTaskLog, AiSuggestion
 │   │   ├── pages.py          # PageRegistry, MenuItem
 │   │   ├── rbac.py           # Role, Permission, UserRole
 │   │   └── comments.py       # Comment
 │   ├── routes/               # HTTP-эндпоинты
 │   │   ├── entities.py       # CRUD сущностей + история + workflow
-│   │   ├── admin.py          # Админ-панель + RBAC API
+│   │   ├── admin.py          # Админ-панель + AI profiles + plugins
 │   │   ├── auth.py           # Авторизация + rate limiting
 │   │   ├── search.py         # Поиск с фильтрами
 │   │   ├── ai.py             # AI API
@@ -42,11 +42,11 @@
 │   │   ├── email.py          # Email service
 │   │   ├── event_log.py      # Аудит-журнал
 │   │   ├── storage.py        # MinIO S3
-│   │   ├── layout.py         # Рендеринг макетов (20 типов блоков)
+│   │   ├── layout.py         # Рендеринг макетов (21 тип блоков)
 │   │   ├── theme.py          # CSS-переменные тем
 │   │   └── i18n.py           # Переводы интерфейса (ru/en)
 │   ├── middleware/            # Middleware
-│   │   ├── theme.py          # Тема + i18n
+│   │   ├── theme.py          # Тема + i18n + cookie
 │   │   ├── kinds.py          # Контекст типов (кэширование)
 │   │   └── rate_limit.py     # Rate limiting (slowapi)
 │   ├── templates/            # Jinja2 шаблоны
@@ -59,11 +59,11 @@
 │   ├── stats/                # Статистика
 │   ├── rbac/                 # RBAC
 │   └── email/                # Email уведомления
-├── tests/                    # 35 unit-тестов
+├── tests/                    # 40 unit-тестов
 ├── db/                       # SQL-скрипты + миграции
-│   ├── init.sql              # Полная схема БД (28 таблиц)
-│   ├── seeds/                # Seed данные (250 сущностей)
-│   └── migrations/           # 3 миграции (RBAC, workflow, comments)
+│   ├── init.sql              # Полная схема БД (30+ таблиц)
+│   ├── seeds/                # Seed данные (250+ сущностей)
+│   └── migrations/           # 6 миграций
 ├── cli.py                    # CLI утилита
 ├── docker-compose.yml        # Оркестрация (app, db, minio)
 └── requirements.txt          # Зависимости
@@ -96,11 +96,15 @@ python cli.py seed      # Заполнение seed данными
 - RSS Feed: http://localhost:8000/feed/entities
 - TMDB Import: http://localhost:8000/api/import/tmdb/search/movie?q=inception
 
+## Языковой переключатель
+
+В верхнем меню доступен переключатель языков (RU/EN). Язык сохраняется в cookie и применяется ко всем страницам.
+
 ## Тесты
 
 ```bash
-# Unit-тесты (без БД)
-.venv/bin/python -m pytest tests/ -v
+# Unit-тесты (в Docker)
+docker compose exec app python -m pytest tests/ -v
 
 # Проверка через curl
 curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/
@@ -112,12 +116,14 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/
 - Онтологическая модель: kinds, projections, templates, contexts
 - Семантические связи: directed/undirected, inverse, transitive
 - JSON Schema для определения полей
-- Блочный лайаут (20 типов блоков)
-- Мультиязычность (7 языков)
-- 25 типов сущностей (movie, actor, book, song, ...)
+- Блочный лайаут (21 тип блоков, включая галерею актёров)
+- Мультиязычность (7 языков: ru, en, de, fr, es, zh, ja)
+- 25+ типов сущностей (movie, actor, language, classifier, ...)
+- Изображение как базовая часть сущности (image_url)
 
 ### Плагины
 - AI: эмбеддинги, chat, парсинг текста, гибридный поиск
+- AI profiles: несколько профилей с переключением
 - TMDB: импорт фильмов, людей, кредитов
 - Темы: 9 пресетов, визуальный редактор
 - CMS: страницы, иерархические меню
@@ -131,6 +137,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/
 - Workflow: draft/published/archived
 - Комментарии с вложенностью
 - Экспорт в Markdown/HTML
+- Управление плагинами (/admin/plugins)
 
 ### Инфраструктура
 - Redis кэширование с in-memory fallback
@@ -138,6 +145,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/
 - Аудит-журнал (EventLog)
 - Backup через CLI
 - RSS/Atom фиды
+- Языковые сущности (ISO 639-1, ISO 639-2, ГОСТ 7.75-97)
 
 ## Технологии
 
