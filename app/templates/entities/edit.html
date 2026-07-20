@@ -562,12 +562,16 @@
             }
         });
 
-        if (emptyFields.length === 0) {
+        // Filter to only TMDB-related fields
+        const tmdbFields = new Set(['title', 'year', 'genre', 'rating', 'description', 'budget', 'country', 'tagline', 'director', 'duration', 'language', 'production_company', 'poster', 'imdb_id']);
+        const filteredFields = emptyFields.filter(f => tmdbFields.has(f.name));
+
+        if (filteredFields.length === 0) {
             list.innerHTML = '<div class="text-center py-4 text-green-600 text-sm">Все поля заполнены!</div>';
         } else {
             list.innerHTML = `
-                <div class="text-sm text-gray-500 mb-2">Незаполненных полей: ${emptyFields.length}</div>
-                ${emptyFields.map(f => `
+                <div class="text-sm text-gray-500 mb-2">Незаполненных полей: ${filteredFields.length}</div>
+                ${filteredFields.map(f => `
                     <div class="flex items-center justify-between p-2 bg-amber-50 rounded-lg border border-amber-200">
                         <span class="text-sm text-gray-700">${f.label} <span class="text-xs text-gray-400">(${f.name})</span></span>
                         <button onclick="fillFromTmdb('${f.name}')" class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition">Заполнить</button>
