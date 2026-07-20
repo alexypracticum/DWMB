@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Статистика - DWMB{% endblock %}
+{% block title %}{{ request.state.t.admin_statistics }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in">
-    <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">Статистика</h1>
+    <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">{{ request.state.t.admin_statistics }}</h1>
 
     <!-- Summary Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {% for stat_item in [
-            {"value": total_entities, "label": "Сущностей", "color": "var(--color-primary)"},
-            {"value": total_projections, "label": "Проекций", "color": "var(--color-success)"},
-            {"value": total_relations, "label": "Связей", "color": "var(--color-secondary)"},
-            {"value": total_kinds, "label": "Типов сущностей", "color": "var(--color-accent)"}
+            {"value": total_entities, "label": request.state.t.admin_entities, "color": "var(--color-primary)"},
+            {"value": total_projections, "label": "Projections", "color": "var(--color-success)"},
+            {"value": total_relations, "label": request.state.t.admin_relations_count, "color": "var(--color-secondary)"},
+            {"value": total_kinds, "label": request.state.t.admin_types, "color": "var(--color-accent)"}
         ] %}
         <div class="card rounded-xl p-5 shadow-sm text-center" style="border: 1px solid var(--color-border);">
             <div class="text-3xl font-bold" style="color: {{ stat_item.color }};">{{ stat_item.value }}</div>
@@ -24,7 +24,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Entities per Kind -->
         <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
-            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Сущности по типам</h2>
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.admin_entities }} {{ request.state.t.admin_types }}</h2>
             <div style="position:relative; height:300px; overflow:hidden;">
                 <canvas id="kindChart"></canvas>
             </div>
@@ -32,7 +32,7 @@
 
         <!-- Relations per Type -->
         <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
-            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Связи по типам</h2>
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.admin_relations_count }}</h2>
             <div style="position:relative; height:300px; overflow:hidden;">
                 <canvas id="relChart"></canvas>
             </div>
@@ -41,15 +41,15 @@
 
     <!-- Detailed Stats Table -->
     <div class="card rounded-xl p-6 shadow-sm mt-6" style="border: 1px solid var(--color-border);">
-        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Детальная статистика по типам</h2>
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.admin_detailed_stats }}</h2>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
                     <tr class="text-left table-header" style="border-bottom: 1px solid var(--color-border); color: var(--color-text-secondary);">
-                        <th class="pb-2">Тип</th>
-                        <th class="pb-2">Количество</th>
-                        <th class="pb-2">Доля</th>
-                        <th class="pb-2">Прогресс</th>
+                        <th class="pb-2">{{ request.state.t.admin_type }}</th>
+                        <th class="pb-2">{{ request.state.t.admin_quantity }}</th>
+                        <th class="pb-2">{{ request.state.t.admin_share }}</th>
+                        <th class="pb-2">{{ request.state.t.admin_progress }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: kindLabels,
             datasets: [{
-                label: 'Количество',
+                label: request.state.t.admin_quantity,
                 data: kindValues,
                 backgroundColor: colors.slice(0, kindLabels.length),
                 borderRadius: 6,

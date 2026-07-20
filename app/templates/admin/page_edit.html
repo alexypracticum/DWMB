@@ -56,8 +56,8 @@
         </div>
 
         <div class="flex justify-end gap-3">
-            <a href="/admin/pages/" class="btn btn-outline px-6 py-2 rounded-lg transition">Отмена</a>
-            <button type="submit" class="btn btn-primary px-6 py-2 rounded-lg transition">Сохранить</button>
+            <a href="/admin/pages/" class="btn btn-outline px-6 py-2 rounded-lg transition">{{ request.state.t.btn_cancel }}</a>
+            <button type="submit" class="btn btn-primary px-6 py-2 rounded-lg transition">{{ request.state.t.btn_save }}</button>
         </div>
     </form>
 </div>

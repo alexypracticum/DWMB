@@ -112,8 +112,8 @@
 
         <!-- Actions -->
         <div class="flex gap-3 mt-6">
-            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Сохранить шаблон</button>
-            <a href="/admin/templates" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Отмена</a>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">{{ request.state.t.admin_save_template }}</button>
+            <a href="/admin/templates" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">{{ request.state.t.btn_cancel }}</a>
         </div>
     </form>
 </div>

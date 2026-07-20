@@ -1,26 +1,26 @@
 {% extends "base.html" %}
-{% block title %}Поиск - DWMB{% endblock %}
+{% block title %}{{ request.state.t.nav_search }} - DWMB{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
-    <a href="/" class="hover:underline" style="color: var(--color-primary);">Главная</a>
+    <a href="/" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.sidebar_all }}</a>
     <span class="mx-2">/</span>
-    <span style="color: var(--color-text);">Поиск</span>
+    <span style="color: var(--color-text);">{{ request.state.t.nav_search }}</span>
 </nav>
 {% endblock %}
 
 {% block content %}
 <div class="fade-in">
-    <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">Расширенный поиск</h1>
+    <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">{{ request.state.t.search_title }}</h1>
 
     <!-- Search Form -->
     <div class="card rounded-xl p-6 shadow-sm mb-6" style="border: 1px solid var(--color-border);">
         <form action="/search" method="get" class="space-y-4">
             <div class="flex gap-3">
-                <input type="text" name="q" value="{{ query }}" placeholder="Поиск по названию, описанию, коду..."
+                <input type="text" name="q" value="{{ query }}" placeholder="{{ request.state.t.label_search_placeholder }}"
                        class="form-input flex-1 px-4 py-3 rounded-lg outline-none transition text-lg"
                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
-                <button type="submit" class="btn btn-primary px-8 py-3 rounded-lg transition font-medium">Найти</button>
+                <button type="submit" class="btn btn-primary px-8 py-3 rounded-lg transition font-medium">{{ request.state.t.search_btn }}</button>
             </div>
 
             <!-- Basic Filters -->
@@ -28,33 +28,33 @@
                 <span class="text-sm" style="color: var(--color-text-secondary);">Тип:</span>
                 <select name="kind" class="form-select px-3 py-1.5 rounded-lg text-sm outline-none"
                         style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
-                    <option value="">Все типы</option>
+                    <option value="">{{ request.state.t.search_all_types }}</option>
                     {% for kind in kinds %}
                     <option value="{{ kind.kind_code }}" {% if current_kind == kind.kind_code %}selected{% endif %}>{{ kind._display_label if kind._display_label else kind.kind_code }}</option>
                     {% endfor %}
                 </select>
 
-                <span class="text-sm" style="color: var(--color-text-secondary);">Год от:</span>
+                <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_year_from }}:</span>
                 <input type="number" name="year_from" value="{{ year_from or '' }}" placeholder="1900"
                        class="form-input w-24 px-3 py-1.5 rounded-lg text-sm outline-none"
                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
 
-                <span class="text-sm" style="color: var(--color-text-secondary);">до:</span>
+                <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_to }}:</span>
                 <input type="number" name="year_to" value="{{ year_to or '' }}" placeholder="2026"
                        class="form-input w-24 px-3 py-1.5 rounded-lg text-sm outline-none"
                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
 
-                <span class="text-sm" style="color: var(--color-text-secondary);">Рейтинг от:</span>
+                <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_year_to }}:</span>
                 <input type="number" name="rating_min" value="{{ rating_min or '' }}" placeholder="0" min="0" max="10" step="0.1"
                        class="form-input w-20 px-3 py-1.5 rounded-lg text-sm outline-none"
                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
 
-                <span class="text-sm" style="color: var(--color-text-secondary);">Сортировка:</span>
+                <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_filters }}:</span>
                 <select name="sort_by" class="form-select px-3 py-1.5 rounded-lg text-sm outline-none"
                         style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
-                    <option value="relevance" {% if sort_by == 'relevance' %}selected{% endif %}>По релевантности</option>
-                    <option value="name" {% if sort_by == 'name' %}selected{% endif %}>По имени</option>
-                    <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Сначала новые</option>
+                    <option value="relevance" {% if sort_by == 'relevance' %}selected{% endif %}>{{ request.state.t.search_sort_relevance }}</option>
+                    <option value="name" {% if sort_by == 'name' %}selected{% endif %}>{{ request.state.t.search_sort_name }}</option>
+                    <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>{{ request.state.t.search_sort_newest }}</option>
                 </select>
 
                 <input type="hidden" name="search_type" value="{{ search_type }}">
@@ -63,40 +63,40 @@
             <!-- Advanced Filters -->
             <details class="group" {% if genre or production_company or country or language or source or date_from or date_to %}open{% endif %}>
                 <summary class="cursor-pointer text-sm font-medium" style="color: var(--color-text-secondary);">
-                    Расширенные фильтры <span class="group-open:rotate-90 transition-transform inline-block">▶</span>
+                    {{ request.state.t.search_filters }} <span class="group-open:rotate-90 transition-transform inline-block">▶</span>
                 </summary>
                 <div class="flex flex-wrap gap-3 items-center mt-3">
-                    <span class="text-sm" style="color: var(--color-text-secondary);">Жанр:</span>
+                    <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_genre }}:</span>
                     <input type="text" name="genre" value="{{ genre or '' }}" placeholder="sci-fi, drama..."
                            class="form-input w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
 
-                    <span class="text-sm" style="color: var(--color-text-secondary);">Кинокомпания:</span>
+                    <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_company }}:</span>
                     <input type="text" name="production_company" value="{{ production_company or '' }}" placeholder="Warner Bros..."
                            class="form-input w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
 
-                    <span class="text-sm" style="color: var(--color-text-secondary);">Страна:</span>
+                    <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_country }}:</span>
                     <input type="text" name="country" value="{{ country or '' }}" placeholder="USA, UK..."
                            class="form-input w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
 
-                    <span class="text-sm" style="color: var(--color-text-secondary);">Язык:</span>
+                    <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_language }}:</span>
                     <input type="text" name="language" value="{{ language or '' }}" placeholder="Russian, English..."
                            class="form-input w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
 
-                    <span class="text-sm" style="color: var(--color-text-secondary);">Источник:</span>
+                    <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_source }}:</span>
                     <input type="text" name="source" value="{{ source or '' }}" placeholder="manual, import..."
                            class="form-input w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
 
-                    <span class="text-sm" style="color: var(--color-text-secondary);">Создано от:</span>
+                    <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_created_from }}:</span>
                     <input type="date" name="date_from" value="{{ date_from or '' }}"
                            class="form-input px-3 py-1.5 rounded-lg text-sm outline-none"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
 
-                    <span class="text-sm" style="color: var(--color-text-secondary);">до:</span>
+                    <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_to }}:</span>
                     <input type="date" name="date_to" value="{{ date_to or '' }}"
                            class="form-input px-3 py-1.5 rounded-lg text-sm outline-none"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
@@ -104,7 +104,7 @@
                     <label class="flex items-center gap-2 text-sm" style="color: var(--color-text-secondary);">
                         <input type="checkbox" name="use_ai" value="true" {% if use_ai %}checked{% endif %}
                                class="rounded border-gray-300">
-                        AI-парсинг запроса
+                        {{ request.state.t.search_ai_parse }}
                     </label>
                 </div>
             </details>
@@ -226,7 +226,7 @@
     {% if query and not results %}
     <div class="text-center py-12" style="color: var(--color-text-secondary);">
         <div class="text-4xl mb-4">?</div>
-        <div>Ничего не найдено по запросу "{{ query }}"</div>
+        <div>{{ request.state.t.search_no_results }}: "{{ query }}"</div>
     </div>
     {% endif %}
 </div>

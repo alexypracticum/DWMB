@@ -7,31 +7,31 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div class="rounded-xl p-6 shadow-sm border card-hover transition-all" style="background: var(--color-surface); border-color: var(--color-border);">
             <div class="text-3xl font-bold" style="color: var(--color-primary);">{{ entity_count }}</div>
-            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">Сущностей</div>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">{{ request.state.t.admin_entities }}</div>
         </div>
         <div class="rounded-xl p-6 shadow-sm border card-hover transition-all" style="background: var(--color-surface); border-color: var(--color-border);">
             <div class="text-3xl font-bold" style="color: var(--color-accent);">{{ kind_count }}</div>
-            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">Типов сущностей</div>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">{{ request.state.t.admin_types }}</div>
         </div>
         <div class="rounded-xl p-6 shadow-sm border card-hover transition-all" style="background: var(--color-surface); border-color: var(--color-border);">
             <div class="text-3xl font-bold" style="color: var(--color-primary);">{{ relation_count }}</div>
-            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">Связей</div>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">{{ request.state.t.admin_relations_count }}</div>
         </div>
     </div>
 
     <!-- Quick Search -->
     <div class="rounded-xl p-6 shadow-sm border mb-8" style="background: var(--color-surface); border-color: var(--color-border);">
-        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Быстрый поиск</h2>
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.search_title }}</h2>
         <form action="/search" method="get" class="flex gap-3">
-            <input type="text" name="q" placeholder="Найти сущность..." class="flex-1 px-4 py-2 rounded-lg outline-none transition text-sm" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
-            <button type="submit" class="px-6 py-2 text-white rounded-lg transition" style="background: var(--color-primary);">Найти</button>
+            <input type="text" name="q" placeholder="{{ request.state.t.label_search_placeholder }}" class="flex-1 px-4 py-2 rounded-lg outline-none transition text-sm" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+            <button type="submit" class="px-6 py-2 text-white rounded-lg transition" style="background: var(--color-primary);">{{ request.state.t.search_btn }}</button>
         </form>
     </div>
 
     <!-- Recent Entities -->
     <div class="rounded-xl p-6 shadow-sm border" style="background: var(--color-surface); border-color: var(--color-border);">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold" style="color: var(--color-text);">Последние сущности</h2>
+            <h2 class="text-lg font-semibold" style="color: var(--color-text);">{{ request.state.t.admin_recent_entities }}</h2>
             <div class="flex items-center gap-3">
                 <!-- View Mode Toggle -->
                 <div class="flex rounded-lg overflow-hidden" style="border: 1px solid var(--color-border);">
@@ -42,7 +42,7 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     </button>
                 </div>
-                <a href="/entities" class="text-sm hover:underline" style="color: var(--color-primary);">Показать все &rarr;</a>
+                <a href="/entities" class="text-sm hover:underline" style="color: var(--color-primary);">{{ request.state.t.label_all }} &rarr;</a>
             </div>
         </div>
 

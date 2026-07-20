@@ -5,7 +5,7 @@
 <div class="fade-in max-w-2xl">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Создать онтологическую модель</h1>
-        <a href="/admin/models" class="text-sm text-blue-600 hover:text-blue-800">← Назад</a>
+        <a href="/admin/models" class="text-sm text-blue-600 hover:text-blue-800">{{ request.state.t.admin_back }}</a>
     </div>
 
     <form action="/admin/models/create" method="post" class="space-y-6">
@@ -33,8 +33,8 @@
         </div>
 
         <div class="flex justify-end gap-3">
-            <a href="/admin/models" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">Отмена</a>
-            <button type="submit" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Создать</button>
+            <a href="/admin/models" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">{{ request.state.t.btn_cancel }}</a>
+            <button type="submit" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">{{ request.state.t.btn_create }}</button>
         </div>
     </form>
 </div>

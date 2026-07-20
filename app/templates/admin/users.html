@@ -3,18 +3,18 @@
 
 {% block content %}
 <div class="fade-in">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Пользователи</h1>
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ request.state.t.admin_users }}</h1>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <table class="w-full text-sm">
             <thead>
                 <tr class="text-left text-gray-500 bg-gray-50 border-b">
-                    <th class="px-4 py-3">Имя</th>
-                    <th class="px-4 py-3">Email</th>
-                    <th class="px-4 py-3">Роль</th>
-                    <th class="px-4 py-3">Статус</th>
+                    <th class="px-4 py-3">{{ request.state.t.admin_user_name }}</th>
+                    <th class="px-4 py-3">{{ request.state.t.admin_user_email }}</th>
+                    <th class="px-4 py-3">{{ request.state.t.admin_user_role }}</th>
+                    <th class="px-4 py-3">{{ request.state.t.admin_user_status }}</th>
                     <th class="px-4 py-3">Создан</th>
-                    <th class="px-4 py-3">Действия</th>
+                    <th class="px-4 py-3">{{ request.state.t.admin_user_actions }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -34,7 +34,7 @@
                     </td>
                     <td class="px-4 py-3">
                         {% if u.is_active %}
-                        <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">активен</span>
+                        <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">{{ request.state.t.admin_active }}</span>
                         {% else %}
                         <span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">заблокирован</span>
                         {% endif %}
@@ -44,12 +44,12 @@
                         <div class="flex gap-2">
                             <form action="/admin/users/{{ u.user_id }}/toggle-admin" method="post" class="inline">
                                 <button type="submit" class="text-xs text-blue-600 hover:text-blue-800 underline">
-                                    {% if u.is_admin %}Снять admin{% else %}Сделать admin{% endif %}
+                                    {% if u.is_admin %}{{ request.state.t.admin_remove_admin }}{% else %}{{ request.state.t.admin_make_admin }}{% endif %}
                                 </button>
                             </form>
                             <form action="/admin/users/{{ u.user_id }}/toggle-active" method="post" class="inline">
                                 <button type="submit" class="text-xs text-orange-600 hover:text-orange-800 underline">
-                                    {% if u.is_active %}Заблокировать{% else %}Разблокировать{% endif %}
+                                    {% if u.is_active %}{{ request.state.t.admin_block }}{% else %}{{ request.state.t.admin_unblock }}{% endif %}
                                 </button>
                             </form>
                         </div>

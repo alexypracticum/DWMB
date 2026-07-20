@@ -10,6 +10,7 @@ from app.models.projections import EntityProjection, ProjectionState
 from app.models.relations import SemanticRelation, RelationType
 from app.models.users import UserAccount
 from app.services.auth import get_current_user
+from app.routes.entities import _get_kind_label
 
 router = APIRouter(tags=["stats"])
 templates = Jinja2Templates(directory="app/templates")
@@ -42,9 +43,19 @@ async def stats_page(request: Request, db: AsyncSession = Depends(get_db), user:
     )
     rel_stats = [{"name": name, "count": count} for name, count in rel_stats_result]
 
-    # Entities per kind for chart data
-    chart_labels = [s["code"] for s in kind_stats]
-    chart_values = [s["count"] for s in kind_stats]
+    # Entities per kind for chart data (with translated labels)
+    lang = getattr(request.state, "lang", "ru")
+    chart_labels = []
+    chart_values = []
+    for s in kind_stats:
+        kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_code == s["code"]))
+        kind = kind_result.scalar_one_or_none()
+        if kind:
+            label = await _get_kind_label(db, kind.kind_id, lang) or s["code"]
+        else:
+            label = s["code"]
+        chart_labels.append(label)
+        chart_values.append(s["count"])
 
     # Relation chart data
     rel_labels = [s["name"] for s in rel_stats]

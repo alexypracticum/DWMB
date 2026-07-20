@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Сущности - DWMB{% endblock %}
+{% block title %}{{ request.state.t.nav_entities }} - DWMB{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
-    <a href="/" class="hover:underline" style="color: var(--color-primary);">Главная</a>
+    <a href="/" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.sidebar_all }}</a>
     <span class="mx-2">/</span>
-    <span style="color: var(--color-text);">Сущности</span>
+    <span style="color: var(--color-text);">{{ request.state.t.nav_entities }}</span>
     {% if current_kind %}
     <span class="mx-2">/</span>
     <span style="color: var(--color-text);">{{ current_kind_label or current_kind }}</span>
@@ -17,10 +17,10 @@
 <div class="fade-in min-w-0">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold" style="color: var(--color-text);">
-            {% if current_kind_label %}{{ current_kind_label }}{% elif current_kind %}{{ current_kind }}{% else %}Все сущности{% endif %}
+            {% if current_kind_label %}{{ current_kind_label }}{% elif current_kind %}{{ current_kind }}{% else %}{{ request.state.t.label_all_entities }}{% endif %}
             <span class="text-sm font-normal ml-2" style="color: var(--color-text-secondary);">({{ total }})</span>
         </h1>
-        <a href="/entity/create?kind={{ current_kind or '' }}" class="px-4 py-2 text-white rounded-lg transition text-sm" style="background: var(--color-primary);">+ Создать</a>
+        <a href="/entity/create?kind={{ current_kind or '' }}" class="px-4 py-2 text-white rounded-lg transition text-sm" style="background: var(--color-primary);">+ {{ request.state.t.btn_create }}</a>
     </div>
 
     <!-- Search Bar + Controls -->
@@ -28,7 +28,7 @@
         <div class="flex flex-wrap gap-3 items-center">
             <form action="/entities" method="get" class="flex gap-3 flex-1 min-w-[300px]">
                 <input type="hidden" name="kind" value="{{ current_kind or '' }}">
-                <input type="text" name="search" value="{{ search or '' }}" placeholder="Поиск по названию..." class="flex-1 px-4 py-2 rounded-lg outline-none transition text-sm" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                <input type="text" name="search" value="{{ search or '' }}" placeholder="{{ request.state.t.label_search_placeholder }}" class="flex-1 px-4 py-2 rounded-lg outline-none transition text-sm" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 <button type="submit" class="px-4 py-2 text-white rounded-lg transition text-sm" style="background: var(--color-primary);">Поиск</button>
                 {% if search %}
                 <a href="/entities?kind={{ current_kind or '' }}" class="px-4 py-2 rounded-lg transition text-sm" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">Сбросить</a>
@@ -162,7 +162,7 @@
     {% if not entities %}
     <div class="text-center py-12" style="color: var(--color-text-secondary);">
         <div class="text-4xl mb-4">?</div>
-        <div>Сущности не найдены</div>
+        <div>{{ request.state.t.label_no_entities }}</div>
     </div>
     {% endif %}
 

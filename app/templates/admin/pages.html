@@ -39,7 +39,7 @@
                     </td>
                     <td class="py-3 px-4 text-right">
                         <form action="/admin/pages/{{ page.page_id }}/delete" method="post" class="inline" onsubmit="return confirm('Удалить страницу?')">
-                            <button type="submit" class="text-xs" style="color: var(--color-error);">Удалить</button>
+                            <button type="submit" class="text-xs" style="color: var(--color-error);">{{ request.state.t.btn_delete }}</button>
                         </form>
                     </td>
                 </tr>
