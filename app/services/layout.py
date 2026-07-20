@@ -238,6 +238,39 @@ RU_LABELS = {
     "revenue": "Сборы", "currency": "Валюта",
 }
 
+EN_LABELS = {
+    "year": "Year", "genre": "Genre", "title": "Title", "rating": "Rating",
+    "country": "Country", "language": "Language", "budget_mln": "Budget (mln)",
+    "duration_min": "Duration (min)", "artist": "Artist", "album": "Album",
+    "bpm": "BPM", "author": "Author", "pages": "Pages", "isbn": "ISBN",
+    "first_name": "First Name", "last_name": "Last Name", "birth_date": "Birth Date",
+    "birth_place": "Birth Place", "nationality": "Nationality",
+    "occupation": "Occupation", "name": "Name", "species": "Species",
+    "habitat": "Habitat", "diet": "Diet", "lifespan_years": "Lifespan",
+    "symbol": "Symbol", "atomic_number": "Atomic Number", "atomic_mass": "Atomic Mass",
+    "group": "Group", "period": "Period", "category": "Category",
+    "definition": "Definition", "domain": "Domain", "start_year": "Start Year",
+    "end_year": "End Year", "region": "Region", "significance": "Significance",
+    "format": "Format", "size_kb": "Size (KB)", "photographer": "Photographer",
+    "subject": "Subject", "published": "Published", "source": "Source",
+    "description": "Description", "content": "Content", "poster_url": "Poster",
+    "file_url": "File", "file_title": "File Title", "images": "Images",
+    "video_url": "Video", "audio_url": "Audio", "audio_title": "Audio Title",
+    "release_date": "Release Date", "start_date": "Start Date", "end_date": "End Date",
+    "price": "Price", "website": "Website", "email": "Email", "score": "Score",
+    "director": "Director", "duration": "Duration", "starring": "Starring",
+    "screenwriter": "Screenwriter", "operator": "Cinematographer", "composer": "Composer",
+    "producer": "Producer", "narrator": "Narrator", "studio": "Studio",
+    "country_origin": "Country of Origin", "world_premiere": "World Premiere",
+    "tagline": "Tagline", "mpaa_rating": "MPAA Rating", "budget": "Budget",
+    "revenue": "Revenue", "currency": "Currency",
+}
+
+def get_label(key, lang="ru"):
+    """Get label for a field based on language."""
+    labels = EN_LABELS if lang == "en" else RU_LABELS
+    return labels.get(key, key.replace("_", " ").title())
+
 
 def get_state_field(state_data: dict, field_path: str):
     """Get value from state_data by dot-notation path (e.g. 'meta.title')."""
@@ -448,7 +481,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
         if not fields:
             for k, v in state_data.items():
                 if v and str(v).strip():
-                    fields.append({"key": k, "label": RU_LABELS.get(k, k.replace("_", " ").title())})
+                    fields.append({"key": k, "label": get_label(k, lang)})
         style = config.get("style", "table")
         if style == "table":
             rows = ""
@@ -457,7 +490,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
                 val = get_localized_value(state_data, fkey, lang) or ""
                 if not val and val != 0:
                     continue
-                label = f.get("label") or RU_LABELS.get(fkey, fkey.replace("_", " ").title())
+                label = f.get("label") or get_label(fkey, lang)
                 ftype = f.get("type", "string")
                 val_str = str(val)
                 if ftype == "currency":
@@ -579,7 +612,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
         if not fields:
             for k, v in state_data.items():
                 if k not in skip_keys and v and str(v).strip():
-                    fields.append({"key": k, "label": RU_LABELS.get(k, k.replace("_", " ").title())})
+                    fields.append({"key": k, "label": get_label(k, lang)})
 
         # Interactive field types that link to entity search
         _PERSON_KEYS = {"director", "author", "artist", "composer", "narrator", "producer", "screenwriter", "operator", "actor", "starring"}
@@ -599,7 +632,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
         for f in fields:
             key = f.get("field_key") or f.get("key", "")
             val = get_localized_value(state_data, key, lang) or ""
-            label = f.get("label") or RU_LABELS.get(key, key.replace("_", " ").title())
+            label = f.get("label") or get_label(key, lang)
             ftype = f.get("type", "string")
             val_str = str(val) if val is not None else ""
 
