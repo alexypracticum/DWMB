@@ -195,6 +195,18 @@ BLOCK_TYPES = {
             {"key": "max_items", "label": "Макс. кол-во", "type": "text", "default": "20"},
         ],
     },
+    "actor_character_gallery": {
+        "name": "Галерея актёров-персонажей",
+        "icon": "photo-group",
+        "description": "Компактная галерея с изображениями актёров и персонажей, со спойлером",
+        "config_fields": [
+            {"key": "acted_in_type", "label": "Тип связи актёр→фильм", "type": "relation_type_select", "default": "acted_in"},
+            {"key": "plays_type", "label": "Тип связи актёр→персонаж", "type": "relation_type_select", "default": "plays"},
+            {"key": "appears_in_type", "label": "Тип связи персонаж→фильм", "type": "relation_type_select", "default": "appears_in"},
+            {"key": "max_items", "label": "Макс. кол-во", "type": "text", "default": "20"},
+            {"key": "spoiler_text", "label": "Текст спойлера", "type": "text", "default": "Показать актёрский состав"},
+        ],
+    },
 }
 
 
@@ -688,6 +700,49 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
             return ""
         label = config.get("label", "Актёры и персонажи")
         return f'<div class="my-4"><h3 class="text-sm font-semibold text-gray-700 mb-2">{label}</h3>{rows}</div>'
+
+    elif btype == "actor_character_gallery":
+        acted_in_type = config.get("acted_in_type", "acted_in")
+        max_items = int(config.get("max_items", "20") or "20")
+        spoiler_text = config.get("spoiler_text", "Показать актёрский состав")
+        acted_rels = (relations or {}).get(acted_in_type, [])
+        if not acted_rels:
+            return ""
+        
+        cards = ""
+        for ar in acted_rels[:max_items]:
+            actor_label = ar.get("label", "?")
+            actor_id = ar.get("entity_id", "")
+            role = ar.get("role", "")
+            img_url = ar.get("image_url", "")
+            
+            actor_img_html = f'<img src="/media/proxy?url={img_url}" alt="{actor_label}" class="w-16 h-16 rounded-lg object-cover" loading="lazy">' if img_url else f'<div class="w-16 h-16 rounded-lg flex items-center justify-center text-lg font-bold" style="background:var(--color-primary);color:#fff;">{actor_label[:1]}</div>'
+            char_img_html = f'<div class="w-12 h-12 rounded-lg flex items-center justify-center text-sm font-bold" style="background:var(--color-accent);color:#fff;">{role[:1] if role else "?"}</div>'
+            
+            cards += (
+                f'<div class="flex items-center gap-3 p-3 rounded-lg border" style="border-color:var(--color-border);">'
+                f'<a href="/entity/{actor_id}">{actor_img_html}</a>'
+                f'<div class="flex-1 min-w-0">'
+                f'<a href="/entity/{actor_id}" class="font-medium text-sm truncate block" style="color:var(--color-text);">{actor_label}</a>'
+                f'<div class="text-xs truncate" style="color:var(--color-text-secondary);">{role}</div>'
+                f'</div>'
+                f'{char_img_html}'
+                f'</div>'
+            )
+        
+        if not cards:
+            return ""
+        
+        return (
+            f'<details class="my-4 rounded-xl border" style="border-color:var(--color-border);">'
+            f'<summary class="p-4 cursor-pointer hover:bg-gray-50 transition text-sm font-semibold" style="color:var(--color-text);">'
+            f'{spoiler_text} ({len(acted_rels[:max_items])})'
+            f'</summary>'
+            f'<div class="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">'
+            f'{cards}'
+            f'</div>'
+            f'</details>'
+        )
 
     elif btype == "file_link":
         url = get_state_field(state_data, config.get("source", "")) or ""

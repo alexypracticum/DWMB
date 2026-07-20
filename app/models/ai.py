@@ -55,3 +55,20 @@ class AiSuggestion(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     entity = relationship("Entity", foreign_keys=[entity_id])
+
+
+class AiConfigProfile(Base):
+    __tablename__ = "ai_config_profile"
+    __table_args__ = {"schema": "meta"}
+
+    profile_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    profile_name = Column(String, nullable=False)
+    is_active = Column(Boolean, default=False)
+    provider = Column(String, default="openai")
+    model_embedding = Column(String, default="text-embedding-3-small")
+    model_chat = Column(String, default="gpt-4o-mini")
+    api_key_enc = Column(LargeBinary)
+    api_base_url = Column(String, default="https://api.openai.com/v1")
+    max_tokens = Column(Integer, default=4096)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

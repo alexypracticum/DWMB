@@ -73,6 +73,7 @@ class Entity(Base):
     kind_id = Column(UUID(as_uuid=True), ForeignKey("meta.entity_kind.kind_id"), nullable=False)
     status = Column(PG_ENUM("active", "deprecated", "deleted", name="entity_status", schema="meta", create_type=False), default="active")
     workflow_state = Column(String, default="published")
+    image_url = Column(Text)
     source_id = Column(UUID(as_uuid=True), ForeignKey("meta.source_system.source_id"))
     batch_id = Column(UUID(as_uuid=True), ForeignKey("meta.import_batch.batch_id"))
     owner_id = Column(UUID(as_uuid=True), ForeignKey("meta.user_account.user_id"))

@@ -199,7 +199,11 @@ async def _find_or_create_related_entity(
     is_new = False
     if not existing_entity:
         eid = uuid4()
-        entity = Entity(entity_id=eid, entity_code=entity_code, kind_id=kind.kind_id, status="active", owner_id=owner_id, version_id=version_id)
+        # Set image_url from poster if available
+        image_url = None
+        if extra_state and extra_state.get("poster"):
+            image_url = extra_state["poster"]
+        entity = Entity(entity_id=eid, entity_code=entity_code, kind_id=kind.kind_id, status="active", image_url=image_url, owner_id=owner_id, version_id=version_id)
         db.add(entity)
         await db.flush()
 
@@ -224,8 +228,11 @@ async def _find_or_create_related_entity(
             existing_entity = entity
             is_new = True
     else:
-        # Existing entity — update poster if missing
+        # Existing entity — update image_url and poster if missing
         if extra_state and extra_state.get("poster"):
+            # Update image_url on entity
+            if not existing_entity.image_url:
+                existing_entity.image_url = extra_state["poster"]
             tgt_proj = (await db.execute(select(EntityProjection).where(EntityProjection.entity_id == existing_entity.entity_id).limit(1))).scalars().first()
             if tgt_proj:
                 st = await db.execute(

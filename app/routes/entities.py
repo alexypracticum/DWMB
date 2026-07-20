@@ -124,22 +124,23 @@ async def list_entities(
     lang = getattr(request.state, "lang", "ru")
     for entity, label, ek in result.unique():
         kl = await _get_kind_label(db, ek.kind_id, lang) or ek.kind_code
-        # Fetch poster from projection state
-        poster = None
-        proj_result = await db.execute(
-            select(EntityProjection).where(EntityProjection.entity_id == entity.entity_id).limit(1)
-        )
-        proj = proj_result.scalars().first()
-        if proj:
-            state_result = await db.execute(
-                select(ProjectionState).where(
-                    ProjectionState.projection_id == proj.projection_id,
-                    ProjectionState.is_current == True
-                ).limit(1)
+        # Use image_url directly from entity (fallback to projection state)
+        poster = entity.image_url
+        if not poster:
+            proj_result = await db.execute(
+                select(EntityProjection).where(EntityProjection.entity_id == entity.entity_id).limit(1)
             )
-            state = state_result.scalars().first()
-            if state and state.state_data:
-                poster = state.state_data.get("poster") or state.state_data.get("poster_url") or state.state_data.get("image_url")
+            proj = proj_result.scalars().first()
+            if proj:
+                state_result = await db.execute(
+                    select(ProjectionState).where(
+                        ProjectionState.projection_id == proj.projection_id,
+                        ProjectionState.is_current == True
+                    ).limit(1)
+                )
+                state = state_result.scalars().first()
+                if state and state.state_data:
+                    poster = state.state_data.get("poster") or state.state_data.get("poster_url") or state.state_data.get("image_url")
         entities.append({"entity": entity, "label": label, "kind": ek, "kind_label": kl, "poster": poster})
 
     # Kinds for sidebar
@@ -594,18 +595,19 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
                         "label": r["label"].label,
                         "entity_id": str(r["target"].entity_id),
                         "role": ((r["relation"].metadata_ or {}) if hasattr(r["relation"], 'metadata_') else {}).get("role", "") if r.get("relation") else "",
+                        "image_url": getattr(r["target"], "image_url", None) or "",
                     })
                 layout_html = render_layout(layout_blocks, state_data, rels_by_type, str(entity_id))
-
-    # Extract SEO fields from state_data
-    seo_title = state_data.get("meta_title") or state_data.get("title") or label.label if labels else None
-    seo_description = state_data.get("meta_description") or state_data.get("description") or (labels[0].description if labels else None)
-    seo_og_image = state_data.get("og_image") or state_data.get("poster") or state_data.get("poster_url")
 
     # Get primary label for template
     label = None
     if labels:
         label = next((l for l in labels if l.language == lang and l.is_primary), labels[0])
+
+    # Extract SEO fields from state_data
+    seo_title = state_data.get("meta_title") or state_data.get("title") or (label.label if label else None)
+    seo_description = state_data.get("meta_description") or state_data.get("description") or (labels[0].description if labels else None)
+    seo_og_image = state_data.get("og_image") or state_data.get("poster") or state_data.get("poster_url")
 
     # Get comments
     from app.models.comments import Comment

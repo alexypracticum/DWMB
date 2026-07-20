@@ -1337,6 +1337,129 @@ async def admin_ai_save(
     return RedirectResponse(url="/admin/ai", status_code=303)
 
 
+@router.get("/ai/profiles", response_class=HTMLResponse)
+async def admin_ai_profiles(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+    from app.models.ai import AiConfigProfile
+    result = await db.execute(select(AiConfigProfile).order_by(AiConfigProfile.created_at.desc()))
+    profiles = result.scalars().all()
+    return templates.TemplateResponse("admin/ai_profiles.html", {
+        "request": request, "user": user, "profiles": profiles,
+    })
+
+
+@router.post("/ai/profiles/create")
+async def admin_ai_profile_create(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+):
+    from app.models.ai import AiConfigProfile
+    form = await request.form()
+    profile = AiConfigProfile(
+        profile_name=form.get("profile_name", "New Profile"),
+        provider=form.get("provider", "openai"),
+        model_embedding=form.get("model_embedding", "text-embedding-3-small"),
+        model_chat=form.get("model_chat", "gpt-4o-mini"),
+        api_base_url=form.get("api_base_url", "https://api.openai.com/v1"),
+        max_tokens=int(form.get("max_tokens", 4096) or 4096),
+    )
+    db.add(profile)
+    await db.commit()
+    return RedirectResponse(url="/admin/ai/profiles", status_code=303)
+
+
+@router.get("/plugins", response_class=HTMLResponse)
+async def admin_plugins_page(request: Request, user: UserAccount = Depends(require_admin)):
+    from plugins import get_plugins
+    plugins_list = []
+    for p in get_plugins():
+        plugins_list.append({
+            "name": p.name,
+            "description": p.description,
+            "version": p.version,
+            "status": "active",
+        })
+    return templates.TemplateResponse("admin/plugins.html", {
+        "request": request, "user": user, "plugins": plugins_list,
+    })
+
+
+@router.post("/ai/profiles/{profile_id}/activate")
+async def admin_ai_profile_activate(
+    profile_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+):
+    from app.models.ai import AiConfigProfile, AiConfig
+    # Deactivate all profiles
+    result = await db.execute(select(AiConfigProfile))
+    for p in result.scalars().all():
+        p.is_active = False
+    # Activate selected profile
+    profile = await db.get(AiConfigProfile, UUID(profile_id))
+    if profile:
+        profile.is_active = True
+        # Update main AI config
+        ai_result = await db.execute(select(AiConfig).where(AiConfig.is_active == True).limit(1))
+        config = ai_result.scalar_one_or_none()
+        if config:
+            config.provider = profile.provider
+            config.model_embedding = profile.model_embedding
+            config.model_chat = profile.model_chat
+            config.api_base_url = profile.api_base_url
+            config.max_tokens = profile.max_tokens
+            if profile.api_key_enc:
+                config.api_key_enc = profile.api_key_enc
+    await db.commit()
+    return RedirectResponse(url="/admin/ai/profiles", status_code=303)
+
+
+@router.get("/plugins", response_class=HTMLResponse)
+async def admin_plugins_page(request: Request, user: UserAccount = Depends(require_admin)):
+    from plugins import get_plugins
+    plugins_list = []
+    for p in get_plugins():
+        plugins_list.append({
+            "name": p.name,
+            "description": p.description,
+            "version": p.version,
+            "status": "active",
+        })
+    return templates.TemplateResponse("admin/plugins.html", {
+        "request": request, "user": user, "plugins": plugins_list,
+    })
+
+
+@router.post("/ai/profiles/{profile_id}/delete")
+async def admin_ai_profile_delete(
+    profile_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+):
+    from app.models.ai import AiConfigProfile
+    profile = await db.get(AiConfigProfile, UUID(profile_id))
+    if profile:
+        await db.delete(profile)
+        await db.commit()
+    return RedirectResponse(url="/admin/ai/profiles", status_code=303)
+
+
+@router.get("/plugins", response_class=HTMLResponse)
+async def admin_plugins_page(request: Request, user: UserAccount = Depends(require_admin)):
+    from plugins import get_plugins
+    plugins_list = []
+    for p in get_plugins():
+        plugins_list.append({
+            "name": p.name,
+            "description": p.description,
+            "version": p.version,
+            "status": "active",
+        })
+    return templates.TemplateResponse("admin/plugins.html", {
+        "request": request, "user": user, "plugins": plugins_list,
+    })
+
+
 # =============================================================================
 #  RELATION TYPES CRUD
 # =============================================================================
