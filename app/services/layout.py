@@ -253,6 +253,73 @@ def get_state_field(state_data: dict, field_path: str):
     return val
 
 
+def get_localized_value(state_data: dict, field_path: str, lang: str = "ru", fallback_lang: str = "ru"):
+    """Get localized value from state_data.
+    
+    Supports both formats:
+    - Simple: {"title": "Inception"} → returns "Inception"
+    - Multilingual: {"title": {"ru": "Начало", "en": "Inception"}} → returns localized value
+    
+    Fallback chain: lang → fallback_lang → first available value
+    """
+    value = get_state_field(state_data, field_path)
+    if value is None:
+        return None
+    
+    # If value is a dict with language keys, it's multilingual
+    if isinstance(value, dict):
+        # Try requested language first
+        if lang in value:
+            return value[lang]
+        # Try fallback language
+        if fallback_lang in value:
+            return value[fallback_lang]
+        # Return first available value
+        for v in value.values():
+            if v:
+                return v
+        return None
+    
+    # Simple value (not multilingual)
+    return value
+
+
+def set_localized_value(state_data: dict, field_path: str, lang: str, value: str) -> dict:
+    """Set a localized value in state_data.
+    
+    Creates multilingual structure if needed:
+    - If field doesn't exist: creates {lang: value}
+    - If field is simple string: converts to {lang: value}
+    - If field is already multilingual dict: updates the language
+    """
+    if not field_path:
+        return state_data
+    
+    parts = field_path.split(".")
+    current = state_data
+    
+    # Navigate to the parent
+    for part in parts[:-1]:
+        if part not in current:
+            current[part] = {}
+        current = current[part]
+    
+    final_key = parts[-1]
+    old_value = current.get(final_key)
+    
+    if old_value is None:
+        # New field - create multilingual dict
+        current[final_key] = {lang: value}
+    elif isinstance(old_value, dict):
+        # Already multilingual - update
+        old_value[lang] = value
+    else:
+        # Was a simple string - convert to multilingual
+        current[final_key] = {lang: value}
+    
+    return state_data
+
+
 def _replace_variables(text: str, state_data: dict) -> str:
     """Replace [field_name] patterns with values from state_data.
 
@@ -281,7 +348,7 @@ def _replace_variables(text: str, state_data: dict) -> str:
     return re.sub(r'\[([^\]:]+)(?::([^\]]*))?\]', _replace_match, text)
 
 
-def render_block_html(block: dict, state_data: dict, relations: dict = None, entity_id: str = None) -> str:
+def render_block_html(block: dict, state_data: dict, relations: dict = None, entity_id: str = None, lang: str = "ru") -> str:
     """Render a single block to HTML."""
     btype = block.get("type", "text_block")
     config = block.get("config", {})
@@ -387,7 +454,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
             rows = ""
             for f in fields:
                 fkey = f.get("field_key") or f.get("key", "")
-                val = get_state_field(state_data, fkey) or ""
+                val = get_localized_value(state_data, fkey, lang) or ""
                 if not val and val != 0:
                     continue
                 label = f.get("label") or RU_LABELS.get(fkey, fkey.replace("_", " ").title())
@@ -414,13 +481,13 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
             cards = ""
             for f in fields:
                 fkey2 = f.get("field_key") or f.get("key", "")
-                val = get_state_field(state_data, fkey2) or "-"
+                val = get_localized_value(state_data, fkey2, lang) or "-"
                 cards += f'<div class="bg-gray-50 rounded-lg p-3 text-center"><div class="text-lg font-bold">{val}</div><div class="text-xs text-gray-500">{f.get("label", fkey2)}</div></div>'
             return f'<div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-4">{cards}</div>'
         else:
             parts = []
             for f in fields:
-                val = get_state_field(state_data, f.get("key", "")) or "-"
+                val = get_localized_value(state_data, f.get("key", ""), lang) or "-"
                 parts.append(f'<span class="text-sm"><span class="text-gray-500">{f.get("label", f["key"])}:</span> <strong>{val}</strong></span>')
             return f'<div class="flex flex-wrap gap-4 my-4">{" ".join(parts)}</div>'
 
@@ -456,7 +523,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
         return f'<div class="my-2 text-sm"><span class="font-medium text-gray-700">{label}:</span> {names}</div>'
 
     elif btype == "text_block":
-        content = get_state_field(state_data, "description") or ""
+        content = get_localized_value(state_data, "description", lang) or ""
         if content:
             content = _replace_variables(str(content), state_data)
         if not content:
@@ -469,7 +536,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
         title = config.get("title", "")
         source = config.get("source", "")
         static_content = config.get("content", "")
-        content = get_state_field(state_data, source) or "" if source else static_content
+        content = get_localized_value(state_data, source, lang) or "" if source else static_content
         if not content:
             content = static_content
         if content:
@@ -531,7 +598,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
         rows = ""
         for f in fields:
             key = f.get("field_key") or f.get("key", "")
-            val = get_state_field(state_data, key) or ""
+            val = get_localized_value(state_data, key, lang) or ""
             label = f.get("label") or RU_LABELS.get(key, key.replace("_", " ").title())
             ftype = f.get("type", "string")
             val_str = str(val) if val is not None else ""
@@ -763,7 +830,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
     return ""
 
 
-def render_layout(layout_blocks, state_data: dict, relations: dict = None, entity_id: str = None) -> str:
+def render_layout(layout_blocks, state_data: dict, relations: dict = None, entity_id: str = None, lang: str = "ru") -> str:
     """Render full layout from block definitions."""
     if isinstance(layout_blocks, str):
         try:
@@ -782,8 +849,8 @@ def render_layout(layout_blocks, state_data: dict, relations: dict = None, entit
         if btype == "columns" and "children" in block:
             left_blocks = [c for c in block["children"] if c.get("width") == "left"]
             right_blocks = [c for c in block["children"] if c.get("width") == "right"]
-            left_html = "".join(render_block_html(b, state_data, relations, entity_id) for b in left_blocks)
-            right_html = "".join(render_block_html(b, state_data, relations, entity_id) for b in right_blocks)
+            left_html = "".join(render_block_html(b, state_data, relations, entity_id, lang) for b in left_blocks)
+            right_html = "".join(render_block_html(b, state_data, relations, entity_id, lang) for b in right_blocks)
             left_w = block.get("config", {}).get("left_width", "40%")
             right_w = block.get("config", {}).get("right_width", "60%")
             html_parts.append(
@@ -802,6 +869,6 @@ def render_layout(layout_blocks, state_data: dict, relations: dict = None, entit
                 col_html += f'<div style="width:{col_width}; flex-shrink:0;">{render_block_html(child, state_data, relations, entity_id)}</div>'
             html_parts.append(f'<div class="flex flex-col md:flex-row gap-4 my-4">{col_html}</div>')
         else:
-            html_parts.append(render_block_html(block, state_data, relations, entity_id))
+            html_parts.append(render_block_html(block, state_data, relations, entity_id, lang))
 
     return "\n".join(html_parts)

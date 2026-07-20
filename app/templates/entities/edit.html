@@ -62,46 +62,78 @@
             </div>
             <div class="w-full">
                 {% for field in schema_fields %}
-                <div class="flex items-center border-b border-gray-100 py-3 {% if field.key == 'description' or field.key == 'content' %}flex-col items-stretch{% endif %}">
-                    {% if field.key != 'description' and field.key != 'content' %}
-                    <div class="w-44 flex-shrink-0 text-sm text-gray-500 font-medium text-right pr-3">
-                        {{ field.label }}{% if field.required %} <span class="text-red-500">*</span>{% endif %}
+                <div class="border-b py-3" style="border-color: var(--color-border);">
+                    {% if field.enum %}
+                    <div class="flex items-center">
+                        <div class="w-44 flex-shrink-0 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">
+                            {{ field.label }}{% if field.required %} <span style="color: var(--color-error);">*</span>{% endif %}
+                        </div>
+                        <div style="color: var(--color-text-secondary);">:</div>
+                        <div class="flex-1">
+                            <select name="{{ field.key }}" {% if field.required %}required{% endif %}
+                                class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                                <option value="">— выбрать —</option>
+                                {% for opt in field.enum %}
+                                <option value="{{ opt }}" {% if state_data.get(field.key) == opt %}selected{% endif %}>{{ opt }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
-                    <div class="text-gray-400 pr-3">:</div>
-                    <div class="flex-1">
-                    {% endif %}
-                        {% if field.enum %}
-                        <select name="{{ field.key }}" {% if field.required %}required{% endif %}
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                            <option value="">— выбрать —</option>
-                            {% for opt in field.enum %}
-                            <option value="{{ opt }}" {% if state_data.get(field.key) == opt %}selected{% endif %}>{{ opt }}</option>
-                            {% endfor %}
-                        </select>
-                        {% elif field.type == 'integer' or field.type == 'number' %}
-                        <input type="number" name="{{ field.key }}" step="{% if field.type == 'number' %}any{% else %}1{% endif %}"
-                            value="{{ state_data.get(field.key, '') }}"
-                            {% if field.required %}required{% endif %}
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                        {% elif field.type == 'boolean' %}
+                    {% elif field.type == 'integer' or field.type == 'number' %}
+                    <div class="flex items-center">
+                        <div class="w-44 flex-shrink-0 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">
+                            {{ field.label }}{% if field.required %} <span style="color: var(--color-error);">*</span>{% endif %}
+                        </div>
+                        <div style="color: var(--color-text-secondary);">:</div>
+                        <div class="flex-1">
+                            <input type="number" name="{{ field.key }}" step="{% if field.type == 'number' %}any{% else %}1{% endif %}"
+                                value="{{ state_data.get(field.key, '') }}"
+                                {% if field.required %}required{% endif %}
+                                class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                        </div>
+                    </div>
+                    {% elif field.type == 'boolean' %}
+                    <div class="flex items-center">
+                        <div class="w-44 flex-shrink-0 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">
+                            {{ field.label }}
+                        </div>
                         <label class="flex items-center gap-2">
                             <input type="checkbox" name="{{ field.key }}" value="true"
-                                {% if state_data.get(field.key) %}checked{% endif %} class="rounded border-gray-300">
-                            <span class="text-sm text-gray-600">{{ field.description or field.label }}</span>
+                                {% if state_data.get(field.key) %}checked{% endif %} class="rounded">
+                            <span class="text-sm" style="color: var(--color-text);">{{ field.description or field.label }}</span>
                         </label>
-                        {% elif field.key == 'description' or field.key == 'content' or field.type == 'array' %}
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="text-sm text-gray-500 font-medium">{{ field.label }}</span>
-                        </div>
-                        <input type="hidden" name="{{ field.key }}" id="{{ field.key }}_input" value="{{ state_data.get(field.key, '') }}">
-                        <div id="tiptap_{{ field.key }}" data-tiptap data-field="{{ field.key }}" style="border:1px solid #e5e7eb;border-radius:8px;min-height:120px;padding:12px;"></div>
-                        {% else %}
-                        <input type="text" name="{{ field.key }}" value="{{ state_data.get(field.key, '') }}"
-                            {% if field.required %}required{% endif %}
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                        {% endif %}
-                    {% if field.key != 'description' and field.key != 'content' %}
                     </div>
+                    {% elif field.key == 'description' or field.key == 'content' or field.type == 'array' %}
+                    <div class="mb-1">
+                        <span class="text-sm font-medium" style="color: var(--color-text-secondary);">{{ field.label }}</span>
+                    </div>
+                    <input type="hidden" name="{{ field.key }}" id="{{ field.key }}_input" value="{{ state_data.get(field.key, '') }}">
+                    <div id="tiptap_{{ field.key }}" data-tiptap data-field="{{ field.key }}" style="border:1px solid var(--color-border);border-radius:8px;min-height:120px;padding:12px;"></div>
+                    {% else %}
+                    {# Multilingual text field #}
+                    <div class="flex items-center gap-2 mb-2">
+                        <div class="w-44 flex-shrink-0 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">
+                            {{ field.label }}{% if field.required %} <span style="color: var(--color-error);">*</span>{% endif %}
+                        </div>
+                        <div class="flex gap-1">
+                            {% for lang_code in ['ru', 'en', 'de', 'fr', 'es', 'zh', 'ja'] %}
+                            <button type="button" onclick="switchFieldLang('{{ field.key }}', '{{ lang_code }}')" 
+                                class="px-2 py-0.5 text-xs rounded transition field-lang-btn" 
+                                data-field="{{ field.key }}" data-lang="{{ lang_code }}"
+                                style="background: {% if loop.first %}var(--color-primary); color: #fff;{% else %}var(--color-bg); color: var(--color-text-secondary); border: 1px solid var(--color-border);{% endif %}">
+                                {{ lang_code|upper }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% for lang_code in ['ru', 'en', 'de', 'fr', 'es', 'zh', 'ja'] %}
+                    <input type="text" name="{{ field.key }}_{{ lang_code }}" 
+                        value="{{ state_data.get(field.key, {}).get(lang_code, '') if state_data.get(field.key) is mapping else (state_data.get(field.key, '') if lang_code == 'ru' else '') }}"
+                        placeholder="{{ field.label }} ({{ lang_code|upper }})"
+                        class="w-full px-3 py-2 rounded-lg text-sm outline-none field-lang-input"
+                        data-field="{{ field.key }}" data-lang="{{ lang_code }}"
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text); {% if not loop.first %}display: none;{% endif %}">
+                    {% endfor %}
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -762,7 +794,14 @@ async function importTmdbCredits() {
     try {
         const entityId = '{{ entity.entity_id }}';
         const resp = await fetch('/api/import/tmdb/import-credits/' + entityId, { method: 'POST' });
-        const data = await resp.json();
+        const text = await resp.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            content.innerHTML = '<div class="text-red-600">Ошибка сервера: ' + text.substring(0, 200) + '</div>';
+            return;
+        }
 
         if (!resp.ok) {
             content.innerHTML = '<div class="text-red-600">' + (data.detail || 'Ошибка импорта') + '</div>';
@@ -843,6 +882,30 @@ function addLanguage() {
 function removeLabel(btn) {
     const entry = btn.closest('.label-entry');
     if (entry) entry.remove();
+}
+</script>
+<script>
+function switchFieldLang(fieldKey, lang) {
+    // Hide all inputs for this field
+    document.querySelectorAll(`.field-lang-input[data-field="${fieldKey}"]`).forEach(el => {
+        el.style.display = 'none';
+    });
+    // Show selected language input
+    const targetInput = document.querySelector(`.field-lang-input[data-field="${fieldKey}"][data-lang="${lang}"]`);
+    if (targetInput) targetInput.style.display = '';
+    
+    // Update button styles
+    document.querySelectorAll(`.field-lang-btn[data-field="${fieldKey}"]`).forEach(btn => {
+        btn.style.background = 'var(--color-bg)';
+        btn.style.color = 'var(--color-text-secondary)';
+        btn.style.border = '1px solid var(--color-border)';
+    });
+    const activeBtn = document.querySelector(`.field-lang-btn[data-field="${fieldKey}"][data-lang="${lang}"]`);
+    if (activeBtn) {
+        activeBtn.style.background = 'var(--color-primary)';
+        activeBtn.style.color = '#fff';
+        activeBtn.style.border = 'none';
+    }
 }
 </script>
 {% endblock %}

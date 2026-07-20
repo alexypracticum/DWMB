@@ -11,7 +11,7 @@ from app.models.projections import EntityProjection, ProjectionState, OntologyMo
 from app.models.relations import SemanticRelation, RelationType
 from app.models.users import UserAccount
 from app.services.auth import get_current_user, require_auth
-from app.services.layout import render_layout, get_state_field
+from app.services.layout import render_layout, get_state_field, get_localized_value
 
 router = APIRouter(tags=["entities"])
 templates = Jinja2Templates(directory="app/templates")
@@ -408,23 +408,42 @@ async def entity_create(
         db.add(proj)
         await db.flush()
 
-        # Collect state data from form for this template
+        # Collect state data from form for this template (multilingual support)
         state_data = {}
         if tmpl.schema_definition and isinstance(tmpl.schema_definition, dict):
             props = tmpl.schema_definition.get("properties", {})
+            langs = ["ru", "en", "de", "fr", "es", "zh", "ja"]
             for key in props:
-                val = form.get(key, "")
-                if val:
-                    prop_type = props[key].get("type", "string")
-                    if prop_type == "integer":
-                        try: val = int(val)
-                        except: pass
-                    elif prop_type == "number":
-                        try: val = float(val)
-                        except: pass
-                    elif prop_type == "boolean":
-                        val = val.lower() in ("true", "1", "yes")
-                    state_data[key] = val
+                p = props[key]
+                prop_type = p.get("type", "string") if isinstance(p, dict) else "string"
+                is_text_field = prop_type in ("string", "textarea")
+                
+                if is_text_field:
+                    # Try multilingual values
+                    ml_values = {}
+                    for l in langs:
+                        ml_key = f"{key}_{l}"
+                        ml_val = form.get(ml_key, "")
+                        if ml_val:
+                            ml_values[l] = ml_val
+                    if ml_values:
+                        state_data[key] = ml_values
+                    else:
+                        val = form.get(key, "")
+                        if val:
+                            state_data[key] = val
+                else:
+                    val = form.get(key, "")
+                    if val:
+                        if prop_type == "integer":
+                            try: val = int(val)
+                            except: pass
+                        elif prop_type == "number":
+                            try: val = float(val)
+                            except: pass
+                        elif prop_type == "boolean":
+                            val = val.lower() in ("true", "1", "yes")
+                        state_data[key] = val
 
         # Collect layout block data
         _ld = tmpl.layout_definition
@@ -486,9 +505,9 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
     kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_id == entity.kind_id))
     kind = kind_result.scalar_one_or_none()
 
+    lang = getattr(request.state, "lang", "ru")
     kind_label = None
     if kind:
-        lang = getattr(request.state, "lang", "ru")
         kind_label = await _get_kind_label(db, kind.kind_id, lang) or kind.kind_code
 
     # Projections with states
@@ -597,7 +616,7 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
                         "role": ((r["relation"].metadata_ or {}) if hasattr(r["relation"], 'metadata_') else {}).get("role", "") if r.get("relation") else "",
                         "image_url": getattr(r["target"], "image_url", None) or "",
                     })
-                layout_html = render_layout(layout_blocks, state_data, rels_by_type, str(entity_id))
+                layout_html = render_layout(layout_blocks, state_data, rels_by_type, str(entity_id), lang)
 
     # Get primary label for template
     label = None
@@ -1187,23 +1206,49 @@ async def entity_edit(
             ps = state_result.scalar_one_or_none()
             if ps:
                 state_data = ps.state_data or {}
-                # Schema fields
+                # Schema fields (multilingual support)
                 if tmpl.schema_definition and isinstance(tmpl.schema_definition, dict):
                     props = tmpl.schema_definition.get("properties", {})
+                    langs = ["ru", "en", "de", "fr", "es", "zh", "ja"]
                     for key in props:
-                        val = form.get(key)
-                        if val is not None:
-                            p = props[key]
-                            prop_type = p.get("type", "string") if isinstance(p, dict) else "string"
-                            if prop_type == "integer":
-                                try: val = int(val)
-                                except: pass
-                            elif prop_type == "number":
-                                try: val = float(val)
-                                except: pass
-                            elif prop_type == "boolean":
-                                val = val.lower() in ("true", "1", "yes")
-                            state_data[key] = val
+                        p = props[key]
+                        prop_type = p.get("type", "string") if isinstance(p, dict) else "string"
+                        
+                        # Check if this is a multilingual text field
+                        # Skip multilingual for unique identifier fields
+                        non_ml_keys = {"imdb_id", "tmdb_id", "poster", "poster_url", "image_url", "video_url", "audio_url", "file_url", "file_title", "uploaded_file_url", "uploaded_file_title"}
+                        is_text_field = prop_type in ("string", "textarea") and key not in non_ml_keys
+                        
+                        if is_text_field:
+                            # Try to get multilingual values
+                            ml_values = {}
+                            for l in langs:
+                                ml_key = f"{key}_{l}"
+                                ml_val = form.get(ml_key)
+                                if ml_val is not None:
+                                    ml_values[l] = ml_val
+                            
+                            if ml_values:
+                                # Multilingual field
+                                state_data[key] = ml_values
+                            else:
+                                # Fallback to simple value
+                                val = form.get(key)
+                                if val is not None:
+                                    state_data[key] = val
+                        else:
+                            # Non-text field (integer, number, boolean)
+                            val = form.get(key)
+                            if val is not None:
+                                if prop_type == "integer":
+                                    try: val = int(val)
+                                    except: pass
+                                elif prop_type == "number":
+                                    try: val = float(val)
+                                    except: pass
+                                elif prop_type == "boolean":
+                                    val = val.lower() in ("true", "1", "yes")
+                                state_data[key] = val
                 # Layout block fields — form inputs use state_key as name
                 _ld = tmpl.layout_definition
                 if isinstance(_ld, str):
