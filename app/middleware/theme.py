@@ -55,5 +55,12 @@ class ThemeMiddleware(BaseHTTPMiddleware):
             except JWTError:
                 pass
 
+        # Fallback to lang cookie if no user language set
+        if request.state.lang == "ru" and not token:
+            cookie_lang = request.cookies.get("lang")
+            if cookie_lang and cookie_lang in ("ru", "en"):
+                request.state.lang = cookie_lang
+                request.state.t = get_translation(cookie_lang)
+
         response = await call_next(request)
         return response

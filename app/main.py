@@ -68,6 +68,18 @@ async def media_proxy(url: str):
 
 app.mount("/media", StaticFiles(directory=media_dir), name="media")
 
+
+@app.get("/set-lang")
+async def set_language(lang: str = "ru", next: str = "/"):
+    """Set language preference via cookie and redirect."""
+    from fastapi.responses import RedirectResponse
+    if lang not in ("ru", "en"):
+        lang = "ru"
+    response = RedirectResponse(url=next, status_code=303)
+    response.set_cookie("lang", lang, max_age=365 * 24 * 3600)
+    return response
+
+
 # ─── Core routers (always loaded) ─────────────────────────────
 app.include_router(auth.router)
 app.include_router(entities.router)

@@ -18,6 +18,18 @@
     <link rel="stylesheet" href="https://unpkg.com/@tiptap/extension-text-style@2.6.6/dist/styles.css">
     <script src="/static/js/upload.js"></script>
     <script>
+        function toggleLangDropdown() {
+            const menu = document.getElementById('langDropdownMenu');
+            menu.classList.toggle('hidden');
+        }
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('langDropdown');
+            const menu = document.getElementById('langDropdownMenu');
+            if (dropdown && !dropdown.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
         function toggleRightSidebar() {
             const sidebar = document.getElementById('right-sidebar');
             const toggle = document.getElementById('sidebar-toggle');
@@ -142,6 +154,17 @@
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <a href="/" class="text-xl font-bold" style="color: var(--color-primary);">DWMB</a>
+                <!-- Language Switcher -->
+                <div class="relative" id="langDropdown">
+                    <button onclick="toggleLangDropdown()" class="px-2 py-1 text-sm rounded-md transition flex items-center gap-1" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">
+                        {{ request.state.lang|upper }}
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="langDropdownMenu" class="hidden absolute left-0 mt-1 w-32 rounded-lg shadow-lg border z-50" style="background: var(--color-surface); border-color: var(--color-border);">
+                        <a href="/set-lang?lang=ru&next={{ request.url.path }}" class="block px-3 py-2 text-sm rounded-t-lg transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇷🇺 Русский</a>
+                        <a href="/set-lang?lang=en&next={{ request.url.path }}" class="block px-3 py-2 text-sm rounded-b-lg transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇬🇧 English</a>
+                    </div>
+                </div>
                 <div class="hidden md:flex items-center gap-1">
                     <a href="/entities" class="px-3 py-1.5 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.nav_entities }}</a>
 
