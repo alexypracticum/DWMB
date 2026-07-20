@@ -1,16 +1,36 @@
 # TODO
 
-## Текущий статус: v0.4.3
+## Текущий статус: v0.5.0
+
+### Выполнено (v0.5.0)
+- [x] Архитектура плагинов: PluginBase, load_plugins(), 7 плагинов (ai, tmdb, themes, cms, stats, rbac, email)
+- [x] RBAC: модели Role/Permission, require_permission() dependency, 3 роли, 13 разрешений
+- [x] EventLog: аудит create/update/delete/relation_change
+- [x] Вид "Превью" с постерами (3:4 aspect ratio)
+- [x] Убран entity_code из grid/list видов
+- [x] SEO-поля: meta_title, meta_description, og_image
+- [x] Redis кэширование с in-memory fallback (5 мин TTL для kinds)
+- [x] Rate limiting: 200/min default, 10/min auth (brute-force защита)
+- [x] Email service: send_verification_email, send_password_reset_email
+- [x] Версионирование: страница /entity/{id}/history с списком событий
+- [x] Workflow: draft/published/archived состояния с кнопками переходов
+- [x] Комментарии: модель Comment, CRUD, вложенность, ответы
+- [x] WYSIWYG: TipTap редактор с тулбаром (bold, italic, headings, lists, links)
+- [x] Экспорт: Markdown и HTML файлы для скачивания
+- [x] API документация: Swagger annotations для TMDB, comments, export
+- [x] CLI утилита: status, seed, stats, backup, restore, migrate
+- [x] RSS/Atom фиды: /feed/entities, /feed/pages
+- [x] Backup: pg_dump через CLI (timestamped SQL files)
 
 ### Выполнено (v0.4.3)
-- [x] Исправление SQL-инъекции в TMDB импорте (ORM вместо raw SQL)
-- [x] Добавление retry/backoff для TMDB API (429 rate limit)
+- [x] SQL-инъекция в TMDB импорте (ORM вместо raw SQL)
+- [x] Retry/backoff для TMDB API (обработка 429 rate limit)
 - [x] Логирование TMDB запросов и ошибок
 - [x] 11 новых unit-тестов для TMDB импорта
 - [x] i18n: замена хардкода language="ru" на язык пользователя с fallback
 - [x] Переведённые названия типов в боковом меню и выпадающем списке
 - [x] Автоматическое растягивание страницы создания сущности по ширине
-- [x] Выбор вида отображения (плитки/список/таблица) на страницах списка, поиска и главной
+- [x] Выбор вида отображения (плитки/список/таблица)
 - [x] Сортировка и масштабирование на странице списка сущностей
 - [x] Сохранение предпочтений вида в localStorage
 
@@ -34,28 +54,16 @@
 - [x] Исправление бага с raw SQL text() в async session
 - [x] Исправление model_id vs UUID issue
 
-### Приоритет 1: TMDB / IMDB
-- [ ] Импорт через IMDB (OMDb API)
-- [ ] Сопоставление с существующими сущностями
-- [ ] Дедупликация
-- [ ] Прогресс-бар импорта
+### Приоритет 1: Визуализация (v0.6.0)
+- [ ] D3.js/Cytoscape.js граф связей
+- [ ] Интерактивное исследование графа
+- [ ] Фильтрация по типам связей
 
-### Приоритет 2: Другие источники
+### Приоритет 2: Дополнительные источники
+- [ ] IMDB через OMDb API
 - [ ] Wikipedia API
 - [ ] MusicBrainz API
-- [ ] Кэширование
 
-### Приоритет 3: Rate limiting
-- [ ] Middleware по IP
-- [ ] Лимиты по эндпоинтам
-- [ ] Защита от brute-force
-
-### Приоритет 4: Визуализация
-- [ ] D3.js/Cytoscape.js граф
-- [ ] Интерактивное исследование
-
-### Приоритет 5: Технический долг
-- [ ] Интеграционные тесты в контейнере (все 70+ тестов)
-- [ ] Swagger/OpenAPI
-- [ ] README с примерами
-- [ ] Документация для импорта
+### Приоритет 3: Тестирование
+- [ ] Интеграционные тесты API (в контейнере)
+- [ ] End-to-end тесты

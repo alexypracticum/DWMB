@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}История — {{ label.label if label else entity.entity_code }} - DWMB{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
+    <a href="/" class="hover:underline" style="color: var(--color-primary);">Главная</a>
+    <span class="mx-2">/</span>
+    <a href="/entities" class="hover:underline" style="color: var(--color-primary);">Сущности</a>
+    <span class="mx-2">/</span>
+    <a href="/entity/{{ entity.entity_id }}" class="hover:underline" style="color: var(--color-primary);">{{ label.label if label else entity.entity_code }}</a>
+    <span class="mx-2">/</span>
+    <span style="color: var(--color-text);">История</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-4xl">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold" style="color: var(--color-text);">История изменений</h1>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">
+                {{ label.label if label else entity.entity_code }}
+                {% if kind_label %}<span class="ml-2 px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ kind_label }}</span>{% endif %}
+            </div>
+        </div>
+        <a href="/entity/{{ entity.entity_id }}" class="px-4 py-2 rounded-lg transition text-sm" style="background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text);">Назад к сущности</a>
+    </div>
+
+    {% if events %}
+    <div class="space-y-3">
+        {% for event in events %}
+        <div class="rounded-xl p-4 border" style="background: var(--color-surface); border-color: var(--color-border);">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 text-xs rounded-full
+                        {% if event.event_type == 'create' %}bg-green-100 text-green-700
+                        {% elif event.event_type == 'update' %}bg-blue-100 text-blue-700
+                        {% elif event.event_type == 'delete' %}bg-red-100 text-red-700
+                        {% elif event.event_type == 'relation_change' %}bg-purple-100 text-purple-700
+                        {% else %}bg-gray-100 text-gray-700
+                        {% endif %}">
+                        {{ event_labels.get(event.event_type, event.event_type) }}
+                    </span>
+                    {% if event.caused_by %}
+                    <span class="text-xs" style="color: var(--color-text-secondary);">by {{ event.caused_by }}</span>
+                    {% endif %}
+                </div>
+                <span class="text-xs" style="color: var(--color-text-secondary);">
+                    {{ event.occurred_at.strftime('%d.%m.%Y %H:%M') if event.occurred_at else '' }}
+                </span>
+            </div>
+            {% if event.payload %}
+            <div class="mt-2 p-2 rounded text-xs font-mono" style="background: var(--color-bg); color: var(--color-text-secondary);">
+                {{ event.payload | tojson }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12" style="color: var(--color-text-secondary);">
+        <div class="text-4xl mb-4">?</div>
+        <div>История пуста</div>
+        <div class="text-sm mt-2">События записываются при создании, обновлении и удалении сущностей</div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -47,16 +47,27 @@ async def test_ensure_kind_and_relation_creates_missing_kind():
     db.add = MagicMock()
     db.flush = AsyncMock()
 
-    # kind NOT found, parent found, then rel found
-    db.execute.side_effect = [
-        AsyncMock(scalars=lambda: AsyncMock(first=lambda: None)),   # kind not found
-        AsyncMock(scalars=lambda: AsyncMock(first=lambda: mock_parent)),  # parent "entity" found
-        AsyncMock(scalars=lambda: AsyncMock(first=lambda: mock_rel)),  # rel found
-    ]
+    # kind NOT found, parent found, then after flush: kind found, rel found
+    call_count = [0]
+    async def execute_side_effect(*args, **kwargs):
+        call_count[0] += 1
+        if call_count[0] == 1:
+            # kind not found
+            return AsyncMock(scalars=lambda: AsyncMock(first=lambda: None))
+        elif call_count[0] == 2:
+            # parent "entity" found
+            return AsyncMock(scalars=lambda: AsyncMock(first=lambda: mock_parent))
+        elif call_count[0] == 3:
+            # after flush, kind found
+            return AsyncMock(scalars=lambda: AsyncMock(first=lambda: mock_kind))
+        else:
+            # rel found
+            return AsyncMock(scalars=lambda: AsyncMock(first=lambda: mock_rel))
+
+    db.execute.side_effect = execute_side_effect
 
     kind, rel = await _ensure_kind_and_relation(db, "director", "directed_by")
-    assert kind == mock_kind or kind.kind_code == "director"
-    # Verify db.add was called (for EntityKind and EntityKindLabel)
+    assert kind.kind_code == "director"
     assert db.add.call_count >= 1
 
 
@@ -73,11 +84,18 @@ async def test_ensure_kind_and_relation_creates_missing_rel():
     db.add = MagicMock()
     db.flush = AsyncMock()
 
-    # kind found, rel NOT found
-    db.execute.side_effect = [
-        AsyncMock(scalars=lambda: AsyncMock(first=lambda: mock_kind)),   # kind found
-        AsyncMock(scalars=lambda: AsyncMock(first=lambda: None)),        # rel NOT found
-    ]
+    # kind found, rel NOT found, after flush: rel found
+    call_count = [0]
+    async def execute_side_effect(*args, **kwargs):
+        call_count[0] += 1
+        if call_count[0] == 1:
+            return AsyncMock(scalars=lambda: AsyncMock(first=lambda: mock_kind))
+        elif call_count[0] == 2:
+            return AsyncMock(scalars=lambda: AsyncMock(first=lambda: None))
+        else:
+            return AsyncMock(scalars=lambda: AsyncMock(first=lambda: mock_rel))
+
+    db.execute.side_effect = execute_side_effect
 
     kind, rel = await _ensure_kind_and_relation(db, "actor", "acted_in")
     assert kind == mock_kind

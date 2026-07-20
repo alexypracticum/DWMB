@@ -28,3 +28,4 @@ class UserAccount(Base):
 
     entities = relationship("Entity", back_populates="owner")
     themes = relationship("UserTheme", back_populates="user", foreign_keys="UserTheme.user_id")
+    roles = relationship("Role", secondary="meta.user_role", back_populates="users")

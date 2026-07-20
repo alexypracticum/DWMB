@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models.users import UserAccount
 from app.services.auth import require_auth
 from app.services.importers.tmdb import tmdb_service
+from app.middleware.rate_limit import limiter, get_rate_limit
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ async def _ensure_kind_and_relation(db, kind_code, relation_code, inverse_code=N
 
 # ─── TMDB Search ──────────────────────────────────────────────
 
-@router.get("/tmdb/status")
+@router.get("/tmdb/status", summary="Проверка настройки TMDB API", description="Возвращает статус подключения к TMDB API")
 async def tmdb_status(user: UserAccount = Depends(require_auth)):
     """Check if TMDB API is configured."""
     return {
@@ -84,7 +85,7 @@ async def tmdb_status(user: UserAccount = Depends(require_auth)):
     }
 
 
-@router.get("/tmdb/search/movie")
+@router.get("/tmdb/search/movie", summary="Поиск фильмов в TMDB", description="Поиск фильмов по названию через The Movie Database API")
 async def tmdb_search_movie(
     q: str = Query(..., min_length=1),
     page: int = Query(1, ge=1, le=10),
@@ -98,7 +99,7 @@ async def tmdb_search_movie(
     return {"results": results, "query": q, "page": page}
 
 
-@router.get("/tmdb/search/person")
+@router.get("/tmdb/search/person", summary="Поиск людей в TMDB", description="Поиск персон по имени через The Movie Database API")
 async def tmdb_search_person(
     q: str = Query(..., min_length=1),
     page: int = Query(1, ge=1, le=10),
@@ -114,7 +115,7 @@ async def tmdb_search_person(
 
 # ─── TMDB Import ──────────────────────────────────────────────
 
-@router.get("/tmdb/movie/{tmdb_id}")
+@router.get("/tmdb/movie/{tmdb_id}", summary="Детали фильма из TMDB", description="Получение полной информации о фильме по TMDB ID")
 async def tmdb_get_movie(
     tmdb_id: int,
     user: UserAccount = Depends(require_auth),
@@ -129,7 +130,7 @@ async def tmdb_get_movie(
     return movie
 
 
-@router.get("/tmdb/movie/{tmdb_id}/credits")
+@router.get("/tmdb/movie/{tmdb_id}/credits", summary="Кредиты фильма из TMDB", description="Получение списка актёров и съёмочной группы фильма")
 async def tmdb_get_movie_credits(
     tmdb_id: int,
     user: UserAccount = Depends(require_auth),
@@ -142,7 +143,7 @@ async def tmdb_get_movie_credits(
     return credits
 
 
-@router.get("/tmdb/person/{tmdb_id}")
+@router.get("/tmdb/person/{tmdb_id}", summary="Детали персоны из TMDB", description="Получение полной информации о персоне по TMDB ID")
 async def tmdb_get_person(
     tmdb_id: int,
     user: UserAccount = Depends(require_auth),
@@ -157,7 +158,7 @@ async def tmdb_get_person(
     return person
 
 
-@router.get("/tmdb/genres")
+@router.get("/tmdb/genres", summary="Список жанров TMDB", description="Получение всех жанров фильмов из TMDB")
 async def tmdb_get_genres(
     user: UserAccount = Depends(require_auth),
 ):
@@ -253,12 +254,15 @@ async def _find_or_create_related_entity(
                 if metadata:
                     rel.metadata_ = metadata
                 db.add(rel)
+                # Log relation creation
+                from app.services.event_log import log_relation_change
+                await log_relation_change(db, None, existing_entity.entity_id, version_id, caused_by=user.username, action="create")
             return {"created": is_new, "linked": True, "entity_id": str(existing_entity.entity_id)}
         return {"created": is_new, "linked": False, "entity_id": str(existing_entity.entity_id)}
     return None
 
 
-@router.post("/tmdb/import-credits/{entity_id}")
+@router.post("/tmdb/import-credits/{entity_id}", summary="Импорт связей из TMDB", description="Импорт актёров, режиссёров, компаний и других связей из TMDB")
 async def tmdb_import_credits(
     entity_id: str,
     db: AsyncSession = Depends(get_db),

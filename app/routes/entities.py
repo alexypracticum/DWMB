@@ -124,7 +124,23 @@ async def list_entities(
     lang = getattr(request.state, "lang", "ru")
     for entity, label, ek in result.unique():
         kl = await _get_kind_label(db, ek.kind_id, lang) or ek.kind_code
-        entities.append({"entity": entity, "label": label, "kind": ek, "kind_label": kl})
+        # Fetch poster from projection state
+        poster = None
+        proj_result = await db.execute(
+            select(EntityProjection).where(EntityProjection.entity_id == entity.entity_id).limit(1)
+        )
+        proj = proj_result.scalars().first()
+        if proj:
+            state_result = await db.execute(
+                select(ProjectionState).where(
+                    ProjectionState.projection_id == proj.projection_id,
+                    ProjectionState.is_current == True
+                ).limit(1)
+            )
+            state = state_result.scalars().first()
+            if state and state.state_data:
+                poster = state.state_data.get("poster") or state.state_data.get("poster_url") or state.state_data.get("image_url")
+        entities.append({"entity": entity, "label": label, "kind": ek, "kind_label": kl, "poster": poster})
 
     # Kinds for sidebar
     kinds_result = await db.execute(
@@ -439,6 +455,10 @@ async def entity_create(
         )
         db.add(ps)
 
+    # Log entity creation
+    from app.services.event_log import log_entity_created
+    await log_entity_created(db, entity_id, version_id, caused_by=user.username)
+
     await db.commit()
     return RedirectResponse(url=f"/entity/{entity_id}", status_code=303)
 
@@ -577,11 +597,43 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
                     })
                 layout_html = render_layout(layout_blocks, state_data, rels_by_type, str(entity_id))
 
+    # Extract SEO fields from state_data
+    seo_title = state_data.get("meta_title") or state_data.get("title") or label.label if labels else None
+    seo_description = state_data.get("meta_description") or state_data.get("description") or (labels[0].description if labels else None)
+    seo_og_image = state_data.get("og_image") or state_data.get("poster") or state_data.get("poster_url")
+
+    # Get primary label for template
+    label = None
+    if labels:
+        label = next((l for l in labels if l.language == lang and l.is_primary), labels[0])
+
+    # Get comments
+    from app.models.comments import Comment
+    from app.models.users import UserAccount as UA
+    comments_result = await db.execute(
+        select(Comment, UA.username)
+        .join(UA, Comment.user_id == UA.user_id, isouter=True)
+        .where(Comment.entity_id == eid, Comment.parent_id == None)
+        .order_by(Comment.created_at.desc())
+    )
+    comments = []
+    for comment, username in comments_result:
+        # Get replies
+        replies_result = await db.execute(
+            select(Comment, UA.username)
+            .join(UA, Comment.user_id == UA.user_id, isouter=True)
+            .where(Comment.parent_id == comment.comment_id)
+            .order_by(Comment.created_at.asc())
+        )
+        replies = [{"comment": r, "username": u} for r, u in replies_result]
+        comments.append({"comment": comment, "username": username, "replies": replies})
+
     return templates.TemplateResponse("entities/detail.html", {
         "request": request,
         "user": user,
         "entity": entity,
         "labels": labels,
+        "label": label,
         "kind": kind,
         "kind_label": kind_label,
         "projections": projections,
@@ -592,7 +644,92 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
         "template_obj": template_obj,
         "schema_fields": schema_fields,
         "state_data": state_data,
+        "seo_title": seo_title,
+        "seo_description": seo_description,
+        "seo_og_image": seo_og_image,
+        "comments": comments,
     })
+
+
+@router.get("/entity/{entity_id}/history", response_class=HTMLResponse)
+async def entity_history(request: Request, entity_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(get_current_user)):
+    from uuid import UUID
+    from app.services.event_log import get_entity_history
+    eid = UUID(entity_id)
+
+    entity_result = await db.execute(select(Entity).where(Entity.entity_id == eid))
+    entity = entity_result.scalar_one_or_none()
+    if not entity:
+        raise HTTPException(404)
+
+    # Get kind label
+    kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_id == entity.kind_id))
+    kind = kind_result.scalar_one_or_none()
+    lang = getattr(request.state, "lang", "ru")
+    kind_label = await _get_kind_label(db, kind.kind_id, lang) if kind else None
+
+    # Get entity label
+    label_result = await db.execute(
+        select(EntityLabel).where(EntityLabel.entity_id == eid, EntityLabel.is_primary == True).limit(1)
+    )
+    label = label_result.scalars().first()
+
+    # Get history
+    events = await get_entity_history(db, eid)
+
+    # Event type labels
+    event_labels = {
+        "create": "Создание",
+        "update": "Обновление",
+        "delete": "Удаление",
+        "merge": "Слияние",
+        "split": "Разделение",
+        "state_transition": "Изменение состояния",
+        "relation_change": "Изменение связи",
+    }
+
+    return templates.TemplateResponse("entities/history.html", {
+        "request": request,
+        "user": user,
+        "entity": entity,
+        "label": label,
+        "kind": kind,
+        "kind_label": kind_label,
+        "events": events,
+        "event_labels": event_labels,
+    })
+
+
+@router.post("/entity/{entity_id}/workflow")
+async def entity_workflow(
+    entity_id: str,
+    state: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_auth),
+):
+    """Change entity workflow state (draft/published/archived)."""
+    from uuid import UUID
+    from datetime import datetime, timezone
+    eid = UUID(entity_id)
+
+    if state not in ("draft", "published", "archived"):
+        raise HTTPException(400, "Invalid workflow state")
+
+    result = await db.execute(select(Entity).where(Entity.entity_id == eid))
+    entity = result.scalar_one_or_none()
+    if not entity:
+        raise HTTPException(404)
+
+    old_state = entity.workflow_state or "published"
+    entity.workflow_state = state
+    entity.updated_at = datetime.now(timezone.utc)
+
+    # Log workflow change
+    from app.services.event_log import log_state_transition
+    await log_state_transition(db, eid, None, version_id=entity.version_id, caused_by=user.username, old_state={"workflow_state": old_state}, new_state={"workflow_state": state})
+
+    await db.commit()
+    return RedirectResponse(url=f"/entity/{entity_id}", status_code=303)
 
 
 @router.get("/entity/{entity_id}/edit", response_class=HTMLResponse)
@@ -1082,6 +1219,11 @@ async def entity_edit(
                                 form_val = form.get(state_key)
                                 if form_val is not None:
                                     state_data[state_key] = str(form_val)
+                # SEO fields
+                for seo_key in ("meta_title", "meta_description", "og_image"):
+                    seo_val = form.get(seo_key)
+                    if seo_val is not None:
+                        state_data[seo_key] = str(seo_val) if seo_val else ""
                 ps.state_data = state_data
                 ps.state_hash = hashlib.sha256(_json.dumps(state_data, sort_keys=True, default=str).encode()).hexdigest()
                 from sqlalchemy.orm.attributes import flag_modified
@@ -1144,6 +1286,10 @@ async def api_update_entity_field(
     if ent:
         ent.updated_at = datetime.now(timezone.utc)
 
+    # Log entity update
+    from app.services.event_log import log_entity_updated
+    await log_entity_updated(db, eid, version_id=1, caused_by=user.username, changes={field_key: field_value})
+
     await db.commit()
     return {"ok": True, "value": field_value}
 
@@ -1160,6 +1306,9 @@ async def entity_delete(
     entity = result.scalar_one_or_none()
     if entity:
         entity.status = "deleted"
+        # Log entity deletion
+        from app.services.event_log import log_entity_deleted
+        await log_entity_deleted(db, eid, version_id=entity.version_id, caused_by=user.username)
     return RedirectResponse(url="/entities", status_code=303)
 
 

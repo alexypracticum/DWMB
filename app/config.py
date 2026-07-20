@@ -26,6 +26,17 @@ class Settings(BaseSettings):
     # TMDB (The Movie Database)
     TMDB_API_KEY: str = ""
 
+    # Redis
+    REDIS_URL: str = "redis://localhost:6379/0"
+
+    # SMTP / Email
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "noreply@dwmb.local"
+    SMTP_TLS: bool = True
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

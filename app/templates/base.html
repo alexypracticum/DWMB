@@ -4,11 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}DWMB{% endblock %}</title>
+    {% block meta %}{% endblock %}
+    <link rel="alternate" type="application/rss+xml" title="DWMB RSS" href="/feed/entities">
     <link rel="stylesheet" href="/static/css/theme.css">
     <style>:root { {{ request.state.theme_css }} }</style>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/@tiptap/core@2.6.6/dist/index.umd.js"></script>
+    <script src="https://unpkg.com/@tiptap/starter-kit@2.6.6/dist/index.umd.js"></script>
+    <script src="https://unpkg.com/@tiptap/extension-link@2.6.6/dist/index.umd.js"></script>
+    <script src="https://unpkg.com/@tiptap/extension-image@2.6.6/dist/index.umd.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@tiptap/extension-text-style@2.6.6/dist/styles.css">
     <script src="/static/js/upload.js"></script>
     <script>
         function toggleRightSidebar() {

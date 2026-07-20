@@ -51,6 +51,9 @@
 
             <!-- View Mode Toggle -->
             <div class="flex rounded-lg overflow-hidden" style="border: 1px solid var(--color-border);">
+                <button onclick="setViewMode('preview')" id="btn-preview" class="px-3 py-1.5 text-sm transition" title="Превью">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                </button>
                 <button onclick="setViewMode('grid')" id="btn-grid" class="px-3 py-1.5 text-sm transition" title="Плитки">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
                 </button>
@@ -64,6 +67,31 @@
         </div>
     </div>
 
+    <!-- Preview View (poster + type + name) -->
+    <div id="view-preview" class="entity-view hidden">
+        <div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(var(--tile-min, 200px), 1fr));">
+            {% for item in entities %}
+            <a href="/entity/{{ item.entity.entity_id }}" class="block rounded-xl overflow-hidden shadow-sm border card-hover transition-all" style="background: var(--color-surface); border-color: var(--color-border);">
+                <div class="relative aspect-[3/4] overflow-hidden">
+                    {% if item.poster %}
+                    <img src="/media/proxy?url={{ item.poster }}" alt="{{ item.label.label }}" class="w-full h-full object-cover">
+                    {% else %}
+                    <div class="w-full h-full flex items-center justify-center" style="background: var(--color-bg);">
+                        <span class="text-4xl font-bold" style="color: var(--color-text-secondary);">{{ item.label.label[:1] }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="absolute top-2 left-2">
+                        <span class="px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
+                    </div>
+                </div>
+                <div class="p-3">
+                    <div class="font-semibold text-sm truncate" style="color: var(--color-text);">{{ item.label.label }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
     <!-- Grid View -->
     <div id="view-grid" class="entity-view">
         <div id="entityGrid" class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(var(--tile-min, 280px), 1fr));">
@@ -74,9 +102,8 @@
                 </div>
                 <div class="font-semibold text-lg mb-1" style="color: var(--color-text);">{{ item.label.label }}</div>
                 <div class="text-sm line-clamp-2" style="color: var(--color-text-secondary);">{{ item.label.description or '' }}</div>
-                <div class="mt-3 flex items-center justify-between text-xs" style="color: var(--color-text-secondary);">
-                    <span>{{ item.entity.entity_code }}</span>
-                    <span>{{ item.entity.updated_at.strftime('%d.%m.%Y') if item.entity.updated_at else '' }}</span>
+                <div class="mt-3 text-xs" style="color: var(--color-text-secondary);">
+                    {{ item.entity.updated_at.strftime('%d.%m.%Y') if item.entity.updated_at else '' }}
                 </div>
             </a>
             {% endfor %}
@@ -87,20 +114,19 @@
     <div id="view-list" class="entity-view hidden">
         <div class="space-y-2">
             {% for item in entities %}
-            <a href="/entity/{{ item.entity.entity_id }}" class="flex items-center gap-4 p-4 rounded-xl border card-hover transition-all" style="background: var(--color-surface); border-color: var(--color-border);">
+            <a href="/entity/{{ item.entity.entity_id }}" class="flex items-center gap-4 p-4 rounded-xl border card-hover transition-all overflow-hidden" style="background: var(--color-surface); border-color: var(--color-border);">
                 <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold" style="background: var(--color-primary); color: #fff;">
                     {{ item.label.label[:2] }}
                 </div>
-                <div class="flex-1 min-w-0">
+                <div class="flex-1 min-w-0 overflow-hidden">
                     <div class="flex items-center gap-2 mb-0.5">
-                        <span class="px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
+                        <span class="px-2 py-0.5 text-xs rounded-full flex-shrink-0" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
                         <span class="font-semibold truncate" style="color: var(--color-text);">{{ item.label.label }}</span>
                     </div>
                     <div class="text-sm truncate" style="color: var(--color-text-secondary);">{{ item.label.description or '' }}</div>
                 </div>
                 <div class="flex-shrink-0 text-right text-xs" style="color: var(--color-text-secondary);">
-                    <div>{{ item.entity.entity_code }}</div>
-                    <div>{{ item.entity.updated_at.strftime('%d.%m.%Y') if item.entity.updated_at else '' }}</div>
+                    {{ item.entity.updated_at.strftime('%d.%m.%Y') if item.entity.updated_at else '' }}
                 </div>
             </a>
             {% endfor %}
@@ -115,7 +141,6 @@
                     <tr style="border-bottom: 1px solid var(--color-border);">
                         <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Название</th>
                         <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Тип</th>
-                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Код</th>
                         <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Обновлено</th>
                     </tr>
                 </thead>
@@ -126,7 +151,6 @@
                         <td class="px-4 py-3">
                             <span class="px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
                         </td>
-                        <td class="px-4 py-3 font-mono text-xs" style="color: var(--color-text-secondary);">{{ item.entity.entity_code }}</td>
                         <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ item.entity.updated_at.strftime('%d.%m.%Y') if item.entity.updated_at else '' }}</td>
                     </tr>
                     {% endfor %}
@@ -171,8 +195,9 @@
     const SORT_KEY = 'dwmb_entity_sort';
     const SCALE_LEVELS = [200, 150, 125, 100, 80, 60];
     const TILE_SIZES = {200: '450px', 150: '380px', 125: '330px', 100: '280px', 80: '230px', 60: '180px'};
+    const PREVIEW_SIZES = {200: '300px', 150: '250px', 125: '220px', 100: '200px', 80: '170px', 60: '140px'};
 
-    let currentView = localStorage.getItem(STORAGE_KEY) || 'grid';
+    let currentView = localStorage.getItem(STORAGE_KEY) || 'preview';
     let currentScale = parseInt(localStorage.getItem(SCALE_KEY)) || 100;
     let currentSort = localStorage.getItem(SORT_KEY) || 'name';
 
@@ -190,10 +215,17 @@
             activeBtn.style.background = 'var(--color-primary)';
             activeBtn.style.color = '#fff';
         }
+
+        // Update tile size based on view
+        const sizes = view === 'preview' ? PREVIEW_SIZES : TILE_SIZES;
+        const defaultMin = view === 'preview' ? '200px' : '280px';
+        document.documentElement.style.setProperty('--tile-min', sizes[currentScale] || defaultMin);
     }
 
     function applyScale(scale) {
-        document.documentElement.style.setProperty('--tile-min', TILE_SIZES[scale] || '280px');
+        const view = currentView;
+        const sizes = view === 'preview' ? PREVIEW_SIZES : TILE_SIZES;
+        document.documentElement.style.setProperty('--tile-min', sizes[scale] || '280px');
         document.getElementById('scaleLabel').textContent = scale + '%';
     }
 

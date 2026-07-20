@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.users import UserAccount
 from app.services.auth import verify_password, get_password_hash, create_access_token, get_current_user
+from app.middleware.rate_limit import limiter, get_rate_limit
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 templates = Jinja2Templates(directory="app/templates")
@@ -19,6 +20,7 @@ async def login_page(request: Request, user: UserAccount = Depends(get_current_u
 
 
 @router.post("/login")
+@limiter.limit(get_rate_limit("auth"))
 async def login(request: Request, username: str = Form(...), password: str = Form(...), db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(UserAccount).where(UserAccount.username == username))
     user = result.scalar_one_or_none()
@@ -40,6 +42,7 @@ async def register_page(request: Request, user: UserAccount = Depends(get_curren
 
 
 @router.post("/register")
+@limiter.limit(get_rate_limit("auth"))
 async def register(request: Request, username: str = Form(...), email: str = Form(...), password: str = Form(...), db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(UserAccount).where(UserAccount.username == username))
     if existing.scalar_one_or_none():
