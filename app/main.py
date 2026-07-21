@@ -95,7 +95,7 @@ async def set_language(request: Request, lang: str = "ru", next: str = "/"):
 
 
 # ─── Core routers (always loaded) ─────────────────────────────
-from app.routes import auth, entities, search, admin, editor_api, profile, comments, export, feeds
+from app.routes import auth, entities, search, admin, editor_api, profile, comments, export, feeds, page_management, stats
 app.include_router(auth.router)
 app.include_router(entities.router)
 app.include_router(search.router)
@@ -105,6 +105,8 @@ app.include_router(profile.router)
 app.include_router(comments.router)
 app.include_router(export.router)
 app.include_router(feeds.router)
+app.include_router(page_management.router)
+app.include_router(stats.router)
 
 
 # ─── Media proxy ──────────────────────────────────────────────

@@ -11,9 +11,9 @@
 
 {% block breadcrumbs %}
 <nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
-    <a href="/" class="hover:underline" style="color: var(--color-primary);">Главная</a>
+    <a href="/" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.breadcrumb_home }}</a>
     <span class="mx-2">/</span>
-    <a href="/entities" class="hover:underline" style="color: var(--color-primary);">Сущности</a>
+    <a href="/entities" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.breadcrumb_entities }}</a>
     <span class="mx-2">/</span>
     <a href="/entities?kind={{ kind.kind_code }}" class="hover:underline" style="color: var(--color-primary);">{{ kind_label }}</a>
     <span class="mx-2">/</span>
@@ -22,7 +22,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="fade-in max-w-4xl">
+<div class="fade-in max-w-6xl">
     <!-- Header -->
     <div class="flex items-start justify-between mb-6">
         <div>
@@ -44,7 +44,7 @@
                     {% elif ws == 'archived' %}bg-gray-100 text-gray-500
                     {% else %}bg-green-100 text-green-700
                     {% endif %}">
-                    {% if ws == 'draft' %}Черновик{% elif ws == 'archived' %}Архив{% else %}Опубликовано{% endif %}
+                    {% if ws == 'draft' %}{{ request.state.t.workflow_draft }}{% elif ws == 'archived' %}{{ request.state.t.workflow_archived }}{% else %}{{ request.state.t.workflow_published }}{% endif %}
                 </span>
             </h1>
             {% for label in labels %}{% if label.language.code == 'en' %}
@@ -57,23 +57,23 @@
             {% if ws == 'draft' %}
             <form action="/entity/{{ entity.entity_id }}/workflow" method="post" class="inline">
                 <input type="hidden" name="state" value="published">
-                <button type="submit" class="px-4 py-2 text-sm text-white rounded-lg transition" style="background: #10b981;">Опубликовать</button>
+                <button type="submit" class="px-4 py-2 text-sm text-white rounded-lg transition" style="background: #10b981;">{{ request.state.t.btn_publish }}</button>
             </form>
             {% elif ws == 'published' %}
             <form action="/entity/{{ entity.entity_id }}/workflow" method="post" class="inline">
                 <input type="hidden" name="state" value="archived">
-                <button type="submit" class="px-4 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">В архив</button>
+                <button type="submit" class="px-4 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.btn_to_archive }}</button>
             </form>
             {% elif ws == 'archived' %}
             <form action="/entity/{{ entity.entity_id }}/workflow" method="post" class="inline">
                 <input type="hidden" name="state" value="published">
-                <button type="submit" class="px-4 py-2 text-sm text-white rounded-lg transition" style="background: #10b981;">Разархивировать</button>
+                <button type="submit" class="px-4 py-2 text-sm text-white rounded-lg transition" style="background: #10b981;">{{ request.state.t.btn_unarchive }}</button>
             </form>
             {% endif %}
-            <a href="/entity/{{ entity.entity_id }}/history" class="px-4 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">История</a>
-            <a href="/entity/{{ entity.entity_id }}/edit" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">Редактировать</a>
+            <a href="/entity/{{ entity.entity_id }}/history" class="px-4 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.btn_history }}</a>
+            <a href="/entity/{{ entity.entity_id }}/edit" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">{{ request.state.t.btn_edit }}</a>
             <div class="relative group">
-                <button class="px-4 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">Экспорт ▾</button>
+                <button class="px-4 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.btn_export }} ▾</button>
                 <div class="hidden group-hover:block absolute right-0 mt-1 w-40 rounded-lg shadow-lg border z-50" style="background: var(--color-surface); border-color: var(--color-border);">
                     <a href="/entity/{{ entity.entity_id }}/export/markdown" class="block px-4 py-2 text-sm hover:bg-blue-50 rounded-t-lg" style="color: var(--color-text);">Markdown</a>
                     <a href="/entity/{{ entity.entity_id }}/export/html" class="block px-4 py-2 text-sm hover:bg-blue-50 rounded-b-lg" style="color: var(--color-text);">HTML</a>
@@ -81,8 +81,8 @@
             </div>
             {% endif %}
             {% if user and user.is_admin %}
-            <form action="/entity/{{ entity.entity_id }}/delete" method="post" onsubmit="return confirm('Удалить сущность?')">
-                <button type="submit" class="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">Удалить</button>
+            <form action="/entity/{{ entity.entity_id }}/delete" method="post" onsubmit="return confirm('{{ request.state.t.btn_confirm_delete_entity }}')">
+                <button type="submit" class="px-4 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition">{{ request.state.t.btn_delete }}</button>
             </form>
             {% endif %}
         </div>
@@ -105,7 +105,7 @@
     {% if schema_fields and state_data %}
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-4">
-            Данные
+            {{ request.state.t.section_data }}
             {% if template_obj %}
             <span class="text-sm font-normal text-gray-400 ml-2">({{ template_obj.template_name }})</span>
             {% endif %}
@@ -147,7 +147,7 @@
     <!-- Fallback: Projections raw data (if no schema) -->
     {% if projections and not schema_fields %}
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Данные</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.section_data }}</h2>
         <div class="space-y-4">
             {% for p in projections %}
             <div class="border border-gray-200 rounded-lg p-4">
@@ -169,14 +169,14 @@
 
     <!-- Labels -->
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Метки</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.section_labels }}</h2>
         <div class="space-y-3">
             {% for label in labels %}
             <div class="flex items-center gap-3">
                 <span class="px-2 py-0.5 text-xs font-mono bg-gray-100 text-gray-600 rounded">{{ label.language.code }}</span>
                 <span class="font-medium text-gray-800">{{ label.label }}</span>
                 {% if label.is_primary %}
-                <span class="px-1.5 py-0.5 text-xs bg-green-100 text-green-700 rounded">основной</span>
+                <span class="px-1.5 py-0.5 text-xs bg-green-100 text-green-700 rounded">{{ request.state.t.label_primary_badge }}</span>
                 {% endif %}
             </div>
             {% if label.description %}
@@ -189,11 +189,11 @@
     <!-- Relations -->
     {% if outgoing_relations or incoming_relations %}
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Связи</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.section_relations }}</h2>
 
         {% if outgoing_relations %}
         <div class="mb-4">
-            <h3 class="text-sm font-medium text-gray-500 mb-2">Исходящие связи</h3>
+            <h3 class="text-sm font-medium text-gray-500 mb-2">{{ request.state.t.section_outgoing }}</h3>
             <div class="space-y-2">
                 {% for r in outgoing_relations %}
                 <a href="/entity/{{ r.target.entity_id }}" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition">
@@ -215,7 +215,7 @@
 
         {% if incoming_relations %}
         <div>
-            <h3 class="text-sm font-medium text-gray-500 mb-2">Входящие связи</h3>
+            <h3 class="text-sm font-medium text-gray-500 mb-2">{{ request.state.t.section_incoming }}</h3>
             <div class="space-y-2">
                 {% for r in incoming_relations %}
                 <a href="/entity/{{ r.source.entity_id }}" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-green-50 transition">
@@ -238,22 +238,22 @@
 
     <!-- Meta -->
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Мета-информация</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.section_meta }}</h2>
         <dl class="grid grid-cols-2 gap-4 text-sm">
             <div>
                 <dt class="text-gray-400">ID</dt>
                 <dd class="font-mono text-gray-700 text-xs">{{ entity.entity_id }}</dd>
             </div>
             <div>
-                <dt class="text-gray-400">Статус</dt>
+                <dt class="text-gray-400">{{ request.state.t.meta_status }}</dt>
                 <dd class="text-gray-700">{{ entity.status }}</dd>
             </div>
             <div>
-                <dt class="text-gray-400">Создано</dt>
+                <dt class="text-gray-400">{{ request.state.t.meta_created }}</dt>
                 <dd class="text-gray-700">{{ entity.created_at.strftime('%d.%m.%Y %H:%M') if entity.created_at else '-' }}</dd>
             </div>
             <div>
-                <dt class="text-gray-400">Обновлено</dt>
+                <dt class="text-gray-400">{{ request.state.t.meta_updated }}</dt>
                 <dd class="text-gray-700">{{ entity.updated_at.strftime('%d.%m.%Y %H:%M') if entity.updated_at else '-' }}</dd>
             </div>
         </dl>
@@ -261,19 +261,19 @@
 
     <!-- Comments -->
     <div id="comments" class="rounded-xl p-6 shadow-sm border mt-6" style="background: var(--color-surface); border-color: var(--color-border);">
-        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Комментарии ({{ comments|length }})</h2>
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.section_comments }} ({{ comments|length }})</h2>
 
         {% if user %}
         <form action="/entity/{{ entity.entity_id }}/comment" method="post" class="mb-6">
-            <textarea name="content" rows="3" placeholder="Написать комментарий..." required
+            <textarea name="content" rows="3" placeholder="{{ request.state.t.comment_placeholder }}" required
                 class="w-full px-4 py-2 rounded-lg outline-none transition text-sm" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);"></textarea>
             <div class="mt-2 flex justify-end">
-                <button type="submit" class="px-4 py-2 text-white rounded-lg transition text-sm" style="background: var(--color-primary);">Отправить</button>
+                <button type="submit" class="px-4 py-2 text-white rounded-lg transition text-sm" style="background: var(--color-primary);">{{ request.state.t.btn_send }}</button>
             </div>
         </form>
         {% else %}
         <div class="mb-6 p-4 rounded-lg text-sm" style="background: var(--color-bg); color: var(--color-text-secondary);">
-            <a href="/auth/login" style="color: var(--color-primary);">Войдите</a>, чтобы оставить комментарий.
+            <a href="/auth/login" style="color: var(--color-primary);">{{ request.state.t.comment_login_required }}</a>
         </div>
         {% endif %}
 
@@ -286,13 +286,13 @@
                         <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style="background: var(--color-primary); color: #fff;">
                             {{ c.username[:1] if c.username else '?' }}
                         </div>
-                        <span class="font-medium text-sm" style="color: var(--color-text);">{{ c.username or 'Аноним' }}</span>
+                        <span class="font-medium text-sm" style="color: var(--color-text);">{{ c.username or request.state.t.comment_anonymous }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="text-xs" style="color: var(--color-text-secondary);">{{ c.comment.created_at.strftime('%d.%m.%Y %H:%M') if c.comment.created_at else '' }}</span>
                         {% if user and (c.comment.user_id == user.user_id or user.is_admin) %}
-                        <form action="/comment/{{ c.comment.comment_id }}/delete" method="post" onsubmit="return confirm('Удалить комментарий?')">
-                            <button type="submit" class="text-xs" style="color: var(--color-text-secondary);">Удалить</button>
+                        <form action="/comment/{{ c.comment.comment_id }}/delete" method="post" onsubmit="return confirm('{{ request.state.t.btn_confirm_delete_comment }}')">
+                            <button type="submit" class="text-xs" style="color: var(--color-text-secondary);">{{ request.state.t.btn_delete }}</button>
                         </form>
                         {% endif %}
                     </div>
@@ -304,7 +304,7 @@
                     {% for r in c.replies %}
                     <div class="p-3 rounded-lg" style="background: var(--color-bg);">
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="font-medium text-xs" style="color: var(--color-text);">{{ r.username or 'Аноним' }}</span>
+                            <span class="font-medium text-xs" style="color: var(--color-text);">{{ r.username or request.state.t.comment_anonymous }}</span>
                             <span class="text-xs" style="color: var(--color-text-secondary);">{{ r.comment.created_at.strftime('%d.%m.%Y %H:%M') if r.comment.created_at else '' }}</span>
                         </div>
                         <div class="text-sm" style="color: var(--color-text);">{{ r.comment.content }}</div>
@@ -316,13 +316,13 @@
                 {% if user %}
                 <div class="mt-3 ml-8">
                     <details>
-                        <summary class="text-xs cursor-pointer" style="color: var(--color-text-secondary);">Ответить</summary>
+                        <summary class="text-xs cursor-pointer" style="color: var(--color-text-secondary);">{{ request.state.t.comment_reply }}</summary>
                         <form action="/entity/{{ entity.entity_id }}/comment" method="post" class="mt-2">
                             <input type="hidden" name="parent_id" value="{{ c.comment.comment_id }}">
-                            <textarea name="content" rows="2" placeholder="Ответ..." required
+                            <textarea name="content" rows="2" placeholder="{{ request.state.t.comment_reply_placeholder }}" required
                                 class="w-full px-3 py-2 rounded-lg outline-none text-sm" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);"></textarea>
                             <div class="mt-2 flex justify-end">
-                                <button type="submit" class="px-3 py-1 text-white rounded-lg text-xs" style="background: var(--color-primary);">Отправить</button>
+                                <button type="submit" class="px-3 py-1 text-white rounded-lg text-xs" style="background: var(--color-primary);">{{ request.state.t.btn_send }}</button>
                             </div>
                         </form>
                     </details>
@@ -333,7 +333,7 @@
         </div>
         {% else %}
         <div class="text-center py-6" style="color: var(--color-text-secondary);">
-            <div class="text-sm">Пока нет комментариев</div>
+            <div class="text-sm">{{ request.state.t.comment_no_comments }}</div>
         </div>
         {% endif %}
     </div>

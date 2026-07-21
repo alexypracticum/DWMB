@@ -1838,7 +1838,8 @@ async def admin_ui_translations(
                 .where(
                     EntityProjection.entity_id == entity.entity_id,
                     EntityProjection.model_id == model.model_id,
-                    ProjectionState.is_current == True
+                    ProjectionState.is_current == True,
+                    EntityProjection.projection_code.like(f"%_{lang}")
                 )
             )
             for state_data in proj_result.scalars().all():

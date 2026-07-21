@@ -13,7 +13,7 @@
                     <th class="px-4 py-3">{{ request.state.t.admin_user_email }}</th>
                     <th class="px-4 py-3">{{ request.state.t.admin_user_role }}</th>
                     <th class="px-4 py-3">{{ request.state.t.admin_user_status }}</th>
-                    <th class="px-4 py-3">Создан</th>
+                    <th class="px-4 py-3">{{ request.state.t.table_created }}</th>
                     <th class="px-4 py-3">{{ request.state.t.admin_user_actions }}</th>
                 </tr>
             </thead>
@@ -36,7 +36,7 @@
                         {% if u.is_active %}
                         <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">{{ request.state.t.admin_active }}</span>
                         {% else %}
-                        <span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">заблокирован</span>
+                        <span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">{{ request.state.t.status_blocked }}</span>
                         {% endif %}
                     </td>
                     <td class="px-4 py-3 text-gray-500 text-xs">{{ u.created_at.strftime('%d.%m.%Y') if u.created_at else '-' }}</td>

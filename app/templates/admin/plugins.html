@@ -1,15 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Плагины - Админ DWMB{% endblock %}
+{% block title %}{{ request.state.t.admin_installed_plugins }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-4xl mx-auto">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold" style="color: var(--color-text);">Плагины</h1>
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">{{ request.state.t.admin_installed_plugins }}</h1>
         <a href="/admin" class="text-sm" style="color: var(--color-primary);">{{ request.state.t.admin_back }}</a>
     </div>
 
     <div class="rounded-xl p-6 shadow-sm border" style="background: var(--color-surface); border-color: var(--color-border);">
-        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Установленные плагины ({{ plugins|length }})</h2>
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.admin_installed_plugins }} ({{ plugins|length }})</h2>
         {% if plugins %}
         <div class="space-y-3">
             {% for plugin in plugins %}
@@ -25,22 +25,22 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 text-xs rounded-full" style="background: #10b981; color: #fff;">Активен</span>
+                    <span class="px-2 py-0.5 text-xs rounded-full" style="background: #10b981; color: #fff;">{{ request.state.t.status_active }}</span>
                 </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
         <div class="text-center py-6" style="color: var(--color-text-secondary);">
-            <div class="text-sm">Нет установленных плагинов</div>
+            <div class="text-sm">{{ request.state.t.admin_no_installed }}</div>
         </div>
         {% endif %}
     </div>
 
     <div class="mt-6 rounded-xl p-6 shadow-sm border" style="background: var(--color-surface); border-color: var(--color-border);">
-        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Доступные плагины</h2>
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.admin_available_plugins }}</h2>
         <div class="text-sm" style="color: var(--color-text-secondary);">
-            Плагины устанавливаются путём добавления директории в <code>plugins/</code> с файлом <code>__init__.py</code>, содержащим переменную <code>plugin</code> экземпляра <code>PluginBase</code>.
+            {{ request.state.t.admin_plugins_description }}
         </div>
     </div>
 </div>

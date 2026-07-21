@@ -1,28 +1,28 @@
 {% extends "base.html" %}
-{% block title %}Шаблоны - Админ DWMB{% endblock %}
+{% block title %}{{ request.state.t.admin_ontology_templates }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Шаблоны онтологии</h1>
+        <h1 class="text-2xl font-bold text-gray-800">{{ request.state.t.admin_ontology_templates }}</h1>
     </div>
 
     <!-- Create Form -->
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Новый шаблон</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.admin_new_template }}</h2>
         <form action="/admin/templates/create" method="post" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Тип сущности *</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.admin_template_kind }} *</label>
                     <select name="kind_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-                        <option value="">— выбрать тип —</option>
+                        <option value="">{{ request.state.t.admin_select_kind }}</option>
                         {% for k in all_kinds %}
                         <option value="{{ k.kind_id }}">{{ k.kind_code }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Модель *</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.admin_template_model }} *</label>
                     <select name="model_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                         {% for m in models %}
                         <option value="{{ m.model_id }}">{{ m.model_code }} ({{ m.domain }})</option>
@@ -30,44 +30,44 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Код шаблона *</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.admin_template_code }} *</label>
                     <input type="text" name="template_code" required placeholder="tpl_my_template"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Название *</label>
-                    <input type="text" name="template_name" required placeholder="Шаблон: Мой шаблон"
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.admin_template_name }} *</label>
+                    <input type="text" name="template_name" required placeholder="{{ request.state.t.admin_template_name_placeholder }}"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
-                    <input type="text" name="description" placeholder="Описание шаблона"
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.admin_template_desc }}</label>
+                    <input type="text" name="description" placeholder="{{ request.state.t.admin_template_desc_placeholder }}"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Схема (JSON)</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.admin_template_schema }}</label>
                 <textarea name="schema_definition" rows="4" placeholder='{"type": "object", "properties": {}}'
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm">{}</textarea>
             </div>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Создать шаблон</button>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">{{ request.state.t.btn_create_template }}</button>
         </form>
     </div>
 
     <!-- Templates List -->
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Существующие шаблоны ({{ templates | length }})</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.admin_existing_templates }} ({{ templates | length }})</h2>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
                     <tr class="text-left text-gray-500 border-b">
-                        <th class="pb-2">Статус</th>
-                        <th class="pb-2">Тип</th>
-                        <th class="pb-2">Код</th>
-                        <th class="pb-2">Название</th>
-                        <th class="pb-2">Модель</th>
-                        <th class="pb-2">Макет</th>
-                        <th class="pb-2">Действия</th>
+                        <th class="pb-2">{{ request.state.t.table_status }}</th>
+                        <th class="pb-2">{{ request.state.t.table_type }}</th>
+                        <th class="pb-2">{{ request.state.t.table_code }}</th>
+                        <th class="pb-2">{{ request.state.t.table_name }}</th>
+                        <th class="pb-2">{{ request.state.t.table_model }}</th>
+                        <th class="pb-2">{{ request.state.t.table_layout }}</th>
+                        <th class="pb-2">{{ request.state.t.admin_actions }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -75,9 +75,9 @@
                     <tr class="border-b border-gray-100">
                         <td class="py-3">
                             {% if item.template.is_active %}
-                            <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">вкл</span>
+                            <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">{{ request.state.t.status_on }}</span>
                             {% else %}
-                            <span class="px-2 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full">выкл</span>
+                            <span class="px-2 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full">{{ request.state.t.status_off }}</span>
                             {% endif %}
                         </td>
                         <td class="py-3">
@@ -94,22 +94,22 @@
                         </td>
                         <td class="py-3">
                             {% if item.template.layout_definition and item.template.layout_definition | length > 0 %}
-                            <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">{{ item.template.layout_definition | length }} блоков</span>
+                            <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">{{ item.template.layout_definition | length }} {{ request.state.t.admin_blocks_count }}</span>
                             {% else %}
-                            <span class="text-xs text-gray-400">нет</span>
+                            <span class="text-xs text-gray-400">{{ request.state.t.admin_none }}</span>
                             {% endif %}
                         </td>
                         <td class="py-3">
                             <div class="flex gap-2 items-center">
                                 <form action="/admin/templates/{{ item.template.template_id }}/toggle-active" method="post" class="inline">
                                     <button type="submit" class="text-xs {% if item.template.is_active %}text-orange-600 hover:text-orange-800{% else %}text-green-600 hover:text-green-800{% endif %}">
-                                        {% if item.template.is_active %}Выкл.{% else %}Включить{% endif %}
+                                        {% if item.template.is_active %}{{ request.state.t.btn_disable }}{% else %}{{ request.state.t.btn_enable }}{% endif %}
                                     </button>
                                 </form>
-                                <a href="/admin/templates/{{ item.template.template_id }}/edit" class="text-xs text-blue-600 hover:text-blue-800">Ред.</a>
+                                <a href="/admin/templates/{{ item.template.template_id }}/edit" class="text-xs text-blue-600 hover:text-blue-800">{{ request.state.t.btn_short_edit }}</a>
                                 <form action="/admin/templates/{{ item.template.template_id }}/delete" method="post" class="inline"
-                                    onsubmit="return confirm('Удалить шаблон?')">
-                                    <button type="submit" class="text-xs text-red-600 hover:text-red-800">Удал.</button>
+                                    onsubmit="return confirm('{{ request.state.t.btn_confirm_delete_template }}')">
+                                    <button type="submit" class="text-xs text-red-600 hover:text-red-800">{{ request.state.t.btn_short_delete }}</button>
                                 </form>
                             </div>
                         </td>
