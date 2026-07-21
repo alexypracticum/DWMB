@@ -446,7 +446,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
                     src = f"/media/proxy?url={urllib.parse.quote(src, safe='')}"
                 items += f'<div class="flex-shrink-0 relative group/item"><img src="{src}" class="h-[{height}px] rounded-lg object-cover cursor-pointer hover:opacity-90 transition" alt="" loading="lazy" onclick="openGalleryFullscreen(this.src)" data-fullsrc="{src}"><button onclick="event.stopPropagation();openGalleryFullscreen(\'{src}\')" class="absolute inset-0 flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition pointer-events-none"><svg class="w-10 h-10 text-white drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg></button></div>'
         title_html = f'<h3 class="text-xl font-bold text-gray-800 mb-3">{title}</h3>' if title else ''
-        return f'''{title_html}<div class="relative group my-4"><button onclick="scrollGallery(this,-1)" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full w-9 h-9 flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-lg backdrop-blur-sm" aria-label="Назад"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button><button onclick="scrollGallery(this,1)" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full w-9 h-9 flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-lg backdrop-blur-sm" aria-label="Вперёд"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button><div class="flex gap-3 overflow-x-auto pb-2 scroll-smooth gallery-scroll" style="scrollbar-width:none;-ms-overflow-style:none;">{items}</div></div>'''
+        return f'''{title_html}<div class="relative group my-4"><button onclick="scrollGallery(this,-1)" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full w-9 h-9 flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-lg backdrop-blur-sm" aria-label="prev"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button><button onclick="scrollGallery(this,1)" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full w-9 h-9 flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-lg backdrop-blur-sm" aria-label="next"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button><div class="flex gap-3 overflow-x-auto pb-2 scroll-smooth gallery-scroll" style="scrollbar-width:none;-ms-overflow-style:none;">{items}</div></div>'''
 
     elif btype == "markdown":
         source = config.get("source", "")
@@ -556,7 +556,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
 
     elif btype == "aggregated_relations":
         rel_type = config.get("relation_type", "")
-        label = config.get("label", rel_type)
+        label = config.get("label", "") or (t.get(f"layout_{rel_type}", rel_type) if t else rel_type)
         max_items = int(config.get("max_items", "10") or "10")
         rels = (relations or {}).get(rel_type, [])[:max_items]
         if not rels:
@@ -579,7 +579,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
             return ""
         import markdown as md
         rendered = md.markdown(str(content), extensions=["tables", "fenced_code", "nl2br"])
-        return f'<div class="my-4"><h3 class="text-lg font-semibold text-gray-800 mb-2">Описание</h3><div class="prose prose-sm max-w-none text-gray-700">{rendered}</div></div>'
+        return f'<div class="my-4"><h3 class="text-lg font-semibold text-gray-800 mb-2">{t.get("layout_description", "Описание") if t else "Описание"}</h3><div class="prose prose-sm max-w-none text-gray-700">{rendered}</div></div>'
 
     elif btype == "richtext":
         title = config.get("title", "")
@@ -919,7 +919,7 @@ def render_layout(layout_blocks, state_data: dict, relations: dict = None, entit
             col_width = f"{100 / cols}%"
             col_html = ""
             for child in children:
-                col_html += f'<div style="width:{col_width}; flex-shrink:0;">{render_block_html(child, state_data, relations, entity_id)}</div>'
+                col_html += f'<div style="width:{col_width}; flex-shrink:0;">{render_block_html(child, state_data, relations, entity_id, lang, t)}</div>'
             html_parts.append(f'<div class="flex flex-col md:flex-row gap-4 my-4">{col_html}</div>')
         else:
             html_parts.append(render_block_html(block, state_data, relations, entity_id, lang, t))
