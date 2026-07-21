@@ -640,9 +640,12 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
                     if key in _skip_keys:
                         continue
                     if isinstance(prop, dict):
+                        t = getattr(request.state, "t", {})
+                        trans_key = f"field_{key}"
+                        label = t.get(trans_key, prop.get("title", key))
                         schema_fields.append({
                             "key": key,
-                            "label": prop.get("title", key),
+                            "label": label,
                             "type": prop.get("type", "string"),
                             "description": prop.get("description", ""),
                             "required": key in required,
@@ -678,7 +681,7 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
                         "role": ((r["relation"].metadata_ or {}) if hasattr(r["relation"], 'metadata_') else {}).get("role", "") if r.get("relation") else "",
                         "image_url": getattr(r["target"], "image_url", None) or "",
                     })
-                layout_html = render_layout(layout_blocks, state_data, rels_by_type, str(entity_id), lang)
+                layout_html = render_layout(layout_blocks, state_data, rels_by_type, str(entity_id), lang, t=getattr(request.state, "t", {}))
 
     # Get primary label for template
     label = None

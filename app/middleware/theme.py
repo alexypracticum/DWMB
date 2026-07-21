@@ -38,7 +38,6 @@ class ThemeMiddleware(BaseHTTPMiddleware):
                         )
                         user = result.scalar_one_or_none()
                         if user:
-                            # Get language code from language_id FK
                             lang = "ru"
                             if user.language_id:
                                 lang_result = await session.execute(
@@ -47,7 +46,6 @@ class ThemeMiddleware(BaseHTTPMiddleware):
                                 lang = lang_result.scalar_one_or_none() or "ru"
                             request.state.lang = lang
                             
-                            # Load translations from DB
                             try:
                                 from app.services.ui_translations import get_translation_dict
                                 request.state.t = await get_translation_dict(session, lang)
@@ -70,7 +68,6 @@ class ThemeMiddleware(BaseHTTPMiddleware):
             except JWTError:
                 pass
 
-        # Fallback to lang cookie if no user language set
         if request.state.lang == "ru" and not token:
             cookie_lang = request.cookies.get("lang")
             if cookie_lang and cookie_lang in ("ru", "en", "de", "fr", "es", "zh", "ja"):

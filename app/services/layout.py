@@ -266,8 +266,24 @@ EN_LABELS = {
     "revenue": "Revenue", "currency": "Currency",
 }
 
-def get_label(key, lang="ru"):
-    """Get label for a field based on language."""
+def get_label(key, lang="ru", t: dict = None):
+    """Get label for a field based on language.
+    Uses translation dict (t) if provided, falls back to hardcoded dicts.
+    Field labels are stored as field_key in translation system.
+    """
+    if t:
+        trans_key = f"field_{key}"
+        if trans_key in t:
+            return t[trans_key]
+    if not t or len(t) < 10:
+        try:
+            from app.services.ui_translations import _translations_cache
+            cached = _translations_cache.get(lang, {})
+            trans_key = f"field_{key}"
+            if trans_key in cached:
+                return cached[trans_key]
+        except Exception:
+            pass
     labels = EN_LABELS if lang == "en" else RU_LABELS
     return labels.get(key, key.replace("_", " ").title())
 
@@ -381,7 +397,7 @@ def _replace_variables(text: str, state_data: dict) -> str:
     return re.sub(r'\[([^\]:]+)(?::([^\]]*))?\]', _replace_match, text)
 
 
-def render_block_html(block: dict, state_data: dict, relations: dict = None, entity_id: str = None, lang: str = "ru") -> str:
+def render_block_html(block: dict, state_data: dict, relations: dict = None, entity_id: str = None, lang: str = "ru", t: dict = None) -> str:
     """Render a single block to HTML."""
     btype = block.get("type", "text_block")
     config = block.get("config", {})
@@ -481,7 +497,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
         if not fields:
             for k, v in state_data.items():
                 if v and str(v).strip():
-                    fields.append({"key": k, "label": get_label(k, lang)})
+                    fields.append({"key": k, "label": get_label(k, lang, t)})
         style = config.get("style", "table")
         if style == "table":
             rows = ""
@@ -490,7 +506,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
                 val = get_localized_value(state_data, fkey, lang) or ""
                 if not val and val != 0:
                     continue
-                label = f.get("label") or get_label(fkey, lang)
+                label = get_label(fkey, lang, t) or f.get("label")
                 ftype = f.get("type", "string")
                 val_str = str(val)
                 if ftype == "currency":
@@ -612,7 +628,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
         if not fields:
             for k, v in state_data.items():
                 if k not in skip_keys and v and str(v).strip():
-                    fields.append({"key": k, "label": get_label(k, lang)})
+                    fields.append({"key": k, "label": get_label(k, lang, t)})
 
         # Interactive field types that link to entity search
         _PERSON_KEYS = {"director", "author", "artist", "composer", "narrator", "producer", "screenwriter", "operator", "actor", "starring"}
@@ -632,7 +648,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
         for f in fields:
             key = f.get("field_key") or f.get("key", "")
             val = get_localized_value(state_data, key, lang) or ""
-            label = f.get("label") or get_label(key, lang)
+            label = get_label(key, lang, t) or f.get("label")
             ftype = f.get("type", "string")
             val_str = str(val) if val is not None else ""
 
@@ -663,8 +679,8 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
                         f'<td class="py-2 text-sm text-gray-500 font-medium text-right pr-3 whitespace-nowrap">{label}</td>'
                         f'<td class="text-gray-400 pr-3">:</td>'
                         f'<td class="py-2 text-sm italic text-gray-400">'
-                        f'Информация отсутствует '
-                        f'<button onclick="event.preventDefault();document.getElementById(\'{_add_id}\').classList.remove(\'hidden\')" class="text-blue-500 hover:underline text-xs">+ добавить</button>'
+                        f'{t.get("layout_information_missing", "Информация отсутствует") if t else "Информация отсутствует"} '
+                        f'<button onclick="event.preventDefault();document.getElementById(\'{_add_id}\').classList.remove(\'hidden\')" class="text-blue-500 hover:underline text-xs">+ {t.get("layout_add", "+ добавить") if t else "+ добавить"}</button>'
                         f'</td></tr>'
                     )
                     rows += _popup_html
@@ -674,8 +690,8 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
                         f'<td class="py-2 text-sm text-gray-500 font-medium text-right pr-3 whitespace-nowrap">{label}</td>'
                         f'<td class="text-gray-400 pr-3">:</td>'
                         f'<td class="py-2 text-sm italic text-gray-400">'
-                        f'Информация отсутствует '
-                        f'<button onclick="event.preventDefault();saveEntityField(\'{_eid}\',\'{key}\',prompt(\'{label}:\'))" class="text-blue-500 hover:underline text-xs">+ добавить</button>'
+                        f'{t.get("layout_information_missing", "Информация отсутствует") if t else "Информация отсутствует"} '
+                        f'<button onclick="event.preventDefault();saveEntityField(\'{_eid}\',\'{key}\',prompt(\'{label}:\'))" class="text-blue-500 hover:underline text-xs">+ {t.get("layout_add", "+ добавить") if t else "+ добавить"}</button>'
                         f'</td></tr>'
                     )
                 continue
@@ -804,7 +820,11 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
     elif btype == "actor_character_gallery":
         acted_in_type = config.get("acted_in_type", "acted_in")
         max_items = int(config.get("max_items", "20") or "20")
-        spoiler_text = config.get("spoiler_text", "Показать актёрский состав")
+        spoiler_text = t.get("layout_show_cast", "") if t else ""
+        if not spoiler_text:
+            spoiler_text = config.get("spoiler_text", "")
+        if not spoiler_text:
+            spoiler_text = "Показать актёрский состав"
         acted_rels = (relations or {}).get(acted_in_type, [])
         if not acted_rels:
             return ""
@@ -863,7 +883,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
     return ""
 
 
-def render_layout(layout_blocks, state_data: dict, relations: dict = None, entity_id: str = None, lang: str = "ru") -> str:
+def render_layout(layout_blocks, state_data: dict, relations: dict = None, entity_id: str = None, lang: str = "ru", t: dict = None) -> str:
     """Render full layout from block definitions."""
     if isinstance(layout_blocks, str):
         try:
@@ -882,8 +902,8 @@ def render_layout(layout_blocks, state_data: dict, relations: dict = None, entit
         if btype == "columns" and "children" in block:
             left_blocks = [c for c in block["children"] if c.get("width") == "left"]
             right_blocks = [c for c in block["children"] if c.get("width") == "right"]
-            left_html = "".join(render_block_html(b, state_data, relations, entity_id, lang) for b in left_blocks)
-            right_html = "".join(render_block_html(b, state_data, relations, entity_id, lang) for b in right_blocks)
+            left_html = "".join(render_block_html(b, state_data, relations, entity_id, lang, t) for b in left_blocks)
+            right_html = "".join(render_block_html(b, state_data, relations, entity_id, lang, t) for b in right_blocks)
             left_w = block.get("config", {}).get("left_width", "40%")
             right_w = block.get("config", {}).get("right_width", "60%")
             html_parts.append(
@@ -902,6 +922,6 @@ def render_layout(layout_blocks, state_data: dict, relations: dict = None, entit
                 col_html += f'<div style="width:{col_width}; flex-shrink:0;">{render_block_html(child, state_data, relations, entity_id)}</div>'
             html_parts.append(f'<div class="flex flex-col md:flex-row gap-4 my-4">{col_html}</div>')
         else:
-            html_parts.append(render_block_html(block, state_data, relations, entity_id, lang))
+            html_parts.append(render_block_html(block, state_data, relations, entity_id, lang, t))
 
     return "\n".join(html_parts)
