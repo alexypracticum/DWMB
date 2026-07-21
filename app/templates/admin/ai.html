@@ -1,117 +1,117 @@
 {% extends "base.html" %}
-{% block title %}AI - Админ DWMB{% endblock %}
+{% block title %}{{ request.state.t.admin_ai }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-3xl mx-auto">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold" style="color: var(--color-text);">AI Конфигурация</h1>
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">{{ request.state.t.ai_configuration }}</h1>
         <div class="flex items-center gap-3">
-            <a href="/admin/ai/profiles" class="px-4 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">Профили</a>
+            <a href="/admin/ai/profiles" class="px-4 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.ai_profiles }}</a>
             <a href="/admin" class="text-sm" style="color: var(--color-primary);">{{ request.state.t.admin_back }}</a>
         </div>
     </div>
 
     <!-- AI Config Form -->
-    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Настройки AI</h2>
+    <div class="rounded-xl p-6 shadow-sm mb-6" style="background: var(--color-surface); border: 1px solid var(--color-border);">
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.ai_settings }}</h2>
         <form action="/admin/ai/save" method="post" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Провайдер</label>
-                    <select name="provider" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">{{ request.state.t.ai_provider }}</label>
+                    <select name="provider" class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                         <option value="openai" {% if config and config.provider == 'openai' %}selected{% endif %}>OpenAI</option>
                         <option value="azure" {% if config and config.provider == 'azure' %}selected{% endif %}>Azure OpenAI</option>
                         <option value="ollama" {% if config and config.provider == 'ollama' %}selected{% endif %}>Ollama (local)</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">API Base URL</label>
+                    <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">{{ request.state.t.ai_base_url }}</label>
                     <input type="text" name="api_base_url" value="{{ config.api_base_url if config else 'https://api.openai.com/v1' }}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Модель для эмбеддингов</label>
+                    <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">{{ request.state.t.ai_model_embed }}</label>
                     <input type="text" name="model_embedding" value="{{ config.model_embedding if config else 'text-embedding-3-small' }}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Модель для чата</label>
+                    <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">{{ request.state.t.ai_model_chat }}</label>
                     <input type="text" name="model_chat" value="{{ config.model_chat if config else 'gpt-4o-mini' }}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
-                    <input type="password" name="api_key" placeholder="{% if config and config.api_key_enc %}Ключ сохранён (оставьте пустым для сохранения текущего){% else %}Введите API ключ{% endif %}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">{{ request.state.t.ai_api_key }}</label>
+                    <input type="password" name="api_key" placeholder="{% if config and config.api_key_enc %}{{ request.state.t.ai_key_saved }}{% else %}{{ request.state.t.ai_enter_key }}{% endif %}"
+                        class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Макс. токенов</label>
+                    <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">{{ request.state.t.ai_max_tokens }}</label>
                     <input type="number" name="max_tokens" value="{{ config.max_tokens if config else 4096 }}"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 </div>
             </div>
             <div class="flex justify-end">
-                <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">{{ request.state.t.btn_save }}</button>
+                <button type="submit" class="px-6 py-2 text-white rounded-lg transition text-sm" style="background: var(--color-primary);">{{ request.state.t.btn_save }}</button>
             </div>
         </form>
     </div>
 
     <!-- Available AI Features -->
-    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Доступные AI-функции</h2>
+    <div class="rounded-xl p-6 shadow-sm mb-6" style="background: var(--color-surface); border: 1px solid var(--color-border);">
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.ai_features }}</h2>
         <div class="grid grid-cols-2 gap-4">
-            <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h3 class="font-medium text-blue-800 text-sm mb-1">Поиск с AI-парсингом</h3>
-                <p class="text-xs text-blue-600">На странице поиска включите галочку "AI-парсинг запроса" для интеллектуального поиска</p>
+            <div class="p-4 rounded-lg" style="background: color-mix(in srgb, var(--color-primary) 10%, transparent); border: 1px solid var(--color-primary);">
+                <h3 class="font-medium text-sm mb-1" style="color: var(--color-primary);">{{ request.state.t.ai_feature_search }}</h3>
+                <p class="text-xs" style="color: var(--color-text-secondary);">{{ request.state.t.ai_feature_search_desc }}</p>
             </div>
-            <div class="p-4 bg-green-50 rounded-lg border border-green-200">
-                <h3 class="font-medium text-green-800 text-sm mb-1">Подсказки полей</h3>
-                <p class="text-xs text-green-600">API: POST /api/ai/suggest-fields/{entity_id} — AI предложит дополнительные поля для сущности</p>
+            <div class="p-4 rounded-lg" style="background: color-mix(in srgb, var(--color-success) 10%, transparent); border: 1px solid var(--color-success);">
+                <h3 class="font-medium text-sm mb-1" style="color: var(--color-success);">{{ request.state.t.ai_feature_suggest }}</h3>
+                <p class="text-xs" style="color: var(--color-text-secondary);">POST /api/ai/suggest-fields/{id}</p>
             </div>
-            <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <h3 class="font-medium text-purple-800 text-sm mb-1">Парсинг текста</h3>
-                <p class="text-xs text-purple-600">API: POST /api/ai/parse-text — преобразует свободный текст в структурированные данные</p>
+            <div class="p-4 rounded-lg" style="background: color-mix(in srgb, var(--color-accent) 10%, transparent); border: 1px solid var(--color-accent);">
+                <h3 class="font-medium text-sm mb-1" style="color: var(--color-accent);">{{ request.state.t.ai_feature_parse }}</h3>
+                <p class="text-xs" style="color: var(--color-text-secondary);">POST /api/ai/parse-text</p>
             </div>
-            <div class="p-4 bg-amber-50 rounded-lg border border-amber-200">
-                <h3 class="font-medium text-amber-800 text-sm mb-1">Похожие сущности</h3>
-                <p class="text-xs text-amber-600">API: GET /api/ai/similar/{entity_id} — найдёт похожие сущности по эмбеддингам</p>
+            <div class="p-4 rounded-lg" style="background: color-mix(in srgb, var(--color-secondary) 10%, transparent); border: 1px solid var(--color-secondary);">
+                <h3 class="font-medium text-sm mb-1" style="color: var(--color-secondary);">{{ request.state.t.ai_feature_similar }}</h3>
+                <p class="text-xs" style="color: var(--color-text-secondary);">GET /api/ai/similar/{id}</p>
             </div>
         </div>
     </div>
 
     <!-- AI Logs -->
     {% if logs %}
-    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Последние AI-задачи</h2>
+    <div class="rounded-xl p-6 shadow-sm" style="background: var(--color-surface); border: 1px solid var(--color-border);">
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.ai_logs }}</h2>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b border-gray-200">
-                        <th class="text-left py-2 px-3 text-gray-500 font-medium">Тип</th>
-                        <th class="text-left py-2 px-3 text-gray-500 font-medium">Модель</th>
-                        <th class="text-left py-2 px-3 text-gray-500 font-medium">Статус</th>
-                        <th class="text-left py-2 px-3 text-gray-500 font-medium">Токены</th>
-                        <th class="text-left py-2 px-3 text-gray-500 font-medium">Стоимость</th>
-                        <th class="text-left py-2 px-3 text-gray-500 font-medium">Дата</th>
+                    <tr style="border-bottom: 1px solid var(--color-border);">
+                        <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.ai_log_type }}</th>
+                        <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.ai_log_model }}</th>
+                        <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.ai_log_status }}</th>
+                        <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.ai_log_tokens }}</th>
+                        <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.ai_log_cost }}</th>
+                        <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.ai_log_date }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for log in logs %}
-                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <tr style="border-bottom: 1px solid var(--color-border);">
                         <td class="py-2 px-3 font-mono text-xs">{{ log.task_type }}</td>
-                        <td class="py-2 px-3 text-gray-600">{{ log.model_used or '-' }}</td>
+                        <td class="py-2 px-3" style="color: var(--color-text-secondary);">{{ log.model_used or '-' }}</td>
                         <td class="py-2 px-3">
                             <span class="px-2 py-0.5 text-xs rounded-full {% if log.status == 'success' %}bg-green-100 text-green-700{% elif log.status == 'error' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-600{% endif %}">
                                 {{ log.status }}
                             </span>
                         </td>
-                        <td class="py-2 px-3 text-gray-500">{{ log.input_tokens + log.output_tokens if log.input_tokens and log.output_tokens else '-' }}</td>
-                        <td class="py-2 px-3 text-gray-500">${{ '%.4f' % log.cost_usd if log.cost_usd else '0.0000' }}</td>
-                        <td class="py-2 px-3 text-gray-400 text-xs">{{ log.created_at.strftime('%d.%m %H:%M') if log.created_at else '-' }}</td>
+                        <td class="py-2 px-3" style="color: var(--color-text-secondary);">{{ log.input_tokens + log.output_tokens if log.input_tokens and log.output_tokens else '-' }}</td>
+                        <td class="py-2 px-3" style="color: var(--color-text-secondary);">${{ '%.4f' % log.cost_usd if log.cost_usd else '0.0000' }}</td>
+                        <td class="py-2 px-3 text-xs" style="color: var(--color-text-secondary);">{{ log.created_at.strftime('%d.%m %H:%M') if log.created_at else '-' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

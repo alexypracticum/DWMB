@@ -489,32 +489,39 @@ async def admin_template_toggle_active(
 #  FIELD REGISTRY
 # =============================================================================
 
-FIELD_TYPES = [
-    ("string", "Строка"), ("integer", "Целое число"), ("number", "Дробное число"),
-    ("boolean", "Да/Нет"), ("date", "Дата"), ("datetime", "Дата и время"),
-    ("currency", "Деньги"), ("email", "Email"), ("url", "URL"),
-    ("textarea", "Текст (многострочный)"), ("select", "Выбор из списка"),
-    ("image", "Изображение"), ("video", "Видео"), ("audio", "Аудио"),
-    ("file", "Файл"), ("gallery", "Галерея"),
+# Field type keys for translation
+FIELD_TYPE_KEYS = [
+    "string", "integer", "number", "boolean", "date", "datetime",
+    "currency", "email", "url", "textarea", "select",
+    "image", "video", "audio", "file", "gallery",
 ]
 
-# Default categories - used as seed, actual categories stored in DB
-DEFAULT_CATEGORIES = [
-    ("common", "Общие"), ("cinema", "Кино"), ("music", "Музыка"),
-    ("literature", "Литература"), ("science", "Наука"), ("media", "Медиа"),
-    ("people", "Люди"), ("geography", "География"), ("organization", "Организации"),
-    ("events", "События"), ("digital", "Цифровое"), ("gaming", "Игры"),
+# Category keys for translation
+CATEGORY_KEYS = [
+    "common", "cinema", "music", "literature", "science", "media",
+    "people", "geography", "organization", "events", "digital", "gaming",
 ]
 
 
-async def _get_categories(db):
+def get_field_types(t: dict) -> list:
+    """Get field types with translated labels."""
+    return [(k, t.get(f"field_type_{k}", k)) for k in FIELD_TYPE_KEYS]
+
+
+def get_default_categories(t: dict) -> list:
+    """Get categories with translated labels."""
+    return [(k, t.get(f"category_{k}", k)) for k in CATEGORY_KEYS]
+
+
+async def _get_categories(db, t: dict = None):
     """Get all categories: distinct from fields + default seed categories."""
     from sqlalchemy import distinct
     result = await db.execute(select(distinct(FieldRegistry.category)).where(FieldRegistry.is_active == True))
     db_cats = [r[0] for r in result.all() if r[0]]
     all_cats = []
     seen = set()
-    for ck, cn in DEFAULT_CATEGORIES + [(c, c.title()) for c in db_cats]:
+    default_cats = get_default_categories(t) if t else [(k, k.title()) for k in CATEGORY_KEYS]
+    for ck, cn in default_cats + [(c, c.title()) for c in db_cats]:
         if ck not in seen:
             seen.add(ck)
             all_cats.append((ck, cn))
@@ -524,7 +531,9 @@ async def _get_categories(db):
 @router.get("/fields", response_class=HTMLResponse)
 async def admin_fields(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin),
                        category: str = Query(None)):
-    categories = await _get_categories(db)
+    t = getattr(request.state, "t", {})
+    categories = await _get_categories(db, t)
+    field_types = get_field_types(t)
     query = select(FieldRegistry).order_by(FieldRegistry.category, FieldRegistry.sort_order)
     if category:
         query = query.where(FieldRegistry.category == category)
@@ -532,7 +541,7 @@ async def admin_fields(request: Request, db: AsyncSession = Depends(get_db), use
     fields = result.scalars().all()
     return templates.TemplateResponse("admin/fields.html", {
         "request": request, "user": user, "fields": fields,
-        "field_types": FIELD_TYPES, "categories": categories,
+        "field_types": field_types, "categories": categories,
         "active_category": category,
     })
 
