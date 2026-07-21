@@ -15,7 +15,7 @@
                     <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.admin_settings }}</h2>
                     <div class="space-y-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Тип сущности</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.admin_template_kind }}</label>
                             <select name="kind_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                                 <option value="">— все типы —</option>
                                 {% for k in all_kinds %}
@@ -24,7 +24,7 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Модель</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.label_model }}</label>
                             <select name="model_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                                 {% for m in models %}
                                 <option value="{{ m.model_id }}" {% if m.model_id == model.model_id %}selected{% endif %}>
@@ -34,7 +34,7 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Код</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.admin_template_code }}</label>
                             <input type="text" name="template_code" value="{{ template.template_code }}" required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
@@ -62,26 +62,26 @@
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                     <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.admin_add_block }}</h2>
                     <div class="grid grid-cols-2 gap-2" id="blockPalette">
-                        <button type="button" onclick="addBlock('image_data_row')" class="px-3 py-2 text-xs bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition border border-indigo-200 font-semibold">📸 ${t('block_image_data_row')}</button>
-                        <button type="button" onclick="addBlock('hero_image')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">🖼️ ${t('block_hero_image')}</button>
-                        <button type="button" onclick="addBlock('image')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">📷 ${t('block_image')}</button>
-                        <button type="button" onclick="addBlock('gallery')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">🖼️ ${t('block_gallery')}</button>
-                        <button type="button" onclick="addBlock('markdown')" class="px-3 py-2 text-xs bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition border border-green-200">📝 ${t('block_markdown')}</button>
-                        <button type="button" onclick="addBlock('video')" class="px-3 py-2 text-xs bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition border border-red-200">🎬 ${t('block_video')}</button>
-                        <button type="button" onclick="addBlock('audio')" class="px-3 py-2 text-xs bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition border border-purple-200">🎵 ${t('block_audio')}</button>
-                        <button type="button" onclick="addBlock('info_table')" class="px-3 py-2 text-xs bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition border border-orange-200">📊 ${t('block_info_table')}</button>
-                        <button type="button" onclick="addBlock('relation_list')" class="px-3 py-2 text-xs bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition border border-teal-200">🔗 ${t('block_relation_list')}</button>
-                        <button type="button" onclick="addBlock('aggregated_relations')" class="px-3 py-2 text-xs bg-violet-50 text-violet-700 rounded-lg hover:bg-violet-100 transition border border-violet-200">👥 ${t('block_aggregated_relations')}</button>
-                        <button type="button" onclick="addBlock('file_link')" class="px-3 py-2 text-xs bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">📎 ${t('block_file_link')}</button>
-                        <button type="button" onclick="addBlock('file_upload')" class="px-3 py-2 text-xs bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">📤 ${t('block_file_upload')}</button>
-                        <button type="button" onclick="addBlock('horizontal_row')" class="px-3 py-2 text-xs bg-cyan-50 text-cyan-700 rounded-lg hover:bg-cyan-100 transition border border-cyan-200">↔️ ${t('block_horizontal_row')}</button>
-                        <button type="button" onclick="addBlock('text_block')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">📄 ${t('block_text')}</button>
-                        <button type="button" onclick="addBlock('divider')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">➖ ${t('block_divider')}</button>
-                        <button type="button" onclick="addBlock('spacer')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">↕️ ${t('block_spacer')}</button>
-                        <button type="button" onclick="addBlock('actor_character_gallery')" class="px-3 py-2 text-xs bg-pink-50 text-pink-700 rounded-lg hover:bg-pink-100 transition border border-pink-200">🎬 ${t('block_actor_character_gallery')}</button>
+                        <button type="button" onclick="addBlock('image_data_row')" class="px-3 py-2 text-xs bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition border border-indigo-200 font-semibold">📸 {{ request.state.t.block_image_data_row }}</button>
+                        <button type="button" onclick="addBlock('hero_image')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">🖼️ {{ request.state.t.block_hero_image }}</button>
+                        <button type="button" onclick="addBlock('image')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">📷 {{ request.state.t.block_image }}</button>
+                        <button type="button" onclick="addBlock('gallery')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">🖼️ {{ request.state.t.block_gallery }}</button>
+                        <button type="button" onclick="addBlock('markdown')" class="px-3 py-2 text-xs bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition border border-green-200">📝 {{ request.state.t.block_markdown }}</button>
+                        <button type="button" onclick="addBlock('video')" class="px-3 py-2 text-xs bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition border border-red-200">🎬 {{ request.state.t.block_video }}</button>
+                        <button type="button" onclick="addBlock('audio')" class="px-3 py-2 text-xs bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition border border-purple-200">🎵 {{ request.state.t.block_audio }}</button>
+                        <button type="button" onclick="addBlock('info_table')" class="px-3 py-2 text-xs bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition border border-orange-200">📊 {{ request.state.t.block_info_table }}</button>
+                        <button type="button" onclick="addBlock('relation_list')" class="px-3 py-2 text-xs bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition border border-teal-200">🔗 {{ request.state.t.block_relation_list }}</button>
+                        <button type="button" onclick="addBlock('aggregated_relations')" class="px-3 py-2 text-xs bg-violet-50 text-violet-700 rounded-lg hover:bg-violet-100 transition border border-violet-200">👥 {{ request.state.t.block_aggregated_relations }}</button>
+                        <button type="button" onclick="addBlock('file_link')" class="px-3 py-2 text-xs bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">📎 {{ request.state.t.block_file_link }}</button>
+                        <button type="button" onclick="addBlock('file_upload')" class="px-3 py-2 text-xs bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">📤 {{ request.state.t.block_file_upload }}</button>
+                        <button type="button" onclick="addBlock('horizontal_row')" class="px-3 py-2 text-xs bg-cyan-50 text-cyan-700 rounded-lg hover:bg-cyan-100 transition border border-cyan-200">↔️ {{ request.state.t.block_horizontal_row }}</button>
+                        <button type="button" onclick="addBlock('text_block')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">📄 {{ request.state.t.block_text }}</button>
+                        <button type="button" onclick="addBlock('divider')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">➖ {{ request.state.t.block_divider }}</button>
+                        <button type="button" onclick="addBlock('spacer')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">↕️ {{ request.state.t.block_spacer }}</button>
+                        <button type="button" onclick="addBlock('actor_character_gallery')" class="px-3 py-2 text-xs bg-pink-50 text-pink-700 rounded-lg hover:bg-pink-100 transition border border-pink-200">🎬 {{ request.state.t.block_actor_character_gallery }}</button>
                         <button type="button" onclick="addBlock('custom_html')" class="px-3 py-2 text-xs bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition border border-yellow-200">💻 HTML</button>
                     </div>
-                    <button type="button" onclick="syncSchemaToBlocks()" class="w-full mt-3 px-3 py-2 text-xs bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">🔄 t('admin_sync_schema')</button>
+                    <button type="button" onclick="syncSchemaToBlocks()" class="w-full mt-3 px-3 py-2 text-xs bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">🔄 {{ request.state.t.admin_sync_schema }}</button>
                 </div>
             </div>
 
@@ -90,12 +90,12 @@
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-gray-800">{{ request.state.t.admin_template_layout }}</h2>
-                        <span class="text-xs text-gray-400" id="blockCount">0 блоков</span>
+                        <span class="text-xs text-gray-400" id="blockCount">0 {{ request.state.t.admin_blocks }}</span>
                     </div>
                     <div id="layoutCanvas" class="space-y-3 min-h-[200px] border-2 border-dashed border-gray-200 rounded-lg p-4">
                         <div id="emptyState" class="text-center py-12 text-gray-400">
                             <div class="text-4xl mb-3">📋</div>
-                            <div class="text-sm">t('admin_add_blocks_hint')</div>
+                            {{ request.state.t.admin_add_blocks_hint }}
                         </div>
                     </div>
                 </div>
@@ -269,7 +269,7 @@ function renderBlocks() {
                     <span class="text-lg">${bt.icon}</span>
                     <span class="font-medium text-sm text-gray-700">${bt.name}</span>
                     <span class="text-xs text-gray-400">#${idx + 1}</span>
-                    ${block.type === 'image_data_row' ? `<button type="button" onclick="syncBlockFromSchema(${idx})" class="px-2 py-0.5 text-xs bg-emerald-50 text-emerald-700 rounded border border-emerald-200 hover:bg-emerald-100" title="Обновить поля из схемы">🔄 t('admin_sync_schema_short')</button>` : ''}
+                    ${block.type === 'image_data_row' ? `<button type="button" onclick="syncBlockFromSchema(${idx})" class="px-2 py-0.5 text-xs bg-emerald-50 text-emerald-700 rounded border border-emerald-200 hover:bg-emerald-100" title="${t('admin_sync_schema_short')}">${t('admin_sync_schema_short')}</button>` : ''}
                 </div>
                 <div class="flex gap-1">
                     ${idx > 0 ? `<button type="button" onclick="moveBlock(${idx},-1)" class="px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 rounded">↑</button>` : ''}
@@ -311,7 +311,7 @@ function createEmptyState() {
     const d = document.createElement('div');
     d.id = 'emptyState';
     d.className = 'text-center py-12 text-gray-400';
-    d.innerHTML = '<div class="text-4xl mb-3">📋</div><div class="text-sm">t('admin_add_blocks_hint')</div>';
+    d.innerHTML = '<div class="text-4xl mb-3">📋</div>{{ request.state.t.admin_add_blocks_hint }}';
     return d;
 }
 
@@ -393,7 +393,7 @@ function syncSchemaToBlocks() {
         }
     });
     if (updated === 0) {
-        alert(t('admin_no_blocks "Фото + данные" для обновления.');
+        alert(t('admin_no_blocks') "Фото + данные" для обновления.');
     } else {
         alert(t('admin_blocks_updated') + ': ' + updated);
     }
