@@ -567,7 +567,25 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
 
     elif btype == "aggregated_relations":
         rel_type = config.get("relation_type", "")
-        label = config.get("label", "") or (t.get(f"layout_{rel_type}", rel_type) if t else rel_type)
+        label_raw = config.get("label", "")
+        # Map Russian labels to translation keys
+        LABEL_MAP = {
+            "Актёры": "layout_acted_in",
+            "Актеры": "layout_acted_in",
+            "Режиссёр": "layout_directed_by",
+            "Режисеры": "layout_directed_by",
+            "Режисёры": "layout_directed_by",
+            "Актёры и персонажи": "layout_actors_characters",
+            "Актеры и персонажи": "layout_actors_characters",
+        }
+        if t and label_raw in LABEL_MAP:
+            label = t.get(LABEL_MAP[label_raw], label_raw)
+        elif t and label_raw:
+            label = label_raw
+        elif t:
+            label = t.get(f"layout_{rel_type}", rel_type)
+        else:
+            label = label_raw or rel_type
         max_items = int(config.get("max_items", "10") or "10")
         rels = (relations or {}).get(rel_type, [])[:max_items]
         if not rels:
@@ -825,7 +843,24 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
             )
         if not rows:
             return ""
-        label = config.get("label", "") or t.get("layout_show_cast", "Актёры и персонажи") if t else config.get("label", "Актёры и персонажи")
+        label_raw = config.get("label", "")
+        LABEL_MAP = {
+            "Актёры и персонажи": "layout_actors_characters",
+            "Актеры и персонажи": "layout_actors_characters",
+            "Актёры": "layout_acted_in",
+            "Актеры": "layout_acted_in",
+            "Режиссёр": "layout_directed_by",
+            "Режисеры": "layout_directed_by",
+            "Режисёры": "layout_directed_by",
+        }
+        if t and label_raw in LABEL_MAP:
+            label = t.get(LABEL_MAP[label_raw], label_raw)
+        elif t and label_raw:
+            label = label_raw
+        elif t:
+            label = t.get("layout_actors_characters", "Актёры и персонажи")
+        else:
+            label = label_raw or "Актёры и персонажи"
         return f'<div class="my-4"><h3 class="text-sm font-semibold text-gray-700 mb-2">{label}</h3>{rows}</div>'
 
     elif btype == "actor_character_gallery":
