@@ -567,6 +567,6 @@ function syncJson() {
 }
 
 // Init
-renderBlocks();
+try { renderBlocks(); } catch(e) { console.error('renderBlocks error:', e); document.getElementById('blockCount').textContent = 'JS Error: ' + e.message; }
 </script>
 {% endblock %}
