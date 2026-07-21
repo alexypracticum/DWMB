@@ -167,16 +167,16 @@
             
             <div id="labels-container" class="space-y-4">
                 {% for label in labels %}
-                <div class="label-entry p-4 rounded-lg border" style="border-color: var(--color-border);" data-lang="{{ label.language }}">
+                <div class="label-entry p-4 rounded-lg border" style="border-color: var(--color-border);" data-lang="{{ label.language.code }}">
                     <div class="flex items-center gap-2 mb-3">
                         <select name="lang_{{ loop.index }}" class="px-3 py-1.5 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
-                            <option value="ru" {% if label.language == 'ru' %}selected{% endif %}>🇷🇺 Русский</option>
-                            <option value="en" {% if label.language == 'en' %}selected{% endif %}>🇬🇧 English</option>
-                            <option value="de" {% if label.language == 'de' %}selected{% endif %}>🇩🇪 Deutsch</option>
-                            <option value="fr" {% if label.language == 'fr' %}selected{% endif %}>🇫🇷 Français</option>
-                            <option value="es" {% if label.language == 'es' %}selected{% endif %}>🇪🇸 Español</option>
-                            <option value="zh" {% if label.language == 'zh' %}selected{% endif %}>🇨🇳 中文</option>
-                            <option value="ja" {% if label.language == 'ja' %}selected{% endif %}>🇯🇵 日本語</option>
+                            <option value="ru" {% if label.language.code == 'ru' %}selected{% endif %}>🇷🇺 Русский</option>
+                            <option value="en" {% if label.language.code == 'en' %}selected{% endif %}>🇬🇧 English</option>
+                            <option value="de" {% if label.language.code == 'de' %}selected{% endif %}>🇩🇪 Deutsch</option>
+                            <option value="fr" {% if label.language.code == 'fr' %}selected{% endif %}>🇫🇷 Français</option>
+                            <option value="es" {% if label.language.code == 'es' %}selected{% endif %}>🇪🇸 Español</option>
+                            <option value="zh" {% if label.language.code == 'zh' %}selected{% endif %}>🇨🇳 中文</option>
+                            <option value="ja" {% if label.language.code == 'ja' %}selected{% endif %}>🇯🇵 日本語</option>
                         </select>
                         <label class="flex items-center gap-1 text-xs" style="color: var(--color-text-secondary);">
                             <input type="checkbox" name="is_primary_{{ loop.index }}" {% if label.is_primary %}checked{% endif %} class="rounded"> Основной

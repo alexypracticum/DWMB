@@ -13,6 +13,7 @@ from app.models.kinds import EntityKind, EntityKindLabel
 from app.models.fields import FieldRegistry
 from app.models.field_labels import FieldRegistryLabel
 from app.services.auth import get_current_user
+from app.services.language import get_language_id
 
 router = APIRouter(prefix="/api/editor", tags=["editor"])
 
@@ -31,6 +32,8 @@ async def get_fields_for_editor(
     result = await db.execute(query)
     fields = result.scalars().all()
     
+    ru_lang_id = await get_language_id(db, "ru")
+    
     # Get Russian labels
     fields_data = []
     for f in fields:
@@ -38,7 +41,7 @@ async def get_fields_for_editor(
             select(FieldRegistryLabel.label)
             .where(
                 FieldRegistryLabel.field_id == f.field_id,
-                FieldRegistryLabel.language == "ru"
+                FieldRegistryLabel.language_id == ru_lang_id
             )
         )
         ru_label = label_result.scalar_one_or_none() or f.field_label
@@ -76,11 +79,12 @@ async def api_search_entities(
     """Search entities by label for inline add popups."""
     if not q or len(q) < 1:
         return {"items": []}
+    ru_lang_id = await get_language_id(db, "ru")
     query = (
         select(Entity, EntityLabel, EntityKind)
         .join(EntityLabel, Entity.entity_id == EntityLabel.entity_id)
         .outerjoin(EntityKind, Entity.kind_id == EntityKind.kind_id)
-        .where(EntityLabel.language == "ru", EntityLabel.label.ilike(f"%{q}%"))
+        .where(EntityLabel.language_id == ru_lang_id, EntityLabel.label.ilike(f"%{q}%"))
     )
     if kind:
         query = query.where(EntityKind.kind_code == kind)

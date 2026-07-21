@@ -36,7 +36,7 @@ class TestSetLangRoute:
     @pytest.mark.asyncio
     async def test_set_lang_invalid_falls_back_to_ru(self, client):
         """Invalid language falls back to ru."""
-        response = await client.get("/set-lang?lang=fr", follow_redirects=False)
+        response = await client.get("/set-lang?lang=xyz", follow_redirects=False)
         assert response.status_code == 303
         assert "lang=ru" in str(response.headers.get("set-cookie", ""))
 

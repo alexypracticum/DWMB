@@ -11,6 +11,7 @@ from app.models.users import UserAccount
 from app.services.auth import require_auth
 from app.services.importers.tmdb import tmdb_service
 from app.middleware.rate_limit import limiter, get_rate_limit
+from app.services.language import get_language_id
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,8 @@ async def _ensure_kind_and_relation(db, kind_code, relation_code, inverse_code=N
         db.add(kind)
         await db.flush()
         label_text = kind_code[0].upper() + kind_code[1:] if kind_code else kind_code
-        db.add(EntityKindLabel(kind_id=kind.kind_id, language="ru", label=label_text, description="Auto-created"))
+        ru_lang_id = await get_language_id(db, "ru")
+        db.add(EntityKindLabel(kind_id=kind.kind_id, language_id=ru_lang_id, label=label_text, description="Auto-created"))
         await db.flush()
         logger.info("Auto-created EntityKind '%s' (id=%s)", kind_code, kind.kind_id)
 
@@ -207,7 +209,8 @@ async def _find_or_create_related_entity(
         db.add(entity)
         await db.flush()
 
-        label = EntityLabel(entity_id=eid, language="ru", label=name, is_primary=True, owner_id=owner_id, version_id=version_id)
+        ru_lang_id = await get_language_id(db, "ru")
+        label = EntityLabel(entity_id=eid, language_id=ru_lang_id, label=name, is_primary=True, owner_id=owner_id, version_id=version_id)
         db.add(label)
 
         tmpl = (await db.execute(
@@ -364,7 +367,8 @@ async def tmdb_import_credits(
                     char_entity = Entity(entity_id=char_id, entity_code=char_entity_code, kind_id=char_kind.kind_id, status="active", owner_id=user.user_id, version_id=version_id)
                     db.add(char_entity)
                     await db.flush()
-                    char_label = EntityLabel(entity_id=char_id, language="ru", label=role, is_primary=True, owner_id=user.user_id, version_id=version_id)
+                    ru_lang_id = await get_language_id(db, "ru")
+                    char_label = EntityLabel(entity_id=char_id, language_id=ru_lang_id, label=role, is_primary=True, owner_id=user.user_id, version_id=version_id)
                     db.add(char_label)
                     char_tmpl = (await db.execute(select(OntologyTemplate).where(OntologyTemplate.kind_id == char_kind.kind_id, OntologyTemplate.is_active == True).limit(1))).scalars().first()
                     # Always create a projection, even without a template (use default model)

@@ -14,6 +14,7 @@ from app.models.kinds import EntityKind, EntityKindLabel
 from app.models.fields import FieldRegistry
 from app.models.relations import RelationType
 from app.services.auth import require_admin, get_password_hash
+from app.services.language import get_language_id
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 templates = Jinja2Templates(directory="app/templates")
@@ -21,12 +22,21 @@ templates = Jinja2Templates(directory="app/templates")
 
 async def _get_kind_label(db, kind_id, lang="ru"):
     """Get kind label with language fallback: current → 'ru' → kind_code."""
+    lang_id = await get_language_id(db, lang)
+    ru_lang_id = await get_language_id(db, "ru")
+    if not lang_id and not ru_lang_id:
+        return None
+    or_clauses = []
+    if lang_id:
+        or_clauses.append(EntityKindLabel.language_id == lang_id)
+    if ru_lang_id:
+        or_clauses.append(EntityKindLabel.language_id == ru_lang_id)
     result = await db.execute(
         select(EntityKindLabel.label).where(
             EntityKindLabel.kind_id == kind_id,
-            or_(EntityKindLabel.language == lang, EntityKindLabel.language == "ru")
+            or_(*or_clauses)
         ).order_by(
-            (EntityKindLabel.language == lang).desc()
+            (EntityKindLabel.language_id == lang_id).desc() if lang_id else True
         ).limit(1)
     )
     return result.scalar_one_or_none()
@@ -262,7 +272,7 @@ async def admin_template_create(
         db.add(entity)
         await db.flush()
 
-        label = EntityLabel(entity_id=entity_id, language="ru", label=template_name, description=description, is_primary=True, owner_id=user.user_id, version_id=version_id)
+        label = EntityLabel(entity_id=entity_id, language_id=await get_language_id(db, "ru"), label=template_name, description=description, is_primary=True, owner_id=user.user_id, version_id=version_id)
         db.add(label)
 
         # Get template for displaying ontology_template entities
@@ -402,7 +412,8 @@ async def admin_template_edit(
     entity = entity_result.scalar_one_or_none()
     if entity:
         # Update label
-        lbl_result = await db.execute(select(EntityLabel).where(EntityLabel.entity_id == entity.entity_id, EntityLabel.language == "ru"))
+        ru_lang_id = await get_language_id(db, "ru")
+        lbl_result = await db.execute(select(EntityLabel).where(EntityLabel.entity_id == entity.entity_id, EntityLabel.language_id == ru_lang_id))
         lbl = lbl_result.scalar_one_or_none()
         if lbl:
             lbl.label = template_name
@@ -639,7 +650,12 @@ async def admin_kind_edit_page(request: Request, kind_id: str, db: AsyncSession 
     lbl_result = await db.execute(
         select(EntityKindLabel).where(EntityKindLabel.kind_id == kind.kind_id)
     )
-    labels = {l.language: l for l in lbl_result.scalars().all()}
+    from app.services.language import get_language_code
+    labels = {}
+    for l in lbl_result.scalars().all():
+        code = await get_language_code(db, l.language_id)
+        if code:
+            labels[code] = l
     import json
     fs = kind.field_schema if kind.field_schema else []
     field_schema_json = json.dumps(_ensure_json_schema(fs), ensure_ascii=False, indent=2)
@@ -699,22 +715,30 @@ async def admin_kind_edit_save(
         tmpl.layout_definition = _ld
 
     # Update labels
+    ru_lang_id = await get_language_id(db, "ru")
+    en_lang_id = await get_language_id(db, "en")
     if label_ru:
-        lbl = (await db.execute(select(EntityKindLabel).where(
-            EntityKindLabel.kind_id == kind.kind_id, EntityKindLabel.language == "ru"
-        ))).scalar_one_or_none()
+        if ru_lang_id:
+            lbl = (await db.execute(select(EntityKindLabel).where(
+                EntityKindLabel.kind_id == kind.kind_id, EntityKindLabel.language_id == ru_lang_id
+            ))).scalar_one_or_none()
+        else:
+            lbl = None
         if lbl:
             lbl.label = label_ru
         else:
-            db.add(EntityKindLabel(kind_id=kind.kind_id, language="ru", label=label_ru))
+            db.add(EntityKindLabel(kind_id=kind.kind_id, language_id=ru_lang_id, label=label_ru))
     if label_en:
-        lbl = (await db.execute(select(EntityKindLabel).where(
-            EntityKindLabel.kind_id == kind.kind_id, EntityKindLabel.language == "en"
-        ))).scalar_one_or_none()
+        if en_lang_id:
+            lbl = (await db.execute(select(EntityKindLabel).where(
+                EntityKindLabel.kind_id == kind.kind_id, EntityKindLabel.language_id == en_lang_id
+            ))).scalar_one_or_none()
+        else:
+            lbl = None
         if lbl:
             lbl.label = label_en
         else:
-            db.add(EntityKindLabel(kind_id=kind.kind_id, language="en", label=label_en))
+            db.add(EntityKindLabel(kind_id=kind.kind_id, language_id=en_lang_id, label=label_en))
 
     await db.commit()
     return RedirectResponse(url="/admin/kinds", status_code=303)
@@ -777,9 +801,11 @@ async def admin_kind_create(
 
     # Add labels
     if label_ru:
-        db.add(EntityKindLabel(kind_id=kind.kind_id, language="ru", label=label_ru))
+        ru_lang_id = await get_language_id(db, "ru")
+        db.add(EntityKindLabel(kind_id=kind.kind_id, language_id=ru_lang_id, label=label_ru))
     if label_en:
-        db.add(EntityKindLabel(kind_id=kind.kind_id, language="en", label=label_en))
+        en_lang_id = await get_language_id(db, "en")
+        db.add(EntityKindLabel(kind_id=kind.kind_id, language_id=en_lang_id, label=label_en))
 
     await db.commit()
     return RedirectResponse(url=f"/admin/kinds/{kind.kind_id}/edit", status_code=303)
@@ -889,7 +915,7 @@ async def admin_model_create(
         db.add(entity)
         await db.flush()
 
-        label = EntityLabel(entity_id=entity_id, language="ru", label=model_code, description=description, is_primary=True, owner_id=user.user_id, version_id=version_id)
+        label = EntityLabel(entity_id=entity_id, language_id=await get_language_id(db, "ru"), label=model_code, description=description, is_primary=True, owner_id=user.user_id, version_id=version_id)
         db.add(label)
 
         # Get template
@@ -973,7 +999,8 @@ async def admin_model_edit(
                 entity.entity_code = f"ontology_{model_code}"
 
             # Update label
-            lbl_result = await db.execute(select(EntityLabel).where(EntityLabel.entity_id == entity.entity_id, EntityLabel.language == "ru"))
+            ru_lang_id = await get_language_id(db, "ru")
+            lbl_result = await db.execute(select(EntityLabel).where(EntityLabel.entity_id == entity.entity_id, EntityLabel.language_id == ru_lang_id))
             lbl = lbl_result.scalar_one_or_none()
             if lbl:
                 lbl.label = model_code
@@ -1088,12 +1115,13 @@ async def api_fields(
     fields = result.scalars().all()
 
     fields_data = []
+    ru_lang_id = await get_language_id(db, "ru")
     for f in fields:
         label_result = await db.execute(
             select(FieldRegistryLabel.label)
             .where(
                 FieldRegistryLabel.field_id == f.field_id,
-                FieldRegistryLabel.language == "ru"
+                FieldRegistryLabel.language_id == ru_lang_id
             )
         )
         ru_label = label_result.scalar_one_or_none() or f.field_label
@@ -1139,9 +1167,10 @@ async def api_create_field(
 
     # Add Russian label
     if body.get("label"):
+        ru_lang_id = await get_language_id(db, "ru")
         label = FieldRegistryLabel(
             field_id=field.field_id,
-            language="ru",
+            language_id=ru_lang_id,
             label=body["label"],
             description=body.get("description", ""),
         )
@@ -1189,10 +1218,11 @@ async def api_update_field(
 
     # Update Russian label
     if "label" in body:
+        ru_lang_id = await get_language_id(db, "ru")
         label_result = await db.execute(
             select(FieldRegistryLabel).where(
                 FieldRegistryLabel.field_id == UUID(field_id),
-                FieldRegistryLabel.language == "ru"
+                FieldRegistryLabel.language_id == ru_lang_id
             )
         )
         label = label_result.scalar_one_or_none()
@@ -1201,7 +1231,7 @@ async def api_update_field(
         else:
             db.add(FieldRegistryLabel(
                 field_id=UUID(field_id),
-                language="ru",
+                language_id=ru_lang_id,
                 label=body["label"],
             ))
 
@@ -1631,3 +1661,723 @@ async def admin_relation_type_delete(rt_id: str, db: AsyncSession = Depends(get_
     await db.delete(rt)
     await db.commit()
     return RedirectResponse(url="/admin/relation-types", status_code=303)
+
+
+# =============================================================================
+# LANGUAGES
+# =============================================================================
+
+@router.get("/languages", response_class=HTMLResponse)
+async def admin_languages(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+    from app.models.languages import Language
+    result = await db.execute(select(Language).order_by(Language.sort_order))
+    languages = result.scalars().all()
+    return templates.TemplateResponse("admin/languages.html", {
+        "request": request,
+        "user": user,
+        "languages": languages,
+    })
+
+
+@router.get("/languages/create", response_class=HTMLResponse)
+async def admin_language_create_page(request: Request, user: UserAccount = Depends(require_admin)):
+    return templates.TemplateResponse("admin/language_edit.html", {
+        "request": request,
+        "user": user,
+        "language": None,
+    })
+
+
+@router.post("/languages/create")
+async def admin_language_create(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+    code: str = Form(...),
+    name: str = Form(...),
+    native_name: str = Form(""),
+    sort_order: int = Form(0),
+):
+    from app.models.languages import Language
+    from app.services.language import clear_language_cache
+
+    lang = Language(
+        code=code.strip().lower(),
+        name=name,
+        native_name=native_name or None,
+        sort_order=sort_order,
+    )
+    db.add(lang)
+    await db.commit()
+    clear_language_cache()
+    return RedirectResponse(url="/admin/languages", status_code=303)
+
+
+@router.get("/languages/{lang_id}/edit", response_class=HTMLResponse)
+async def admin_language_edit_page(
+    request: Request,
+    lang_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+):
+    from app.models.languages import Language
+    result = await db.execute(select(Language).where(Language.language_id == UUID(lang_id)))
+    language = result.scalar_one_or_none()
+    if not language:
+        return RedirectResponse(url="/admin/languages", status_code=303)
+    return templates.TemplateResponse("admin/language_edit.html", {
+        "request": request,
+        "user": user,
+        "language": language,
+    })
+
+
+@router.post("/languages/{lang_id}/edit")
+async def admin_language_edit(
+    request: Request,
+    lang_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+    code: str = Form(...),
+    name: str = Form(...),
+    native_name: str = Form(""),
+    sort_order: int = Form(0),
+    is_active: bool = Form(True),
+):
+    from app.models.languages import Language
+    from app.services.language import clear_language_cache
+
+    result = await db.execute(select(Language).where(Language.language_id == UUID(lang_id)))
+    language = result.scalar_one_or_none()
+    if not language:
+        return RedirectResponse(url="/admin/languages", status_code=303)
+
+    language.code = code.strip().lower()
+    language.name = name
+    language.native_name = native_name or None
+    language.sort_order = sort_order
+    language.is_active = is_active
+    await db.commit()
+    clear_language_cache()
+    return RedirectResponse(url="/admin/languages", status_code=303)
+
+
+@router.post("/languages/{lang_id}/delete")
+async def admin_language_delete(
+    lang_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+):
+    from app.models.languages import Language
+    from app.services.language import clear_language_cache
+
+    result = await db.execute(select(Language).where(Language.language_id == UUID(lang_id)))
+    language = result.scalar_one_or_none()
+    if language:
+        await db.delete(language)
+        await db.commit()
+        clear_language_cache()
+    return RedirectResponse(url="/admin/languages", status_code=303)
+
+
+# =============================================================================
+# UI TRANSLATIONS
+# =============================================================================
+
+@router.get("/ui-translations", response_class=HTMLResponse)
+async def admin_ui_translations(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+    lang: str = Query("ru"),
+    search: str = Query(""),
+):
+    from app.models.languages import Language
+    from app.models.kinds import EntityKind
+    from app.models.projections import EntityProjection, ProjectionState, OntologyModel
+    from app.services.ui_translations import clear_translations_cache
+    
+    # Get all languages
+    lang_result = await db.execute(select(Language).order_by(Language.sort_order))
+    languages = lang_result.scalars().all()
+    
+    # Get ui_string kind
+    kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_code == "ui_string"))
+    kind = kind_result.scalar_one_or_none()
+    if not kind:
+        return templates.TemplateResponse("admin/ui_translations.html", {
+            "request": request, "user": user, "translations": [],
+            "languages": languages, "current_lang": lang, "search": search,
+            "error": "EntityKind 'ui_string' not found. Run migration 008.",
+        })
+    
+    # Get language model
+    model_result = await db.execute(select(OntologyModel).where(OntologyModel.model_code == "language"))
+    model = model_result.scalar_one_or_none()
+    
+    # Get current language ID
+    lang_obj_result = await db.execute(select(Language).where(Language.code == lang))
+    lang_obj = lang_obj_result.scalar_one_or_none()
+    
+    # Get all ui_string entities
+    entities_result = await db.execute(
+        select(Entity).where(Entity.kind_id == kind.kind_id, Entity.status == "active")
+        .order_by(Entity.entity_code)
+    )
+    entities = entities_result.scalars().all()
+    
+    # For each entity, get the translation for current language
+    translations = []
+    for entity in entities:
+        # Get projection for current language
+        value = ""
+        if model and lang_obj:
+            proj_result = await db.execute(
+                select(ProjectionState.state_data)
+                .join(EntityProjection)
+                .where(
+                    EntityProjection.entity_id == entity.entity_id,
+                    EntityProjection.model_id == model.model_id,
+                    ProjectionState.is_current == True
+                )
+            )
+            for state_data in proj_result.scalars().all():
+                if state_data and state_data.get("key") == entity.entity_code:
+                    value = state_data.get("value", "")
+                    break
+        
+        # Apply search filter
+        if search and search.lower() not in entity.entity_code.lower() and search.lower() not in value.lower():
+            continue
+        
+        translations.append({
+            "key": entity.entity_code,
+            "value": value,
+            "entity_id": entity.entity_id,
+        })
+    
+    return templates.TemplateResponse("admin/ui_translations.html", {
+        "request": request,
+        "user": user,
+        "translations": translations,
+        "languages": languages,
+        "current_lang": lang,
+        "search": search,
+    })
+
+
+@router.post("/ui-translations/update")
+async def admin_ui_translation_update(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+):
+    from app.models.languages import Language
+    from app.models.kinds import EntityKind
+    from app.models.projections import EntityProjection, ProjectionState, OntologyModel, OntologyTemplate
+    from app.models.entities import Context
+    from app.services.ui_translations import clear_translations_cache
+    import hashlib, json, uuid
+    
+    form = await request.form()
+    key = form.get("key", "")
+    lang_code = form.get("lang", "ru")
+    value = form.get("value", "")
+    
+    if not key:
+        return RedirectResponse(url="/admin/ui-translations", status_code=303)
+    
+    # Get required IDs
+    kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_code == "ui_string"))
+    kind = kind_result.scalar_one_or_none()
+    model_result = await db.execute(select(OntologyModel).where(OntologyModel.model_code == "language"))
+    model = model_result.scalar_one_or_none()
+    template_result = await db.execute(select(OntologyTemplate).where(OntologyTemplate.template_code == "ui_translation"))
+    template = template_result.scalar_one_or_none()
+    lang_result = await db.execute(select(Language).where(Language.code == lang_code))
+    lang_obj = lang_result.scalar_one_or_none()
+    ctx_result = await db.execute(select(Context).where(Context.context_code == "default"))
+    ctx = ctx_result.scalar_one_or_none()
+    
+    if not all([kind, model, template, lang_obj, ctx]):
+        return RedirectResponse(url="/admin/ui-translations", status_code=303)
+    
+    # Find or create entity
+    entity_result = await db.execute(
+        select(Entity).where(Entity.entity_code == key, Entity.kind_id == kind.kind_id)
+    )
+    entity = entity_result.scalar_one_or_none()
+    
+    if not entity:
+        # Create new entity
+        entity = Entity(
+            entity_id=uuid.uuid4(),
+            entity_code=key,
+            kind_id=kind.kind_id,
+            status="active",
+            version_id=1,
+        )
+        db.add(entity)
+        await db.flush()
+        
+        # Create Russian label
+        ru_lang_result = await db.execute(select(Language).where(Language.code == "ru"))
+        ru_lang = ru_lang_result.scalar_one_or_none()
+        if ru_lang:
+            label = EntityLabel(
+                entity_id=entity.entity_id,
+                language_id=ru_lang.language_id,
+                label=value if lang_code == "ru" else key,
+                is_primary=True,
+                version_id=1,
+            )
+            db.add(label)
+    
+    # Find or update projection for this language
+    proj_result = await db.execute(
+        select(EntityProjection, ProjectionState)
+        .join(ProjectionState, ProjectionState.projection_id == EntityProjection.projection_id)
+        .where(
+            EntityProjection.entity_id == entity.entity_id,
+            EntityProjection.model_id == model.model_id,
+            ProjectionState.is_current == True
+        )
+    )
+    
+    found = False
+    for proj, ps in proj_result:
+        # Check if this projection is for the correct language
+        if proj.projection_code and proj.projection_code.endswith(f"_{lang_code}"):
+            if ps.state_data and ps.state_data.get("key") == key:
+                # Update existing projection
+                ps.state_data = {"key": key, "value": value}
+                ps.state_hash = hashlib.sha256(json.dumps({"key": key, "value": value}, sort_keys=True).encode()).hexdigest()
+                from sqlalchemy.orm.attributes import flag_modified
+                flag_modified(ps, "state_data")
+                flag_modified(ps, "state_hash")
+                found = True
+                break
+    
+    if not found:
+        # Create new projection
+        proj_id = uuid.uuid4()
+        proj = EntityProjection(
+            projection_id=proj_id,
+            entity_id=entity.entity_id,
+            model_id=model.model_id,
+            template_id=template.template_id,
+            context_id=ctx.context_id,
+            projection_code=f"{key}_{lang_code}",
+            projection_name=f"{key} ({lang_code})",
+            confidence=1.0,
+            version_id=1,
+        )
+        db.add(proj)
+        await db.flush()
+        
+        state_data = {"key": key, "value": value}
+        state_hash = hashlib.sha256(json.dumps(state_data, sort_keys=True).encode()).hexdigest()
+        ps = ProjectionState(
+            projection_id=proj_id,
+            state_data=state_data,
+            state_hash=state_hash,
+            is_current=True,
+            version_id=1,
+        )
+        db.add(ps)
+    
+    await db.commit()
+    clear_translations_cache()
+    
+    return RedirectResponse(url=f"/admin/ui-translations?lang={lang_code}", status_code=303)
+
+
+@router.post("/ui-translations/create")
+async def admin_ui_translation_create(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+):
+    from app.models.languages import Language
+    from app.models.kinds import EntityKind
+    from app.models.projections import EntityProjection, ProjectionState, OntologyModel, OntologyTemplate
+    from app.models.entities import Context
+    from app.services.ui_translations import clear_translations_cache
+    import hashlib, json, uuid
+    
+    form = await request.form()
+    key = form.get("key", "").strip()
+    lang_code = form.get("lang", "ru")
+    value = form.get("value", "")
+    
+    if not key:
+        return RedirectResponse(url="/admin/ui-translations", status_code=303)
+    
+    # Sanitize key (lowercase, underscores only)
+    import re
+    key = re.sub(r'[^a-z0-9_]', '_', key.lower())
+    key = re.sub(r'_+', '_', key).strip('_')
+    
+    if not key:
+        return RedirectResponse(url="/admin/ui-translations", status_code=303)
+    
+    # Get required IDs
+    kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_code == "ui_string"))
+    kind = kind_result.scalar_one_or_none()
+    model_result = await db.execute(select(OntologyModel).where(OntologyModel.model_code == "language"))
+    model = model_result.scalar_one_or_none()
+    template_result = await db.execute(select(OntologyTemplate).where(OntologyTemplate.template_code == "ui_translation"))
+    template = template_result.scalar_one_or_none()
+    lang_result = await db.execute(select(Language).where(Language.code == lang_code))
+    lang_obj = lang_result.scalar_one_or_none()
+    ctx_result = await db.execute(select(Context).where(Context.context_code == "default"))
+    ctx = ctx_result.scalar_one_or_none()
+    
+    if not all([kind, model, template, lang_obj, ctx]):
+        return RedirectResponse(url="/admin/ui-translations", status_code=303)
+    
+    # Check if key already exists
+    existing_result = await db.execute(
+        select(Entity).where(Entity.entity_code == key, Entity.kind_id == kind.kind_id)
+    )
+    if existing_result.scalar_one_or_none():
+        return RedirectResponse(url=f"/admin/ui-translations?lang={lang_code}", status_code=303)
+    
+    # Create entity
+    entity = Entity(
+        entity_id=uuid.uuid4(),
+        entity_code=key,
+        kind_id=kind.kind_id,
+        status="active",
+        version_id=1,
+    )
+    db.add(entity)
+    await db.flush()
+    
+    # Create Russian label (primary)
+    ru_lang_result = await db.execute(select(Language).where(Language.code == "ru"))
+    ru_lang = ru_lang_result.scalar_one_or_none()
+    if ru_lang:
+        label = EntityLabel(
+            entity_id=entity.entity_id,
+            language_id=ru_lang.language_id,
+            label=value if lang_code == "ru" else key,
+            is_primary=True,
+            version_id=1,
+        )
+        db.add(label)
+    
+    # Create projection for this language
+    proj_id = uuid.uuid4()
+    proj = EntityProjection(
+        projection_id=proj_id,
+        entity_id=entity.entity_id,
+        model_id=model.model_id,
+        template_id=template.template_id,
+        context_id=ctx.context_id,
+        projection_code=f"{key}_{lang_code}",
+        projection_name=f"{key} ({lang_code})",
+        confidence=1.0,
+        version_id=1,
+    )
+    db.add(proj)
+    await db.flush()
+    
+    state_data = {"key": key, "value": value}
+    state_hash = hashlib.sha256(json.dumps(state_data, sort_keys=True).encode()).hexdigest()
+    ps = ProjectionState(
+        projection_id=proj_id,
+        state_data=state_data,
+        state_hash=state_hash,
+        is_current=True,
+        version_id=1,
+    )
+    db.add(ps)
+    
+    await db.commit()
+    clear_translations_cache()
+    
+    return RedirectResponse(url=f"/admin/ui-translations?lang={lang_code}", status_code=303)
+
+
+@router.post("/ui-translations/delete")
+async def admin_ui_translation_delete(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+):
+    from app.models.languages import Language
+    from app.models.kinds import EntityKind
+    from app.models.projections import EntityProjection, ProjectionState
+    from app.services.ui_translations import clear_translations_cache
+    
+    form = await request.form()
+    key = form.get("key", "")
+    lang_code = form.get("lang", "ru")
+    
+    if not key:
+        return RedirectResponse(url="/admin/ui-translations", status_code=303)
+    
+    # Get ui_string kind
+    kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_code == "ui_string"))
+    kind = kind_result.scalar_one_or_none()
+    if not kind:
+        return RedirectResponse(url="/admin/ui-translations", status_code=303)
+    
+    # Find entity
+    entity_result = await db.execute(
+        select(Entity).where(Entity.entity_code == key, Entity.kind_id == kind.kind_id)
+    )
+    entity = entity_result.scalar_one_or_none()
+    if not entity:
+        return RedirectResponse(url=f"/admin/ui-translations?lang={lang_code}", status_code=303)
+    
+    # Delete all projections and states for this entity
+    proj_result = await db.execute(
+        select(EntityProjection).where(EntityProjection.entity_id == entity.entity_id)
+    )
+    for proj in proj_result.scalars().all():
+        state_result = await db.execute(
+            select(ProjectionState).where(ProjectionState.projection_id == proj.projection_id)
+        )
+        for state in state_result.scalars().all():
+            await db.delete(state)
+        await db.delete(proj)
+    
+    # Delete entity
+    await db.delete(entity)
+    await db.commit()
+    clear_translations_cache()
+    
+    return RedirectResponse(url=f"/admin/ui-translations?lang={lang_code}", status_code=303)
+
+
+@router.get("/ui-translations/export")
+async def admin_ui_translation_export(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+    lang: str = Query("all"),
+):
+    from fastapi.responses import JSONResponse
+    from app.models.languages import Language
+    from app.models.kinds import EntityKind
+    from app.models.projections import EntityProjection, ProjectionState, OntologyModel
+    
+    # Get ui_string kind
+    kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_code == "ui_string"))
+    kind = kind_result.scalar_one_or_none()
+    if not kind:
+        return JSONResponse({"error": "ui_string kind not found"}, status_code=404)
+    
+    # Get language model
+    model_result = await db.execute(select(OntologyModel).where(OntologyModel.model_code == "language"))
+    model = model_result.scalar_one_or_none()
+    
+    # Get all languages
+    lang_result = await db.execute(select(Language).order_by(Language.sort_order))
+    languages = lang_result.scalars().all()
+    
+    # Get all ui_string entities
+    entities_result = await db.execute(
+        select(Entity).where(Entity.kind_id == kind.kind_id, Entity.status == "active")
+        .order_by(Entity.entity_code)
+    )
+    entities = entities_result.scalars().all()
+    
+    # Build export data
+    export_data = {
+        "version": "1.0",
+        "languages": [l.code for l in languages],
+        "translations": {}
+    }
+    
+    for entity in entities:
+        key = entity.entity_code
+        export_data["translations"][key] = {}
+        
+        if model:
+            proj_result = await db.execute(
+                select(ProjectionState.state_data)
+                .join(EntityProjection)
+                .where(
+                    EntityProjection.entity_id == entity.entity_id,
+                    EntityProjection.model_id == model.model_id,
+                    ProjectionState.is_current == True
+                )
+            )
+            for state_data in proj_result.scalars().all():
+                if state_data and "key" in state_data and "value" in state_data:
+                    # Determine language from projection_code suffix
+                    proj_code = state_data.get("key", "")
+                    # Try to find matching language
+                    for l in languages:
+                        if state_data.get("key") == key:
+                            # This is a translation for some language
+                            # We need to check which language this projection is for
+                            pass
+    
+    # Simpler approach: just export all translations by language
+    export_data = {
+        "version": "1.0",
+        "languages": [l.code for l in languages],
+        "translations": {}
+    }
+    
+    for entity in entities:
+        key = entity.entity_code
+        export_data["translations"][key] = {}
+        
+        if model:
+            proj_result = await db.execute(
+                select(EntityProjection, ProjectionState.state_data)
+                .join(ProjectionState, ProjectionState.projection_id == EntityProjection.projection_id)
+                .where(
+                    EntityProjection.entity_id == entity.entity_id,
+                    EntityProjection.model_id == model.model_id,
+                    ProjectionState.is_current == True
+                )
+            )
+            for proj, state_data in proj_result:
+                if state_data and "key" in state_data and "value" in state_data:
+                    # Extract language from projection_code (format: key_langcode)
+                    proj_code = proj.projection_code or ""
+                    for l in languages:
+                        if proj_code.endswith(f"_{l.code}"):
+                            export_data["translations"][key][l.code] = state_data["value"]
+                            break
+    
+    return JSONResponse(export_data)
+
+
+@router.post("/ui-translations/import")
+async def admin_ui_translation_import(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_admin),
+):
+    from fastapi.responses import JSONResponse
+    from app.models.languages import Language
+    from app.models.kinds import EntityKind
+    from app.models.projections import EntityProjection, ProjectionState, OntologyModel, OntologyTemplate
+    from app.models.entities import Context
+    from app.services.ui_translations import clear_translations_cache
+    import hashlib, json, uuid
+    
+    try:
+        body = await request.json()
+    except Exception:
+        return RedirectResponse(url="/admin/ui-translations", status_code=303)
+    
+    translations = body.get("translations", {})
+    if not translations:
+        return RedirectResponse(url="/admin/ui-translations", status_code=303)
+    
+    # Get required IDs
+    kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_code == "ui_string"))
+    kind = kind_result.scalar_one_or_none()
+    model_result = await db.execute(select(OntologyModel).where(OntologyModel.model_code == "language"))
+    model = model_result.scalar_one_or_none()
+    template_result = await db.execute(select(OntologyTemplate).where(OntologyTemplate.template_code == "ui_translation"))
+    template = template_result.scalar_one_or_none()
+    ctx_result = await db.execute(select(Context).where(Context.context_code == "default"))
+    ctx = ctx_result.scalar_one_or_none()
+    
+    if not all([kind, model, template, ctx]):
+        return RedirectResponse(url="/admin/ui-translations", status_code=303)
+    
+    # Get all languages
+    lang_result = await db.execute(select(Language))
+    languages = {l.code: l for l in lang_result.scalars().all()}
+    
+    imported = 0
+    for key, lang_values in translations.items():
+        if not isinstance(lang_values, dict):
+            continue
+        
+        # Find or create entity
+        entity_result = await db.execute(
+            select(Entity).where(Entity.entity_code == key, Entity.kind_id == kind.kind_id)
+        )
+        entity = entity_result.scalar_one_or_none()
+        
+        if not entity:
+            entity = Entity(
+                entity_id=uuid.uuid4(),
+                entity_code=key,
+                kind_id=kind.kind_id,
+                status="active",
+                version_id=1,
+            )
+            db.add(entity)
+            await db.flush()
+        
+        # Create/update projections for each language
+        for lang_code, value in lang_values.items():
+            if lang_code not in languages or not value:
+                continue
+            
+            lang_obj = languages[lang_code]
+            
+            # Check if projection exists
+            existing_proj = await db.execute(
+                select(EntityProjection)
+                .where(
+                    EntityProjection.entity_id == entity.entity_id,
+                    EntityProjection.model_id == model.model_id,
+                )
+            )
+            found = False
+            for proj in existing_proj.scalars().all():
+                state_result = await db.execute(
+                    select(ProjectionState)
+                    .where(
+                        ProjectionState.projection_id == proj.projection_id,
+                        ProjectionState.is_current == True
+                    )
+                )
+                ps = state_result.scalar_one_or_none()
+                if ps and ps.state_data and ps.state_data.get("key") == key:
+                    # Check if this is for the right language
+                    if proj.projection_code and proj.projection_code.endswith(f"_{lang_code}"):
+                        ps.state_data = {"key": key, "value": value}
+                        ps.state_hash = hashlib.sha256(json.dumps({"key": key, "value": value}, sort_keys=True).encode()).hexdigest()
+                        from sqlalchemy.orm.attributes import flag_modified
+                        flag_modified(ps, "state_data")
+                        flag_modified(ps, "state_hash")
+                        found = True
+                        break
+            
+            if not found:
+                proj_id = uuid.uuid4()
+                proj = EntityProjection(
+                    projection_id=proj_id,
+                    entity_id=entity.entity_id,
+                    model_id=model.model_id,
+                    template_id=template.template_id,
+                    context_id=ctx.context_id,
+                    projection_code=f"{key}_{lang_code}",
+                    projection_name=f"{key} ({lang_code})",
+                    confidence=1.0,
+                    version_id=1,
+                )
+                db.add(proj)
+                await db.flush()
+                
+                state_data = {"key": key, "value": value}
+                state_hash = hashlib.sha256(json.dumps(state_data, sort_keys=True).encode()).hexdigest()
+                ps = ProjectionState(
+                    projection_id=proj_id,
+                    state_data=state_data,
+                    state_hash=state_hash,
+                    is_current=True,
+                    version_id=1,
+                )
+                db.add(ps)
+        
+        imported += 1
+    
+    await db.commit()
+    clear_translations_cache()
+    
+    return RedirectResponse(url="/admin/ui-translations", status_code=303)

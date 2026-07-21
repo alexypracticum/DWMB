@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ request.state.t.admin_kinds }} — Языки{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">Языки</h1>
+        <a href="/admin/languages/create" class="px-4 py-2 text-sm text-white rounded-lg transition" style="background: var(--color-primary);">{{ request.state.t.admin_create }}</a>
+    </div>
+
+    <div class="rounded-xl border overflow-hidden" style="background: var(--color-surface); border-color: var(--color-border);">
+        <table class="w-full text-sm">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--color-border);">
+                    <th class="px-4 py-3 text-left font-medium" style="color: var(--color-text-secondary);">Код</th>
+                    <th class="px-4 py-3 text-left font-medium" style="color: var(--color-text-secondary);">Название</th>
+                    <th class="px-4 py-3 text-left font-medium" style="color: var(--color-text-secondary);">Название (родной)</th>
+                    <th class="px-4 py-3 text-left font-medium" style="color: var(--color-text-secondary);">Порядок</th>
+                    <th class="px-4 py-3 text-left font-medium" style="color: var(--color-text-secondary);">Активен</th>
+                    <th class="px-4 py-3 text-right font-medium" style="color: var(--color-text-secondary);">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lang in languages %}
+                <tr style="border-bottom: 1px solid var(--color-border);">
+                    <td class="px-4 py-3 font-mono text-xs" style="color: var(--color-text);">{{ lang.code }}</td>
+                    <td class="px-4 py-3" style="color: var(--color-text);">{{ lang.name }}</td>
+                    <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ lang.native_name or '-' }}</td>
+                    <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ lang.sort_order }}</td>
+                    <td class="px-4 py-3">
+                        {% if lang.is_active %}
+                        <span class="px-2 py-0.5 text-xs rounded-full" style="background: #d1fae5; color: #065f46;">Активен</span>
+                        {% else %}
+                        <span class="px-2 py-0.5 text-xs rounded-full" style="background: #fee2e2; color: #991b1b;">Неактивен</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <a href="/admin/languages/{{ lang.language_id }}/edit" class="text-sm hover:underline" style="color: var(--color-primary);">{{ request.state.t.admin_edit }}</a>
+                        <form action="/admin/languages/{{ lang.language_id }}/delete" method="post" class="inline" onsubmit="return confirm('Удалить язык?')">
+                            <button type="submit" class="text-sm hover:underline ml-2" style="color: var(--color-error);">{{ request.state.t.admin_confirm_delete }}</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

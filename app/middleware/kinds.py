@@ -9,6 +9,7 @@ from sqlalchemy import select, or_
 from app.database import async_session
 from app.models.kinds import EntityKind, EntityKindLabel
 from app.services.cache import cache_get, cache_set
+from app.services.language import get_language_id
 
 
 class KindsMiddleware(BaseHTTPMiddleware):
@@ -43,17 +44,32 @@ class KindsMiddleware(BaseHTTPMiddleware):
                     )
                     kinds = result.scalars().all()
 
+                    lang_id = await get_language_id(session, lang)
+                    ru_lang_id = await get_language_id(session, "ru")
+
                     kinds_with_labels = []
                     cache_data = []
                     for kind in kinds:
-                        label_result = await session.execute(
-                            select(EntityKindLabel.label).where(
-                                EntityKindLabel.kind_id == kind.kind_id,
-                                or_(EntityKindLabel.language == lang, EntityKindLabel.language == "ru")
-                            ).order_by(
-                                (EntityKindLabel.language == lang).desc()
-                            ).limit(1)
-                        )
+                        if lang_id or ru_lang_id:
+                            or_clauses = []
+                            if lang_id:
+                                or_clauses.append(EntityKindLabel.language_id == lang_id)
+                            if ru_lang_id:
+                                or_clauses.append(EntityKindLabel.language_id == ru_lang_id)
+                            label_result = await session.execute(
+                                select(EntityKindLabel.label).where(
+                                    EntityKindLabel.kind_id == kind.kind_id,
+                                    or_(*or_clauses)
+                                ).order_by(
+                                    (EntityKindLabel.language_id == lang_id).desc() if lang_id else True
+                                ).limit(1)
+                            )
+                        else:
+                            label_result = await session.execute(
+                                select(EntityKindLabel.label).where(
+                                    EntityKindLabel.kind_id == kind.kind_id,
+                                ).limit(1)
+                            )
                         label = label_result.scalar_one_or_none() or kind.kind_code
                         kind._display_label = label
                         kinds_with_labels.append(kind)

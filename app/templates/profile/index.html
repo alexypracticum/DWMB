@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Профиль - DWMB{% endblock %}
+{% block title %}{{ request.state.t.label_profile }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-3xl">
-    <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">Профиль пользователя</h1>
+    <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">{{ request.state.t.label_profile }}</h1>
 
     {% if error %}
     <div class="px-4 py-3 rounded-lg mb-4 text-sm" style="background: color-mix(in srgb, var(--color-error) 15%, transparent); color: var(--color-error);">{{ error }}</div>
@@ -11,10 +11,10 @@
 
     <!-- Profile Info -->
     <div class="card rounded-xl p-6 shadow-sm mb-6" style="border: 1px solid var(--color-border);">
-        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Личная информация</h2>
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.label_personal_info }}</h2>
         <form action="/profile/update" method="post" class="space-y-4">
             <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
-                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Имя</div>
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.label_name }}</div>
                 <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
                 <div class="flex-1">
                     <input type="text" name="display_name" value="{{ user.display_name or '' }}"
@@ -23,7 +23,7 @@
                 </div>
             </div>
             <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
-                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Email</div>
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.label_email }}</div>
                 <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
                 <div class="flex-1">
                     <input type="email" name="email" value="{{ user.email or '' }}"
@@ -32,7 +32,7 @@
                 </div>
             </div>
             <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
-                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Телефон</div>
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.label_phone }}</div>
                 <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
                 <div class="flex-1">
                     <input type="text" name="phone" value="{{ user.phone or '' }}"
@@ -41,7 +41,7 @@
                 </div>
             </div>
             <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
-                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">О себе</div>
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.label_about }}</div>
                 <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
                 <div class="flex-1">
                     <textarea name="bio" rows="3"
@@ -50,28 +50,31 @@
                 </div>
             </div>
             <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
-                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Язык</div>
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.label_language }}</div>
                 <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
                 <div class="flex-1">
-                    <select name="language_preference" class="form-select w-full px-3 py-2 rounded-lg outline-none text-sm"
+                    <select name="language_id" class="form-select w-full px-3 py-2 rounded-lg outline-none text-sm"
                         style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
-                        <option value="ru" {% if user.language_preference == 'ru' %}selected{% endif %}>Русский</option>
-                        <option value="en" {% if user.language_preference == 'en' %}selected{% endif %}>English</option>
+                        {% for lang in languages %}
+                        <option value="{{ lang.language_id }}" {% if user.language_id == lang.language_id %}selected{% endif %}>
+                            {{ lang.native_name or lang.name }} ({{ lang.code }})
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
             </div>
             <div class="flex justify-end">
-                <button type="submit" class="btn btn-primary px-6 py-2 rounded-lg transition">Сохранить</button>
+                <button type="submit" class="btn btn-primary px-6 py-2 rounded-lg transition">{{ request.state.t.btn_save }}</button>
             </div>
         </form>
     </div>
 
     <!-- Change Password -->
     <div class="card rounded-xl p-6 shadow-sm mb-6" style="border: 1px solid var(--color-border);">
-        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Изменить пароль</h2>
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.label_change_password }}</h2>
         <form action="/profile/change-password" method="post" class="space-y-4">
             <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
-                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Текущий пароль</div>
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.label_current_password }}</div>
                 <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
                 <div class="flex-1">
                     <input type="password" name="current_password" required
@@ -80,7 +83,7 @@
                 </div>
             </div>
             <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
-                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Новый пароль</div>
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.label_new_password }}</div>
                 <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
                 <div class="flex-1">
                     <input type="password" name="new_password" required minlength="6"
@@ -89,25 +92,25 @@
                 </div>
             </div>
             <div class="flex justify-end">
-                <button type="submit" class="btn px-6 py-2 rounded-lg transition" style="background: var(--color-accent); color: #000;">Изменить пароль</button>
+                <button type="submit" class="btn px-6 py-2 rounded-lg transition" style="background: var(--color-accent); color: #000;">{{ request.state.t.label_change_password }}</button>
             </div>
         </form>
     </div>
 
     <!-- Themes -->
     <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
-        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Темы оформления</h2>
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.label_themes }}</h2>
 
         <!-- Create new theme -->
         <form action="/profile/theme/create" method="post" class="flex gap-3 mb-4">
-            <input type="text" name="theme_name" placeholder="Название темы" required
+            <input type="text" name="theme_name" placeholder="{{ request.state.t.label_theme_name }}" required
                 class="form-input flex-1 px-3 py-2 rounded-lg text-sm outline-none"
                 style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
             <label class="flex items-center gap-2 text-sm" style="color: var(--color-text-secondary);">
                 <input type="checkbox" name="is_dark" value="true" class="rounded" style="border-color: var(--color-border);">
-                Тёмная
+                {{ request.state.t.label_dark }}
             </label>
-            <button type="submit" class="btn btn-success px-4 py-2 rounded-lg transition text-sm">Создать</button>
+            <button type="submit" class="btn btn-success px-4 py-2 rounded-lg transition text-sm">{{ request.state.t.btn_create }}</button>
         </form>
 
         <!-- Theme list -->
@@ -117,24 +120,24 @@
                  style="{% if theme_item.is_active %}background: color-mix(in srgb, var(--color-primary) 10%, transparent); border: 1px solid var(--color-primary);{% else %}background: color-mix(in srgb, var(--color-text-secondary) 5%, transparent); border: 1px solid var(--color-border);{% endif %}">
                 <div class="flex items-center gap-3">
                     <span class="font-medium text-sm" style="color: var(--color-text);">{{ theme_item.theme_name }}</span>
-                    {% if theme_item.is_dark %}<span class="text-xs" style="color: var(--color-text-secondary);">(тёмная)</span>{% endif %}
-                    {% if theme_item.is_active %}<span class="text-xs font-medium" style="color: var(--color-primary);">Активна</span>{% endif %}
+                    {% if theme_item.is_dark %}<span class="text-xs" style="color: var(--color-text-secondary);">({{ request.state.t.label_dark }})</span>{% endif %}
+                    {% if theme_item.is_active %}<span class="text-xs font-medium" style="color: var(--color-primary);">{{ request.state.t.label_active }}</span>{% endif %}
                 </div>
                 <div class="flex gap-2">
-                    <a href="/profile/theme-editor/{{ theme_item.theme_id }}" class="text-xs hover-primary" style="color: var(--color-primary);">Редактировать</a>
+                    <a href="/profile/theme-editor/{{ theme_item.theme_id }}" class="text-xs hover-primary" style="color: var(--color-primary);">{{ request.state.t.label_edit_theme }}</a>
                     {% if not theme_item.is_active %}
                     <form action="/profile/theme/{{ theme_item.theme_id }}/activate" method="post" class="inline">
-                        <button type="submit" class="text-xs hover-primary" style="color: var(--color-primary);">Активировать</button>
+                        <button type="submit" class="text-xs hover-primary" style="color: var(--color-primary);">{{ request.state.t.label_activate }}</button>
                     </form>
                     {% endif %}
-                    <form action="/profile/theme/{{ theme_item.theme_id }}/delete" method="post" class="inline" onsubmit="return confirm('Удалить тему?')">
-                        <button type="submit" class="text-xs" style="color: var(--color-error);">Удалить</button>
+                    <form action="/profile/theme/{{ theme_item.theme_id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ request.state.t.label_confirm_delete_theme }}')">
+                        <button type="submit" class="text-xs" style="color: var(--color-error);">{{ request.state.t.btn_delete }}</button>
                     </form>
                 </div>
             </div>
             {% endfor %}
             {% if not themes %}
-            <div class="text-sm text-center py-4" style="color: var(--color-text-secondary);">Нет пользовательских тем</div>
+            <div class="text-sm text-center py-4" style="color: var(--color-text-secondary);">{{ request.state.t.label_no_themes }}</div>
             {% endif %}
         </div>
     </div>

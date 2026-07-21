@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{% if language %}Редактировать язык{% else %}Новый язык{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-6">
+        <a href="/admin/languages" class="text-sm hover:underline" style="color: var(--color-primary);">{{ request.state.t.admin_back }} Языки</a>
+    </div>
+
+    <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">{% if language %}Редактировать язык{% else %}Новый язык{% endif %}</h1>
+
+    <form action="{% if language %}/admin/languages/{{ language.language_id }}/edit{% else %}/admin/languages/create{% endif %}" method="post" class="space-y-4">
+        <div>
+            <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Код языка (ISO 639-1)</label>
+            <input type="text" name="code" value="{{ language.code if language else '' }}" required maxlength="10"
+                   class="w-full px-3 py-2 rounded-lg border outline-none transition text-sm"
+                   style="background: var(--color-bg); border-color: var(--color-border); color: var(--color-text);"
+                   placeholder="ru, en, de, fr, es, zh, ja">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Название</label>
+            <input type="text" name="name" value="{{ language.name if language else '' }}" required maxlength="100"
+                   class="w-full px-3 py-2 rounded-lg border outline-none transition text-sm"
+                   style="background: var(--color-bg); border-color: var(--color-border); color: var(--color-text);"
+                   placeholder="Русский, English, Deutsch...">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Название на родном языке</label>
+            <input type="text" name="native_name" value="{{ language.native_name if language else '' }}" maxlength="100"
+                   class="w-full px-3 py-2 rounded-lg border outline-none transition text-sm"
+                   style="background: var(--color-bg); border-color: var(--color-border); color: var(--color-text);"
+                   placeholder="Русский, English, Deutsch...">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Порядок сортировки</label>
+            <input type="number" name="sort_order" value="{{ language.sort_order if language else 0 }}"
+                   class="w-full px-3 py-2 rounded-lg border outline-none transition text-sm"
+                   style="background: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
+        </div>
+
+        {% if language %}
+        <div class="flex items-center gap-2">
+            <input type="checkbox" name="is_active" value="true" {% if language.is_active %}checked{% endif %}
+                   class="rounded">
+            <label class="text-sm" style="color: var(--color-text-secondary);">Активен</label>
+        </div>
+        {% endif %}
+
+        <div class="flex gap-3 pt-4">
+            <button type="submit" class="px-6 py-2 text-sm text-white rounded-lg transition" style="background: var(--color-primary);">{{ request.state.t.admin_save }}</button>
+            <a href="/admin/languages" class="px-6 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.admin_cancel }}</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

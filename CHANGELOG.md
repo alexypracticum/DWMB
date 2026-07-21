@@ -1,5 +1,78 @@
 # Changelog
 
+## [0.8.0] — 2026-07-21
+
+### Добавлено
+- CRUD для создания новых UI-строк в admin panel
+- CRUD для удаления UI-строк
+- Экспорт переводов в JSON (/admin/ui-translations/export)
+- Импорт переводов из JSON (/admin/ui-translations/import)
+- Кнопки экспорта/импорта в шаблоне UI переводов
+
+### Изменено
+- i18n.py заменена на обёртку (обратная совместимость)
+- Все импорты обновлены: language.py вместо i18n.py
+- Middleware theme.py: загрузка из БД exclusively
+- Тесты обновлены (20 тестов)
+
+---
+
+## [0.7.0] — 2026-07-21
+
+### Добавлено
+- EntityKind "ui_string" для хранения UI-строк как сущностей
+- OntologyTemplate "ui_translation" с полями key, value (multilingual)
+- Миграция 008: создание ui_string сущностей и шаблона
+- Seed-скрипт 03_ui_translations.py: миграция 269 переводов из i18n.py в сущности
+- Сервис ui_translations.py: чтение переводов из БД с кэшированием
+- CRUD для управления UI переводами в admin panel (/admin/ui-translations)
+- Шаблон ui_translations.html с табами языков и inline-редактированием
+- 269 UI-строк с мультиязычными проекциями (7 языков x 269 ключей)
+
+### Изменено
+- Middleware theme.py: загрузка переводов из БД с fallback на i18n.py
+- Admin dashboard: добавлена ссылка "UI Переводы"
+
+---
+
+## [0.6.1] — 2026-07-21
+
+### Добавлено
+- Перевод кнопки "Языки" в admin dashboard на 7 языков
+- Перевод блока "Пользователи" (таблица: Имя, Email, Роль, Статус, Действия)
+- Перевод статусов пользователей (активен/заблокирован)
+- Перевод кнопок действий (Снять admin/Сделать admin, Заблокировать/Разблокировать)
+- 13 новых ключей перевода x 7 языков в i18n.py
+
+---
+
+## [0.6.0] — 2026-07-21
+
+### Добавлено
+- Таблица meta.language — динамический справочник языков (замена ENUM language_code)
+- Переводы интерфейса на 7 языков: русский, английский, немецкий, французский, испанский, китайский, японский
+- Переключатель языков в навигации с флагами (7 языков)
+- CRUD для языков в админ-панели (список, создание, редактирование, удаление)
+- Миграция 007: замена ENUM language_code на FK language_id в EntityLabel, EntityKindLabel, FieldRegistryLabel, UserAccount
+- ORM модель Language для работы со справочником языков
+- Сервис language.py с кэшированием и вспомогательными функциями
+- 21 тест мультиязычности (переводы, переключение, модели)
+
+### Изменено
+- EntityLabel.language → EntityLabel.language_id (UUID FK → language table)
+- EntityKindLabel.language → EntityKindLabel.language_id (UUID FK → language table)
+- FieldRegistryLabel.language → FieldRegistryLabel.language_id (UUID FK → language table)
+- UserAccount.language_preference → UserAccount.language_id (UUID FK → language table)
+- Middleware theme.py: получение языка через FK language_id
+- Middleware kinds.py: запросы с использованием language_id
+- Все маршруты (entities, admin, search, editor_api, import_api, profile) обновлены для работы с FK
+- set-lang route: поддержка всех 7 языков
+
+### Исправлено
+- Тест test_i18n_service.py: обновлён для поддержки новых языков
+
+---
+
 ## [0.5.2] — 2026-07-20
 
 ### Добавлено

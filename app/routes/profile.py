@@ -12,6 +12,7 @@ from app.database import get_db
 from app.models.users import UserAccount
 from app.models.themes import UserTheme
 from app.services.auth import get_current_user, require_auth, get_password_hash
+from app.services.language import get_language_id
 
 router = APIRouter(prefix="/profile", tags=["profile"])
 templates = Jinja2Templates(directory="app/templates")
@@ -30,10 +31,16 @@ async def profile_page(
     )
     themes = themes_result.scalars().all()
 
+    # Get available languages
+    from app.models.languages import Language
+    lang_result = await db.execute(select(Language).where(Language.is_active == True).order_by(Language.sort_order))
+    languages = lang_result.scalars().all()
+
     return templates.TemplateResponse("profile/index.html", {
         "request": request,
         "user": user,
         "themes": themes,
+        "languages": languages,
     })
 
 
@@ -44,11 +51,13 @@ async def update_profile(
     email: str = Form(None),
     phone: str = Form(None),
     bio: str = Form(None),
-    language_preference: str = Form("ru"),
+    language_id: str = Form(None),
     db: AsyncSession = Depends(get_db),
     user: UserAccount = Depends(require_auth),
 ):
     """Update user profile."""
+    from app.services.language import clear_language_cache
+    
     if display_name is not None:
         user.display_name = display_name
     if email is not None:
@@ -57,8 +66,12 @@ async def update_profile(
         user.phone = phone
     if bio is not None:
         user.bio = bio
-    if language_preference:
-        user.language_preference = language_preference
+    if language_id:
+        try:
+            user.language_id = UUID(language_id)
+            clear_language_cache()
+        except (ValueError, TypeError):
+            pass
 
     await db.commit()
     return RedirectResponse(url="/profile/", status_code=303)

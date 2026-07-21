@@ -1,86 +1,101 @@
+"""
+DWMB — Dynamic World Meta-Base
+Main FastAPI application with plugin system.
+"""
 import os
 import logging
-import httpx
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, Request, Query
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse, StreamingResponse
+from starlette.middleware.cors import CORSMiddleware
+from jose import JWTError, jwt
 
-# Core routes (always loaded)
-from app.routes import auth, entities, search, admin, editor_api, profile, comments, export, feeds
-
-# Core middleware
+from app.config import get_settings
+from app.database import async_session
 from app.middleware.theme import ThemeMiddleware
 from app.middleware.kinds import KindsMiddleware
-from app.middleware.rate_limit import limiter, rate_limit_exceeded_handler
-from app.config import get_settings
+from app.middleware.rate_limit import limiter, get_rate_limit
 
-# Cache
-from app.services.cache import init_cache, close_cache
+settings = get_settings()
 
-# Plugin system
-from plugins import load_plugins
+# ─── Logging ──────────────────────────────────────────────────
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("dwmb")
 
-logger = logging.getLogger(__name__)
+# ─── App ──────────────────────────────────────────────────────
+app = FastAPI(
+    title="DWMB — Dynamic World Meta-Base",
+    description="Семантическая база знаний с онтологической моделью данных",
+    version="0.8.0",
+)
 
-
-@asynccontextmanager
-async def lifespan(app):
-    settings = get_settings()
-    redis_url = getattr(settings, "REDIS_URL", "redis://localhost:6379/0")
-    await init_cache(redis_url)
-    yield
-    await close_cache()
-
-
-app = FastAPI(title="DWMB Meta-System", docs_url="/docs", redoc_url=None, lifespan=lifespan)
-
-# Rate limiter
-app.state.limiter = limiter
-app.add_exception_handler(429, rate_limit_exceeded_handler)
-
-# ─── Middleware (order matters: outermost first) ───────────────
+# ─── Middleware (order matters: last added = first executed) ───
+# ThemeMiddleware MUST run before KindsMiddleware to set request.state.lang
 app.add_middleware(KindsMiddleware)
 app.add_middleware(ThemeMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# ─── Static files ──────────────────────────────────────────────
+# ─── Static files ─────────────────────────────────────────────
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
-media_dir = os.path.join(os.path.dirname(__file__), "media")
-os.makedirs(os.path.join(media_dir, "uploads"), exist_ok=True)
+# ─── Rate limiting ────────────────────────────────────────────
+app.state.limiter = limiter
+app.add_exception_handler(429, get_rate_limit)
 
 
-@app.api_route("/media/proxy", methods=["GET"])
-async def media_proxy(url: str):
-    """Proxy MinIO/external URLs to bypass CORS and Docker-internal hostnames."""
-    settings = get_settings()
-    target_url = url.replace(f"http://{settings.MINIO_ENDPOINT}", f"http://{settings.MINIO_PUBLIC_ENDPOINT}")
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.get(target_url, follow_redirects=True)
-        content_type = resp.headers.get("content-type", "application/octet-stream")
-        return StreamingResponse(
-            iter([resp.content]),
-            media_type=content_type,
-            headers={"Cache-Control": "public, max-age=86400"},
-        )
-
-
-app.mount("/media", StaticFiles(directory=media_dir), name="media")
-
-
+# ─── Language switch ──────────────────────────────────────────
 @app.get("/set-lang")
-async def set_language(lang: str = "ru", next: str = "/"):
-    """Set language preference via cookie and redirect."""
-    from fastapi.responses import RedirectResponse
-    if lang not in ("ru", "en"):
+async def set_language(request: Request, lang: str = "ru", next: str = "/"):
+    """Set language preference via cookie AND user profile."""
+    from sqlalchemy import select
+    from app.models.languages import Language
+    from app.models.users import UserAccount
+    from app.services.language import clear_language_cache
+    
+    valid_langs = ("ru", "en", "de", "fr", "es", "zh", "ja")
+    if lang not in valid_langs:
         lang = "ru"
+    
     response = RedirectResponse(url=next, status_code=303)
     response.set_cookie("lang", lang, max_age=365 * 24 * 3600)
+    
+    # Save to user profile if logged in
+    token = request.cookies.get("access_token")
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            username = payload.get("sub")
+            if username:
+                async with async_session() as session:
+                    # Get user
+                    result = await session.execute(
+                        select(UserAccount).where(UserAccount.username == username)
+                    )
+                    user = result.scalar_one_or_none()
+                    if user:
+                        # Get language_id
+                        lang_result = await session.execute(
+                            select(Language.language_id).where(Language.code == lang)
+                        )
+                        lang_id = lang_result.scalar_one_or_none()
+                        if lang_id:
+                            user.language_id = lang_id
+                            await session.commit()
+                            clear_language_cache()
+        except JWTError:
+            pass
+    
     return response
 
 
 # ─── Core routers (always loaded) ─────────────────────────────
+from app.routes import auth, entities, search, admin, editor_api, profile, comments, export, feeds
 app.include_router(auth.router)
 app.include_router(entities.router)
 app.include_router(search.router)
@@ -91,7 +106,27 @@ app.include_router(comments.router)
 app.include_router(export.router)
 app.include_router(feeds.router)
 
-# ─── Plugin routers (loaded dynamically) ──────────────────────
-load_plugins(app)
 
-logger.info("DWMB Meta-System started. Core + %d plugins loaded.", len([r for r in app.routes]))
+# ─── Media proxy ──────────────────────────────────────────────
+@app.get("/media/proxy")
+async def media_proxy(url: str = Query(...)):
+    """Proxy media files to avoid CORS issues."""
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(url, follow_redirects=True)
+            content_type = resp.headers.get("content-type", "application/octet-stream")
+            return StreamingResponse(
+                iter([resp.content]),
+                media_type=content_type,
+                headers={"Content-Disposition": f"inline; filename={url.split('/')[-1]}"},
+            )
+    except Exception as e:
+        logger.error(f"Media proxy error: {e}")
+        return JSONResponse({"error": str(e)}, status_code=502)
+
+
+# ─── Health check ─────────────────────────────────────────────
+@app.get("/health")
+async def health():
+    return {"status": "ok", "version": "0.8.0"}

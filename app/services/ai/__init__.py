@@ -277,7 +277,7 @@ Text: {text}"""
                 ps.state_data,
                 1 - (ps.embedding <=> :query_embedding::vector) as similarity
             FROM meta.entity e
-            JOIN meta.entity_label el ON el.entity_id = e.entity_id AND el.language = 'ru' AND el.is_primary = true
+            JOIN meta.entity_label el ON el.entity_id = e.entity_id AND el.language_id = (SELECT language_id FROM meta.language WHERE code = 'ru' LIMIT 1) AND el.is_primary = true
             JOIN meta.entity_kind ek ON ek.kind_id = e.kind_id
             JOIN meta.entity_projection ep ON ep.entity_id = e.entity_id
             JOIN meta.projection_state ps ON ps.projection_id = ep.projection_id AND ps.is_current = true
@@ -340,7 +340,7 @@ Text: {text}"""
             FROM meta.projection_state source
             JOIN meta.entity_projection ep ON ep.projection_id = source.projection_id
             JOIN meta.entity e ON e.entity_id = ep.entity_id
-            JOIN meta.entity_label el ON el.entity_id = e.entity_id AND el.language = 'ru' AND el.is_primary = true
+            JOIN meta.entity_label el ON el.entity_id = e.entity_id AND el.language_id = (SELECT language_id FROM meta.language WHERE code = 'ru' LIMIT 1) AND el.is_primary = true
             JOIN meta.entity_kind ek ON ek.kind_id = e.kind_id
             JOIN meta.projection_state ps ON ps.projection_id = (
                 SELECT ep2.projection_id

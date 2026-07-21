@@ -98,7 +98,7 @@ class EntityLabel(Base):
 
     entity_label_id = Column(BigInteger, primary_key=True, autoincrement=True)
     entity_id = Column(UUID(as_uuid=True), ForeignKey("meta.entity.entity_id", ondelete="CASCADE"), nullable=False)
-    language = Column(PG_ENUM("en", "ru", "de", "fr", "es", "zh", "ja", name="language_code", schema="meta", create_type=False), nullable=False)
+    language_id = Column(UUID(as_uuid=True), ForeignKey("meta.language.language_id"), nullable=False)
     label = Column(String, nullable=False)
     description = Column(Text)
     content = Column(Text)
@@ -107,6 +107,7 @@ class EntityLabel(Base):
     version_id = Column(BigInteger, nullable=False)
 
     entity = relationship("Entity", back_populates="labels")
+    language = relationship("Language", foreign_keys=[language_id])
 
 
 class MediaAsset(Base):

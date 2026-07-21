@@ -37,7 +37,7 @@
                 {% endif %}
             </div>
             <h1 class="text-3xl font-bold text-gray-800">
-                {% for label in labels %}{% if label.language == 'ru' %}{{ label.label }}{% endif %}{% endfor %}
+                {% for label in labels %}{% if label.language.code == 'ru' %}{{ label.label }}{% endif %}{% endfor %}
                 {% set ws = entity.workflow_state or 'published' %}
                 <span class="ml-2 px-2 py-0.5 text-xs rounded-full align-middle
                     {% if ws == 'draft' %}bg-yellow-100 text-yellow-700
@@ -47,7 +47,7 @@
                     {% if ws == 'draft' %}Черновик{% elif ws == 'archived' %}Архив{% else %}Опубликовано{% endif %}
                 </span>
             </h1>
-            {% for label in labels %}{% if label.language == 'en' %}
+            {% for label in labels %}{% if label.language.code == 'en' %}
             <div class="text-lg text-gray-500 mt-1">{{ label.label }}</div>
             {% endif %}{% endfor %}
         </div>
@@ -95,7 +95,7 @@
     </div>
     {% else %}
     <!-- Fallback: Description -->
-    {% for label in labels %}{% if label.language == 'ru' and label.description %}
+    {% for label in labels %}{% if label.language.code == 'ru' and label.description %}
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
         <p class="text-gray-700 leading-relaxed">{{ label.description }}</p>
     </div>
@@ -173,7 +173,7 @@
         <div class="space-y-3">
             {% for label in labels %}
             <div class="flex items-center gap-3">
-                <span class="px-2 py-0.5 text-xs font-mono bg-gray-100 text-gray-600 rounded">{{ label.language }}</span>
+                <span class="px-2 py-0.5 text-xs font-mono bg-gray-100 text-gray-600 rounded">{{ label.language.code }}</span>
                 <span class="font-medium text-gray-800">{{ label.label }}</span>
                 {% if label.is_primary %}
                 <span class="px-1.5 py-0.5 text-xs bg-green-100 text-green-700 rounded">основной</span>

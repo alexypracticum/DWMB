@@ -33,11 +33,12 @@ class EntityKindLabel(Base):
     __table_args__ = {"schema": "meta"}
 
     kind_id = Column(UUID(as_uuid=True), ForeignKey("meta.entity_kind.kind_id", ondelete="CASCADE"), primary_key=True)
-    language = Column(PG_ENUM("en", "ru", "de", "fr", "es", "zh", "ja", name="language_code", schema="meta", create_type=False), primary_key=True)
+    language_id = Column(UUID(as_uuid=True), ForeignKey("meta.language.language_id"), primary_key=True)
     label = Column(String, nullable=False)
     description = Column(Text)
 
     kind = relationship("EntityKind", back_populates="labels")
+    language = relationship("Language", foreign_keys=[language_id])
 
 
 class EntityKindRelationConstraint(Base):

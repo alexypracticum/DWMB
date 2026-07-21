@@ -12,6 +12,15 @@ from app.models.relations import SemanticRelation, RelationType
 from app.models.users import UserAccount
 from app.services.auth import get_current_user, require_auth
 from app.services.layout import render_layout, get_state_field, get_localized_value
+from app.services.language import get_language_id
+
+
+
+async def _get_lang_id(db, code: str):
+    """Get language UUID by code, with caching."""
+    from app.services.language import get_language_id as _get_id
+    return await _get_id(db, code)
+
 
 router = APIRouter(tags=["entities"])
 templates = Jinja2Templates(directory="app/templates")
@@ -20,21 +29,39 @@ templates = Jinja2Templates(directory="app/templates")
 async def _get_kind_label(db, kind_id, lang="ru"):
     """Get kind label with language fallback: current → 'ru' → kind_code."""
     from sqlalchemy import or_
+    lang_id = await _get_lang_id(db, lang)
+    ru_lang_id = await _get_lang_id(db, "ru")
+    if not lang_id and not ru_lang_id:
+        return None
+    or_clauses = []
+    if lang_id:
+        or_clauses.append(EntityKindLabel.language_id == lang_id)
+    if ru_lang_id:
+        or_clauses.append(EntityKindLabel.language_id == ru_lang_id)
     result = await db.execute(
         select(EntityKindLabel.label).where(
             EntityKindLabel.kind_id == kind_id,
-            or_(EntityKindLabel.language == lang, EntityKindLabel.language == "ru")
+            or_(*or_clauses)
         ).order_by(
-            (EntityKindLabel.language == lang).desc()
+            (EntityKindLabel.language_id == lang_id).desc() if lang_id else True
         ).limit(1)
     )
     return result.scalar_one_or_none()
 
 
-async def _get_entity_label_filter(lang="ru"):
+async def _get_entity_label_filter(lang="ru", db=None):
     """Return SQLAlchemy filter for entity label with language fallback."""
     from sqlalchemy import or_
-    return or_(EntityLabel.language == lang, EntityLabel.language == "ru")
+    lang_id = await _get_lang_id(db, lang) if db else None
+    ru_lang_id = await _get_lang_id(db, "ru") if db else None
+    or_clauses = []
+    if lang_id:
+        or_clauses.append(EntityLabel.language_id == lang_id)
+    if ru_lang_id:
+        or_clauses.append(EntityLabel.language_id == ru_lang_id)
+    if or_clauses:
+        return or_(*or_clauses)
+    return EntityLabel.is_primary == True  # ultimate fallback
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -46,11 +73,18 @@ async def index(request: Request, db: AsyncSession = Depends(get_db), user: User
 
     # Recent entities
     lang = getattr(request.state, "lang", "ru")
+    lang_id = await _get_lang_id(db, lang)
+    ru_lang_id = await _get_lang_id(db, "ru")
+    or_clauses_el = []
+    if lang_id:
+        or_clauses_el.append(EntityLabel.language_id == lang_id)
+    if ru_lang_id:
+        or_clauses_el.append(EntityLabel.language_id == ru_lang_id)
     result = await db.execute(
         select(Entity, EntityLabel, EntityKind)
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
-        .where(Entity.status == "active", or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
+        .where(Entity.status == "active", or_(*or_clauses_el), EntityLabel.is_primary == True)
         .order_by(Entity.updated_at.desc())
         .limit(12)
     )
@@ -89,19 +123,26 @@ async def list_entities(
     per_page = 20
     offset = (page - 1) * per_page
     lang = getattr(request.state, "lang", "ru")
+    lang_id = await _get_lang_id(db, lang)
+    ru_lang_id = await _get_lang_id(db, "ru")
+    or_clauses_el = []
+    if lang_id:
+        or_clauses_el.append(EntityLabel.language_id == lang_id)
+    if ru_lang_id:
+        or_clauses_el.append(EntityLabel.language_id == ru_lang_id)
 
     query = (
         select(Entity, EntityLabel, EntityKind)
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
-        .where(Entity.status == "active", or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
+        .where(Entity.status == "active", or_(*or_clauses_el), EntityLabel.is_primary == True)
     )
 
     count_query = (
         select(func.count(Entity.entity_id))
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
-        .where(Entity.status == "active", or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
+        .where(Entity.status == "active", or_(*or_clauses_el), EntityLabel.is_primary == True)
     )
 
     if kind:
@@ -153,12 +194,19 @@ async def list_entities(
     current_kind_label = ""
     if kind:
         lang = getattr(request.state, "lang", "ru")
+        lang_id = await _get_lang_id(db, lang)
+        ru_lang_id = await _get_lang_id(db, "ru")
+        or_clauses_ekl = []
+        if lang_id:
+            or_clauses_ekl.append(EntityKindLabel.language_id == lang_id)
+        if ru_lang_id:
+            or_clauses_ekl.append(EntityKindLabel.language_id == ru_lang_id)
         ck_result = await db.execute(
             select(EntityKindLabel.label).where(
                 EntityKind.kind_code == kind,
                 EntityKind.kind_id == EntityKindLabel.kind_id,
-                or_(EntityKindLabel.language == lang, EntityKindLabel.language == "ru")
-            ).order_by((EntityKindLabel.language == lang).desc()).limit(1)
+                or_(*or_clauses_ekl)
+            ).order_by((EntityKindLabel.language_id == lang_id).desc() if lang_id else True).limit(1)
         )
         current_kind_label = ck_result.scalar_one_or_none() or kind
 
@@ -363,16 +411,18 @@ async def entity_create(
     await db.flush()
 
     # Russian label
+    ru_lang_id = await _get_lang_id(db, "ru")
     ru_label = EntityLabel(
-        entity_id=entity_id, language="ru", label=label_ru,
+        entity_id=entity_id, language_id=ru_lang_id, label=label_ru,
         description=description_ru, is_primary=True, owner_id=user.user_id, version_id=version_id,
     )
     db.add(ru_label)
 
     # English label
     if label_en:
+        en_lang_id = await _get_lang_id(db, "en")
         en_label = EntityLabel(
-            entity_id=entity_id, language="en", label=label_en,
+            entity_id=entity_id, language_id=en_lang_id, label=label_en,
             is_primary=False, version_id=version_id,
         )
         db.add(en_label)
@@ -497,9 +547,14 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
     if not entity:
         raise HTTPException(404)
 
-    # Labels
-    labels_result = await db.execute(select(EntityLabel).where(EntityLabel.entity_id == eid))
-    labels = labels_result.scalars().all()
+    # Labels (with language eagerly loaded)
+    from sqlalchemy.orm import joinedload
+    labels_result = await db.execute(
+        select(EntityLabel)
+        .options(joinedload(EntityLabel.language))
+        .where(EntityLabel.entity_id == eid)
+    )
+    labels = labels_result.scalars().unique().all()
 
     # Kind
     kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_id == entity.kind_id))
@@ -526,6 +581,13 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
 
     # Relations
     lang = getattr(request.state, "lang", "ru")
+    lang_id = await _get_lang_id(db, lang)
+    ru_lang_id = await _get_lang_id(db, "ru")
+    or_clauses_el = []
+    if lang_id:
+        or_clauses_el.append(EntityLabel.language_id == lang_id)
+    if ru_lang_id:
+        or_clauses_el.append(EntityLabel.language_id == ru_lang_id)
     source_rels = await db.execute(
         select(SemanticRelation, RelationType, EntityProjection, Entity, EntityLabel)
         .join(RelationType, RelationType.relation_type_id == SemanticRelation.relation_type_id)
@@ -534,7 +596,7 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .where(SemanticRelation.source_projection_id.in_(
             select(EntityProjection.projection_id).where(EntityProjection.entity_id == eid)
-        ), or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
+        ), or_(*or_clauses_el), EntityLabel.is_primary == True)
     )
     outgoing = []
     for rel, rtype, proj, ent, lbl in source_rels.unique():
@@ -548,7 +610,7 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .where(SemanticRelation.target_projection_id.in_(
             select(EntityProjection.projection_id).where(EntityProjection.entity_id == eid)
-        ), or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
+        ), or_(*or_clauses_el), EntityLabel.is_primary == True)
     )
     incoming = []
     for rel, rtype, proj, ent, lbl in target_rels.unique():
@@ -621,7 +683,8 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
     # Get primary label for template
     label = None
     if labels:
-        label = next((l for l in labels if l.language == lang and l.is_primary), labels[0])
+        _lang_id = await _get_lang_id(db, lang)
+        label = next((l for l in labels if l.language_id == _lang_id and l.is_primary), labels[0])
 
     # Extract SEO fields from state_data
     seo_title = state_data.get("meta_title") or state_data.get("title") or (label.label if label else None)
@@ -767,8 +830,13 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
     if not entity:
         raise HTTPException(404)
 
-    labels_result = await db.execute(select(EntityLabel).where(EntityLabel.entity_id == eid))
-    labels = labels_result.scalars().all()
+    from sqlalchemy.orm import joinedload
+    labels_result = await db.execute(
+        select(EntityLabel)
+        .options(joinedload(EntityLabel.language))
+        .where(EntityLabel.entity_id == eid)
+    )
+    labels = labels_result.scalars().unique().all()
 
     kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_id == entity.kind_id))
     kind = kind_result.scalar_one_or_none()
@@ -871,6 +939,13 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
     # Get all projection IDs for this entity
     proj_ids = [p["projection"].projection_id for p in projections]
     lang = getattr(request.state, "lang", "ru")
+    lang_id = await _get_lang_id(db, lang)
+    ru_lang_id = await _get_lang_id(db, "ru")
+    or_clauses_el = []
+    if lang_id:
+        or_clauses_el.append(EntityLabel.language_id == lang_id)
+    if ru_lang_id:
+        or_clauses_el.append(EntityLabel.language_id == ru_lang_id)
 
     # Outgoing relations
     outgoing = []
@@ -881,7 +956,7 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
             .join(EntityProjection, EntityProjection.projection_id == SemanticRelation.target_projection_id)
             .join(Entity, Entity.entity_id == EntityProjection.entity_id)
             .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
-            .where(SemanticRelation.source_projection_id.in_(proj_ids), or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
+            .where(SemanticRelation.source_projection_id.in_(proj_ids), or_(*or_clauses_el), EntityLabel.is_primary == True)
         )
         for rel, rtype, proj, ent, lbl in out_result.unique():
             outgoing.append({"relation": rel, "type": rtype, "target": ent, "label": lbl})
@@ -895,7 +970,7 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
             .join(EntityProjection, EntityProjection.projection_id == SemanticRelation.source_projection_id)
             .join(Entity, Entity.entity_id == EntityProjection.entity_id)
             .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
-            .where(SemanticRelation.target_projection_id.in_(proj_ids), or_(EntityLabel.language == lang, EntityLabel.language == "ru"), EntityLabel.is_primary == True)
+            .where(SemanticRelation.target_projection_id.in_(proj_ids), or_(*or_clauses_el), EntityLabel.is_primary == True)
         )
         for rel, rtype, proj, ent, lbl in in_result.unique():
             incoming.append({"relation": rel, "type": rtype, "source": ent, "label": lbl})
@@ -1168,9 +1243,11 @@ async def entity_edit(
     eid = UUID(entity_id)
 
     # Update Russian label (skip if label_ru is empty — partial update from popup)
+    ru_lang_id = await _get_lang_id(db, "ru")
+    en_lang_id = await _get_lang_id(db, "en")
     if label_ru:
         result = await db.execute(
-            select(EntityLabel).where(EntityLabel.entity_id == eid, EntityLabel.language == "ru")
+            select(EntityLabel).where(EntityLabel.entity_id == eid, EntityLabel.language_id == ru_lang_id)
         )
         ru_label = result.scalar_one_or_none()
         if ru_label:
@@ -1179,14 +1256,14 @@ async def entity_edit(
 
     # Update English label
     result_en = await db.execute(
-        select(EntityLabel).where(EntityLabel.entity_id == eid, EntityLabel.language == "en")
+        select(EntityLabel).where(EntityLabel.entity_id == eid, EntityLabel.language_id == en_lang_id)
     )
     en_label = result_en.scalar_one_or_none()
     if en_label and label_en:
         en_label.label = label_en
     elif not en_label and label_en:
         en_label = EntityLabel(
-            entity_id=eid, language="en", label=label_en,
+            entity_id=eid, language_id=en_lang_id, label=label_en,
             is_primary=False, version_id=ru_label.version_id if ru_label else 1,
         )
         db.add(en_label)
@@ -1438,7 +1515,7 @@ async def upload_file(
 
             label = EntityLabel(
                 entity_id=entity_id,
-                language="ru",
+                language_id=await _get_lang_id(db, "ru"),
                 label=os.path.splitext(filename)[0].replace("_", " ").replace("-", " "),
                 is_primary=True,
                 owner_id=user.user_id,
