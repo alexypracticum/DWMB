@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Редактирование шаблона - Админ DWMB{% endblock %}
+{% block title %}{{ request.state.t.admin_edit_template }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-5xl">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Редактирование шаблона: {{ template.template_name }}</h1>
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ request.state.t.admin_edit_template }}: {{ template.template_name }}</h1>
 
     <form action="/admin/templates/{{ template.template_id }}/edit" method="post" id="templateForm">
         <input type="hidden" name="layout_definition" id="layoutJson" value="{{ layout_json }}">
@@ -341,29 +341,7 @@ function autoFieldsFromSchema() {
         const fields = [];
         // Unified skip list matching server side (admin.py:689)
         const skipKeys = new Set(['poster','poster_url','description','content']);
-        const labelMap = {
-            title:'Название',year:'Год',genre:'Жанр',director:'Режиссёр',rating:'Рейтинг',
-            duration:'Длительность',budget:'Бюджет',revenue:'Сборы',runtime:'Хронометраж',
-            tagline:'Слоган',mpaa_rating:'MPAA',author:'Автор',pages:'Страниц',isbn:'ISBN',
-            publisher:'Издательство',artist:'Исполнитель',label:'Лейбл',tracks:'Треков',
-            first_name:'Имя',last_name:'Фамилия',birth_year:'Год рождения',birth_date:'Дата рождения',
-            birthplace:'Место рождения',birth_place:'Место рождения',nationality:'Национальность',
-            height_cm:'Рост',nickname:'Псевдоним',death_date:'Дата смерти',death_year:'Год смерти',
-            occupation:'Профессия',notable_works:'Знаковые работы',
-            city:'Город',country:'Страна',population:'Население',area:'Площадь',
-            latitude:'Широта',longitude:'Долгота',timezone:'Часовой пояс',
-            founded:'Год основания',industry:'Отрасль',headquarters:'Штаб-квартира',
-            founders:'Основатели',name:'Название',type:'Тип',
-            symbol:'Символ',element:'Элемент',atomic_number:'Атомный номер',
-            atomic_mass:'Атомная масса',category:'Категория',
-            electron_configuration:'Эл. конфигурация',melting_point:'Темп. плавления',boiling_point:'Темп. кипения',
-            description:'Описание',origins:'Происхождение',subfields:'Подобласти',
-            key_works:'Ключевые произведения',variants:'Варианты',
-            subgenres:'Поджанры',periods:'Периоды',
-            common_name:'Название',scientific_name:'Научное название',class:'Класс',
-            order:'Отряд',family:'Семейство',habitat:'Среда обитания',conservation:'Охрана',
-            album:'Альбом',key:'Тональность',op:'Opus',
-        };
+        function getLabel(key) { return t('field_' + key); }
         // Use field_order if available, otherwise fall back to Object.entries
         const orderedKeys = Array.isArray(schema.field_order) && schema.field_order.length
             ? schema.field_order
@@ -372,7 +350,7 @@ function autoFieldsFromSchema() {
             if (!props[key] || skipKeys.has(key)) continue;
             const prop = props[key];
             const type = prop.type === 'integer' || prop.type === 'number' ? prop.type : (prop.type === 'boolean' ? 'boolean' : 'string');
-            fields.push({key, label: prop.title || labelMap[key] || key, type});
+            fields.push({key, label: prop.title || getLabel(key) || key, type});
         }
         return JSON.stringify(fields);
     } catch(e) { return '[]'; }
@@ -476,9 +454,11 @@ function renderFieldEditorRows(editorId) {
     });
     let regOpts = '<option value="">— ' + t('admin_from_registry') + ' —</option>';
     Object.entries(cats).forEach(([cat, fields]) => {
-        regOpts += `<optgroup label="${esc(cat)}">`;
+        const catLabel = t('category_' + cat.toLowerCase());
+        regOpts += `<optgroup label="${esc(catLabel !== ('category_' + cat.toLowerCase()) ? catLabel : cat)}">`;
         fields.forEach(f => {
-            regOpts += `<option value="${esc(f.key)}" data-label="${esc(f.label)}" data-type="${esc(f.type)}">${esc(f.label)} (${f.key})</option>`;
+            const regLabel = t('field_' + f.key);
+        regOpts += `<option value="${esc(f.key)}" data-label="${esc(regLabel !== f.key ? regLabel : f.label)}" data-type="${esc(f.type)}">${esc(regLabel !== f.key ? regLabel : f.label)} (${f.key})</option>`;
         });
         regOpts += '</optgroup>';
     });
