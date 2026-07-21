@@ -426,7 +426,18 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
     elif btype == "gallery":
         images_raw = get_state_field(state_data, config.get("source", "")) or []
         height = config.get("height", "300")
-        title = config.get("title", "")
+        title_raw = config.get("title", "")
+        # Map Russian titles to translation keys
+        TITLE_MAP = {
+            "Галерея изображений": "block_gallery",
+            "Актёры и персонажи": "layout_actors_characters",
+        }
+        if t and title_raw in TITLE_MAP:
+            title = t.get(TITLE_MAP[title_raw], title_raw)
+        elif t:
+            title = t.get("block_gallery", title_raw)
+        else:
+            title = title_raw
         if isinstance(images_raw, str):
             images = [u.strip() for u in images_raw.replace("\r\n", "\n").replace("\r", "\n").split("\n") if u.strip()]
         elif isinstance(images_raw, list):

@@ -12,7 +12,7 @@
             <!-- Left: Template settings -->
             <div class="lg:col-span-1 space-y-4">
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Настройки</h2>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.admin_settings }}</h2>
                     <div class="space-y-3">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Тип сущности</label>
@@ -39,12 +39,12 @@
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Название</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.label_name }}</label>
                             <input type="text" name="template_name" value="{{ template.template_name }}" required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Описание</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.label_description }}</label>
                             <input type="text" name="description" value="{{ template.description or '' }}"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
@@ -53,7 +53,7 @@
 
                 <!-- Schema definition -->
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Схема данных (JSON)</h2>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.admin_template_schema }}</h2>
                     <textarea id="schemaJson" name="schema_definition" rows="8"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">{{ schema_json }}</textarea>
                 </div>
@@ -89,7 +89,7 @@
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold text-gray-800">Макет страницы</h2>
+                        <h2 class="text-lg font-semibold text-gray-800">{{ request.state.t.admin_template_layout }}</h2>
                         <span class="text-xs text-gray-400" id="blockCount">0 блоков</span>
                     </div>
                     <div id="layoutCanvas" class="space-y-3 min-h-[200px] border-2 border-dashed border-gray-200 rounded-lg p-4">
@@ -104,7 +104,7 @@
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mt-6">
                     <h2 class="text-lg font-semibold text-gray-800 mb-4">Превью</h2>
                     <div id="layoutPreview" class="bg-gray-50 rounded-lg p-4 min-h-[100px] text-sm text-gray-500">
-                        Макет пуст
+                        {{ request.state.t.admin_no_blocks }}
                     </div>
                 </div>
             </div>
@@ -208,7 +208,7 @@ function renderBlocks() {
                 fieldsHtml += `<div class="mt-2"><label class="text-xs text-gray-500">${f.label}</label>
                     <input type="hidden" id="${editorId}" value='${typeof val === 'string' ? val : JSON.stringify(val || [])}'>
                     <div id="${editorId}_rows" class="space-y-1 mt-1">${rowsHtml}</div>
-                    <button type="button" onclick="addFieldEditor('${editorId}')" class="mt-1 px-2 py-0.5 bg-green-50 text-green-700 rounded text-xs border border-green-200 hover:bg-green-100">+ Добавить поле</button>
+                    <button type="button" onclick="addFieldEditor('${editorId}')" class="mt-1 px-2 py-0.5 bg-green-50 text-green-700 rounded text-xs border border-green-200 hover:bg-green-100">{{ request.state.t.admin_add_field }}</button>
                 </div>`;
             } else if (f.type === 'relation_type_select') {
                 // Relation type dropdown loaded from API
@@ -569,7 +569,7 @@ function syncJson() {
     // Preview
     const preview = document.getElementById('layoutPreview');
     if (blocks.length === 0) {
-        preview.innerHTML = '<span class="text-gray-400">Макет пуст</span>';
+        preview.innerHTML = '<span class="text-gray-400">{{ request.state.t.admin_no_blocks }}</span>';
         return;
     }
     let html = '<div class="space-y-2">';
