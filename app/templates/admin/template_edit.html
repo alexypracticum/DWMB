@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{{ request.state.t.admin_edit_template }} - DWMB{% endblock %}
+{% block title %}{{ request.state.t.admin_edit_template }}: {{ request.state.t.get(template.template_code, template.template_name) if request.state.t else template.template_name }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-5xl">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ request.state.t.admin_edit_template }}: {{ template.template_name }}</h1>
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ request.state.t.admin_edit_template }}: {{ request.state.t.get(template.template_code, template.template_name) if request.state.t else template.template_name }}</h1>
 
     <form action="/admin/templates/{{ template.template_id }}/edit" method="post" id="templateForm">
         <input type="hidden" name="layout_definition" id="layoutJson" value="{{ layout_json }}">
