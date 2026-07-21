@@ -25,7 +25,7 @@
 
             <!-- Basic Filters -->
             <div class="flex flex-wrap gap-3 items-center">
-                <span class="text-sm" style="color: var(--color-text-secondary);">Тип:</span>
+                <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_type }}:</span>
                 <select name="kind" class="form-select px-3 py-1.5 rounded-lg text-sm outline-none"
                         style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                     <option value="">{{ request.state.t.search_all_types }}</option>
@@ -115,7 +115,7 @@
     {% if ai_parsed %}
     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-sm" style="color: #1e40af;">
         <strong>AI распознал:</strong>
-        {% if ai_parsed.kind %}Тип: {{ ai_parsed.kind }}{% endif %}
+        {% if ai_parsed.kind %}{{ request.state.t.search_type }}: {{ ai_parsed.kind }}{% endif %}
         {% if ai_parsed.year %}, Год: {{ ai_parsed.year }}{% endif %}
         {% if ai_parsed.genre %}, Жанр: {{ ai_parsed.genre }}{% endif %}
         {% if ai_parsed.rating_min %}, Рейтинг ≥ {{ ai_parsed.rating_min }}{% endif %}

@@ -3,9 +3,9 @@
 
 {% block breadcrumbs %}
 <nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
-    <a href="/" class="hover:underline" style="color: var(--color-primary);">Главная</a>
+    <a href="/" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.breadcrumb_home }}</a>
     <span class="mx-2">/</span>
-    <a href="/entities" class="hover:underline" style="color: var(--color-primary);">Сущности</a>
+    <a href="/entities" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.breadcrumb_entities }}</a>
     <span class="mx-2">/</span>
     <span style="color: var(--color-text);">{{ request.state.t.entity_new }}</span>
 </nav>
@@ -49,9 +49,9 @@
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-lg font-semibold text-gray-800">{{ request.state.t.entity_templates }}</h2>
-            <a href="/entity/create" class="text-sm text-blue-600 hover:text-blue-800">← другой тип</a>
+            <a href="/entity/create" class="text-sm text-blue-600 hover:text-blue-800">← {{ request.state.t.entity_type }}</a>
         </div>
-        <p class="text-xs text-gray-400 mb-4">Можно выбрать шаблоны из любых типов сущностей — каждый добавит свои поля.</p>
+        <p class="text-xs text-gray-400 mb-4">{{ request.state.t.entity_template }}</p>
 
         {% if templates_by_kind %}
         <div class="space-y-3">
@@ -84,8 +84,8 @@
             {% endfor %}
 
             <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <a href="/entity/create" class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Отмена</a>
-                <button type="button" onclick="goToStep3()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Далее →</button>
+                <a href="/entity/create" class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">{{ request.state.t.btn_cancel }}</a>
+                <button type="button" onclick="goToStep3()" class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">{{ request.state.t.btn_next }} →</button>
             </div>
         </div>
 
