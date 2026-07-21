@@ -88,7 +88,7 @@
                             {% endif %}
                         </td>
                         <td class="py-3 font-mono text-xs">{{ item.template.template_code }}</td>
-                        <td class="py-3 font-medium">{{ item.template.template_name }}</td>
+                        <td class="py-3 font-medium">{{ t.get(item.template.template_code, item.template.template_name) if t else item.template.template_name }}</td>
                         <td class="py-3">
                             <span class="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full">{{ item.model.model_code }}</span>
                         </td>

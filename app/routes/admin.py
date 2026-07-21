@@ -198,12 +198,14 @@ async def admin_templates(request: Request, db: AsyncSession = Depends(get_db), 
     kinds_result = await db.execute(select(EntityKind).where(EntityKind.is_abstract == False).order_by(EntityKind.sort_order))
     all_kinds = kinds_result.scalars().all()
 
+    t = getattr(request.state, "t", {})
     return templates.TemplateResponse("admin/templates.html", {
         "request": request,
         "user": user,
         "templates": templates_list,
         "models": models,
         "all_kinds": all_kinds,
+        "t": t,
     })
 
 
@@ -1526,8 +1528,9 @@ async def admin_relation_types(request: Request, db: AsyncSession = Depends(get_
 
         type_data.append({"rt": rt, "inverse_code": inverse_code, "relation_count": relation_count})
 
+    t = getattr(request.state, "t", {})
     return templates.TemplateResponse("admin/relation_types.html", {
-        "request": request, "user": user, "relation_types": type_data,
+        "request": request, "user": user, "relation_types": type_data, "t": t,
     })
 
 

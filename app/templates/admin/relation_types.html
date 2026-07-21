@@ -28,7 +28,7 @@
                 {% for item in relation_types %}
                 <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
                     <td class="py-3 px-4 font-mono text-xs text-blue-700">{{ item.rt.relation_code }}</td>
-                    <td class="py-3 px-4 font-medium">{{ item.rt.relation_name }}</td>
+                    <td class="py-3 px-4 font-medium">{{ t.get(item.rt.relation_code, item.rt.relation_name) if t else item.rt.relation_name }}</td>
                     <td class="py-3 px-4">
                         {% if item.inverse_code == item.rt.relation_code %}
                         <span class="px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded">{{ request.state.t.relation_undirected }}</span>

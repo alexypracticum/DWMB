@@ -197,7 +197,7 @@
             <div class="space-y-2">
                 {% for r in outgoing_relations %}
                 <a href="/entity/{{ r.target.entity_id }}" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition">
-                    <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">{{ r.type.relation_name }}</span>
+                    <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">{{ request.state.t.get(r.type.relation_code, r.type.relation_name) if request.state.t else r.type.relation_name }}</span>
                     <span class="font-medium text-gray-800">{{ r.label.label }}</span>
                     <span class="text-xs text-gray-400">{{ r.target.entity_code }}</span>
                     {% if r.relation.metadata and r.relation.metadata.role %}
@@ -221,7 +221,7 @@
                 <a href="/entity/{{ r.source.entity_id }}" class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-green-50 transition">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     <span class="font-medium text-gray-800">{{ r.label.label }}</span>
-                    <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">{{ r.type.relation_name }}</span>
+                    <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">{{ request.state.t.get(r.type.relation_code, r.type.relation_name) if request.state.t else r.type.relation_name }}</span>
                     {% if r.relation.metadata and r.relation.metadata.role %}
                     <span class="text-xs text-gray-400 italic">({{ r.relation.metadata.role }})</span>
                     {% endif %}

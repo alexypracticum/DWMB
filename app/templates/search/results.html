@@ -116,8 +116,8 @@
     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-sm" style="color: #1e40af;">
         <strong>AI распознал:</strong>
         {% if ai_parsed.kind %}{{ request.state.t.search_type }}: {{ ai_parsed.kind }}{% endif %}
-        {% if ai_parsed.year %}, Год: {{ ai_parsed.year }}{% endif %}
-        {% if ai_parsed.genre %}, Жанр: {{ ai_parsed.genre }}{% endif %}
+        {% if ai_parsed.year %}, {{ request.state.t.field_year }}: {{ ai_parsed.year }}{% endif %}
+        {% if ai_parsed.genre %}, {{ request.state.t.field_genre }}: {{ ai_parsed.genre }}{% endif %}
         {% if ai_parsed.rating_min %}, {{ request.state.t.table_rating }} ≥ {{ ai_parsed.rating_min }}{% endif %}
     </div>
     {% endif %}
@@ -203,7 +203,7 @@
                     <tr style="border-bottom: 1px solid var(--color-border);">
                         <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.table_name }}</th>
                         <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.table_type }}</th>
-                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Год</th>
+                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.field_year }}</th>
                         <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.table_rating }}</th>
                     </tr>
                 </thead>

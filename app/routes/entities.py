@@ -80,12 +80,18 @@ async def index(request: Request, db: AsyncSession = Depends(get_db), user: User
         or_clauses_el.append(EntityLabel.language_id == lang_id)
     if ru_lang_id:
         or_clauses_el.append(EntityLabel.language_id == ru_lang_id)
+    from sqlalchemy import text, case
+    lang_priority = case(
+        (EntityLabel.language_id == lang_id, 0),
+        else_=1
+    )
     result = await db.execute(
         select(Entity, EntityLabel, EntityKind)
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
-        .where(Entity.status == "active", or_(*or_clauses_el), EntityLabel.is_primary == True)
-        .order_by(Entity.updated_at.desc())
+        .where(Entity.status == "active", or_(*or_clauses_el))
+        .distinct(Entity.entity_id)
+        .order_by(Entity.entity_id, lang_priority)
         .limit(12)
     )
     recent = []

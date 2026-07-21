@@ -690,8 +690,8 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
                     _popup_html = (
                         f'<div id="{_add_id}" class="hidden fixed inset-0 z-[9998] bg-black/40 flex items-center justify-center">'
                         f'<div class="bg-white rounded-xl shadow-2xl p-5 w-96 space-y-3" onclick="event.stopPropagation()">'
-                        f'<h4 class="font-semibold text-gray-800 text-sm">Добавить: {label}</h4>'
-                        f'<input id="{_add_id}_input" type="text" placeholder="Введите название..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">'
+                        f'<h4 class="font-semibold text-gray-800 text-sm">{t.get("btn_add", "Добавить") if t else "Добавить"}: {label}</h4>'
+                        f'<input id="{_add_id}_input" type="text" placeholder="{t.get("placeholder_enter_name", "Введите название...") if t else "Введите название..."}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">'
                         f'<div id="{_add_id}_results" class="text-xs text-gray-500 max-h-40 overflow-y-auto"></div>'
                         f'<div class="flex gap-2">'
                         f'<button onclick="saveEntityField(\'{_eid}\',\'{key}\',document.getElementById(\'{_add_id}_input\').value)" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">{t.get("btn_save", "Сохранить") if t else "Сохранить"}</button>'
