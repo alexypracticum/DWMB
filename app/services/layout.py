@@ -23,7 +23,7 @@ Layout definition format (JSON):
 
 BLOCK_TYPES = {
     "hero_image": {
-        "name": "Главное изображение",
+        "name": "block_hero_image",
         "icon": "image",
         "description": "Большое изображение сверху (постер, обложка)",
         "config_fields": [
@@ -32,7 +32,7 @@ BLOCK_TYPES = {
         ],
     },
     "image": {
-        "name": "Изображение",
+        "name": "block_image",
         "icon": "photo",
         "description": "Одно изображение",
         "config_fields": [
@@ -43,7 +43,7 @@ BLOCK_TYPES = {
         ],
     },
     "gallery": {
-        "name": "Галерея изображений",
+        "name": "block_gallery",
         "icon": "collection",
         "description": "Горизонтальная прокручиваемая галерея",
         "config_fields": [
@@ -53,7 +53,7 @@ BLOCK_TYPES = {
         ],
     },
     "markdown": {
-        "name": "Текст (Markdown)",
+        "name": "block_markdown",
         "icon": "document-text",
         "description": "Форматированный текст с поддержкой Markdown, изображений, видео",
         "config_fields": [
@@ -62,7 +62,7 @@ BLOCK_TYPES = {
         ],
     },
     "video": {
-        "name": "Видео",
+        "name": "block_video",
         "icon": "play",
         "description": "Встроенное видео (YouTube, Vimeo, MP4)",
         "config_fields": [
@@ -71,7 +71,7 @@ BLOCK_TYPES = {
         ],
     },
     "audio": {
-        "name": "Аудио",
+        "name": "block_audio",
         "icon": "musical-note",
         "description": "Аудиоплеер",
         "config_fields": [
@@ -80,7 +80,7 @@ BLOCK_TYPES = {
         ],
     },
     "info_table": {
-        "name": "Таблица информации",
+        "name": "block_info_table",
         "icon": "table",
         "description": "Ключ-значение: год, длительность, жанр и т.д.",
         "config_fields": [
@@ -90,7 +90,7 @@ BLOCK_TYPES = {
         ],
     },
     "relation_list": {
-        "name": "Связанные сущности",
+        "name": "block_relation_list",
         "icon": "link",
         "description": "Список связанных сущностей (актёры, авторы и т.д.)",
         "config_fields": [
@@ -100,7 +100,7 @@ BLOCK_TYPES = {
         ],
     },
     "aggregated_relations": {
-        "name": "Агрегированные связи",
+        "name": "block_aggregated_relations",
         "icon": "users",
         "description": "Компактный список связанных сущностей через запятую (Актёры, Режиссёры и т.д.)",
         "config_fields": [
@@ -110,13 +110,13 @@ BLOCK_TYPES = {
         ],
     },
     "text_block": {
-        "name": "Описание",
+        "name": "block_text",
         "icon": "text",
         "description": "Блок описания сущности (автоматически из поля description)",
         "config_fields": [],
     },
     "richtext": {
-        "name": "Текстовый блок",
+        "name": "block_richtext",
         "icon": "text",
         "description": "Текстовый блок с заголовком и настраиваемым содержимым",
         "config_fields": [
@@ -126,13 +126,13 @@ BLOCK_TYPES = {
         ],
     },
     "divider": {
-        "name": "Разделитель",
+        "name": "block_divider",
         "icon": "minus",
         "description": "Горизонтальная линия",
         "config_fields": [],
     },
     "spacer": {
-        "name": "Отступ",
+        "name": "block_spacer",
         "icon": "arrow-down",
         "description": "Вертикальный отступ",
         "config_fields": [
@@ -140,7 +140,7 @@ BLOCK_TYPES = {
         ],
     },
     "custom_html": {
-        "name": "Произвольный HTML",
+        "name": "block_custom_html",
         "icon": "code",
         "description": "Свой HTML/CSS код",
         "config_fields": [
@@ -148,7 +148,7 @@ BLOCK_TYPES = {
         ],
     },
     "image_data_row": {
-        "name": "Изображение + данные",
+        "name": "block_image_data_row",
         "icon": "photograph",
         "description": "Изображение слева, информация справа",
         "config_fields": [
@@ -159,7 +159,7 @@ BLOCK_TYPES = {
         ],
     },
     "horizontal_row": {
-        "name": "Горизонтальный ряд",
+        "name": "block_horizontal_row",
         "icon": "view-columns",
         "description": "2-5 блоков в ряд (горизонтально)",
         "config_fields": [
@@ -167,7 +167,7 @@ BLOCK_TYPES = {
         ],
     },
     "file_link": {
-        "name": "Файл-ссылка",
+        "name": "block_file_link",
         "icon": "document-arrow-down",
         "description": "Ссылка на файл (PDF, DOC и т.д.)",
         "config_fields": [
@@ -176,7 +176,7 @@ BLOCK_TYPES = {
         ],
     },
     "file_upload": {
-        "name": "Загрузка файла",
+        "name": "block_file_upload",
         "icon": "arrow-up-tray",
         "description": "Загрузка файла с сохранением в хранилище",
         "config_fields": [
@@ -185,7 +185,7 @@ BLOCK_TYPES = {
         ],
     },
     "actor_character_row": {
-        "name": "Актёр — персонаж",
+        "name": "block_actor_character_row",
         "icon": "user-group",
         "description": "Строка: слева актёр, справа персонаж",
         "config_fields": [
@@ -196,7 +196,7 @@ BLOCK_TYPES = {
         ],
     },
     "actor_character_gallery": {
-        "name": "Галерея актёров-персонажей",
+        "name": "block_actor_character_gallery",
         "icon": "photo-group",
         "description": "Компактная галерея с изображениями актёров и персонажей, со спойлером",
         "config_fields": [

@@ -340,6 +340,7 @@ async def admin_template_edit_page(
             if isinstance(fs, dict) and "properties" in fs:
                 schema_source = fs
 
+    t = getattr(request.state, "t", {})
     return templates.TemplateResponse("admin/template_edit.html", {
         "request": request,
         "user": user,
@@ -350,6 +351,7 @@ async def admin_template_edit_page(
         "schema_json": json.dumps(schema_source, indent=2, ensure_ascii=False) if schema_source else "{}",
         "layout_json": json.dumps(layout_blocks, ensure_ascii=False),
         "layout_blocks_json": json.dumps(layout_blocks, ensure_ascii=False),
+        "ui_translations": json.dumps(t, ensure_ascii=False),
     })
 
 

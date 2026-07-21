@@ -119,27 +119,34 @@
 </div>
 
 <script>
+window.__ui_translations = {{ ui_translations | safe }};
+
+function t(key) {
+    const translations = window.__ui_translations || {};
+    return translations[key] || key;
+}
+
 const BLOCK_TYPES = {
-    hero_image: {name: 'Главное фото', icon: '🖼️', fields: [{key:'source',label:'Поле данных',def:'poster_url'},{key:'alt_field',label:'Alt-текст',def:'title'}]},
-    image: {name: 'Изображение', icon: '📷', fields: [{key:'source',label:'Поле данных',def:'image_url'},{key:'alt_field',label:'Alt-текст',def:'title'},{key:'caption',label:'Подпись',def:''},{key:'height',label:'Высота (px)',def:''}]},
-    image_data_row: {name: 'Фото + данные', icon: '📸', fields: [{key:'image_source',label:'Поле изображения',def:'poster'},{key:'alt_field',label:'Alt-текст',def:'title'},{key:'fields',label:'Поля данных',def:'[]',type:'field_editor'}]},
-    gallery: {name: 'Галерея', icon: '🖼️', fields: [{key:'source',label:'Поле (массив)',def:'images'},{key:'title',label:'Заголовок',def:''},{key:'height',label:'Высота (px)',def:'300'}]},
-    markdown: {name: 'Текст Markdown', icon: '📝', fields: [{key:'title',label:'Заголовок',def:''},{key:'source',label:'Поле данных',def:''},{key:'content',label:'Текст (статический)',def:''}]},
-    video: {name: 'Видео', icon: '🎬', fields: [{key:'source',label:'Поле (URL)',def:'video_url'}]},
-    audio: {name: 'Аудио', icon: '🎵', fields: [{key:'source',label:'Поле (URL)',def:'audio_url'},{key:'title',label:'Название',def:'title'}]},
-    info_table: {name: 'Таблица', icon: '📊', fields: [{key:'fields',label:'Поля данных',def:'[]',type:'field_editor'},{key:'style',label:'Стиль',def:'table'}]},
-    relation_list: {name: 'Связи', icon: '🔗', fields: [{key:'relation_type',label:'Тип связи',def:''},{key:'display',label:'Стиль',def:'list'}]},
-    aggregated_relations: {name: 'Агрегир. связи', icon: '👥', fields: [{key:'relation_type',label:'Тип связи',def:'',type:'relation_type_select'},{key:'label',label:'Заголовок',def:''},{key:'max_items',label:'Макс. кол-во',def:'10'}]},
-    actor_character_row: {name: 'Актёр → Персонаж', icon: '🎭', fields: [{key:'acted_in_type',label:'Связь актёр→фильм',def:'acted_in',type:'relation_type_select'},{key:'plays_type',label:'Связь актёр→персонаж',def:'plays',type:'relation_type_select'},{key:'appears_in_type',label:'Связь персонаж→фильм',def:'appears_in',type:'relation_type_select'},{key:'label',label:'Заголовок',def:'Актёры и персонажи'},{key:'max_items',label:'Макс. кол-во',def:'20'}]},
-    actor_character_gallery: {name: 'Галерея актёров', icon: '🎬', fields: [{key:'acted_in_type',label:'Связь актёр→фильм',def:'acted_in',type:'relation_type_select'},{key:'plays_type',label:'Связь актёр→персонаж',def:'plays',type:'relation_type_select'},{key:'appears_in_type',label:'Связь персонаж→фильм',def:'appears_in',type:'relation_type_select'},{key:'max_items',label:'Макс. кол-во',def:'20'},{key:'spoiler_text',label:'Текст спойлера',def:'Показать актёрский состав'}]},
-    file_link: {name: 'Файл-ссылка', icon: '📎', fields: [{key:'source',label:'Поле (URL)',def:'file_url'},{key:'title',label:'Название',def:'file_title'}]},
-    file_upload: {name: 'Загрузка файла', icon: '📤', fields: [{key:'source',label:'Поле (URL)',def:'uploaded_file_url'},{key:'title',label:'Название',def:'uploaded_file_title'}]},
-    horizontal_row: {name: 'Горизонт. ряд', icon: '↔️', fields: [{key:'columns',label:'Колонок (2-5)',def:'2'}], hasChildren: true},
-    text_block: {name: 'Описание', icon: '📄', fields: []},
-    richtext: {name: 'Текстовый блок', icon: '📝', fields: [{key:'title',label:'Заголовок',def:''},{key:'source',label:'Поле данных',def:''},{key:'content',label:'Текст (статический)',def:''}]},
-    divider: {name: 'Разделитель', icon: '➖', fields: []},
-    spacer: {name: 'Отступ', icon: '↕️', fields: [{key:'height',label:'Высота (px)',def:'40'}]},
-    custom_html: {name: 'HTML', icon: '💻', fields: [{key:'html',label:'HTML-код',def:''}]},
+    hero_image: {name: t('block_hero_image'), icon: '🖼️', fields: [{key:'source',label: t('field_source'),def:'poster_url'},{key:'alt_field',label: t('field_alt_text'),def:'title'}]},
+    image: {name: t('block_image'), icon: '📷', fields: [{key:'source',label: t('field_source'),def:'image_url'},{key:'alt_field',label: t('field_alt_text'),def:'title'},{key:'caption',label: t('field_caption'),def:''},{key:'height',label: t('field_height'),def:''}]},
+    image_data_row: {name: t('block_image_data_row'), icon: '📸', fields: [{key:'image_source',label: t('field_image_source'),def:'poster'},{key:'alt_field',label: t('field_alt_text'),def:'title'},{key:'fields',label: t('field_data'),def:'[]',type:'field_editor'}]},
+    gallery: {name: t('block_gallery'), icon: '🖼️', fields: [{key:'source',label: t('field_images'),def:'images'},{key:'title',label: t('label_title'),def:''},{key:'height',label: t('field_height'),def:'300'}]},
+    markdown: {name: t('block_markdown'), icon: '📝', fields: [{key:'title',label: t('label_title'),def:''},{key:'source',label: t('field_source'),def:''},{key:'content',label: t('field_static_text'),def:''}]},
+    video: {name: t('block_video'), icon: '🎬', fields: [{key:'source',label: t('field_url'),def:'video_url'}]},
+    audio: {name: t('block_audio'), icon: '🎵', fields: [{key:'source',label: t('field_url'),def:'audio_url'},{key:'title',label: t('label_name'),def:'title'}]},
+    info_table: {name: t('block_info_table'), icon: '📊', fields: [{key:'fields',label: t('field_data'),def:'[]',type:'field_editor'},{key:'style',label: t('label_style'),def:'table'}]},
+    relation_list: {name: t('block_relation_list'), icon: '🔗', fields: [{key:'relation_type',label: t('label_relation_type'),def:''},{key:'display',label: t('label_style'),def:'list'}]},
+    aggregated_relations: {name: t('block_aggregated_relations'), icon: '👥', fields: [{key:'relation_type',label: t('label_relation_type'),def:'',type:'relation_type_select'},{key:'label',label: t('label_title'),def:''},{key:'max_items',label: t('label_max_items'),def:'10'}]},
+    actor_character_row: {name: t('block_actor_character_row'), icon: '🎭', fields: [{key:'acted_in_type',label: t('label_acted_in'),def:'acted_in',type:'relation_type_select'},{key:'plays_type',label: t('label_plays'),def:'plays',type:'relation_type_select'},{key:'appears_in_type',label: t('label_appears_in'),def:'appears_in',type:'relation_type_select'},{key:'label',label: t('label_title'),def:'Актёры и персонажи'},{key:'max_items',label: t('label_max_items'),def:'20'}]},
+    actor_character_gallery: {name: t('block_actor_character_gallery'), icon: '🎬', fields: [{key:'acted_in_type',label: t('label_acted_in'),def:'acted_in',type:'relation_type_select'},{key:'plays_type',label: t('label_plays'),def:'plays',type:'relation_type_select'},{key:'appears_in_type',label: t('label_appears_in'),def:'appears_in',type:'relation_type_select'},{key:'max_items',label: t('label_max_items'),def:'20'},{key:'spoiler_text',label: t('label_spoiler'),def:'Показать актёрский состав'}]},
+    file_link: {name: t('block_file_link'), icon: '📎', fields: [{key:'source',label: t('field_url'),def:'file_url'},{key:'title',label: t('label_name'),def:'file_title'}]},
+    file_upload: {name: t('block_file_upload'), icon: '📤', fields: [{key:'source',label: t('field_url'),def:'uploaded_file_url'},{key:'title',label: t('label_name'),def:'uploaded_file_title'}]},
+    horizontal_row: {name: t('block_horizontal_row'), icon: '↔️', fields: [{key:'columns',label: t('label_columns'),def:'2'}], hasChildren: true},
+    text_block: {name: t('block_text'), icon: '📄', fields: []},
+    richtext: {name: t('block_richtext'), icon: '📝', fields: [{key:'title',label: t('label_title'),def:''},{key:'source',label: t('field_source'),def:''},{key:'content',label: t('field_static_text'),def:''}]},
+    divider: {name: t('block_divider'), icon: '➖', fields: []},
+    spacer: {name: t('block_spacer'), icon: '↕️', fields: [{key:'height',label: t('field_height'),def:'40'}]},
+    custom_html: {name: t('block_custom_html'), icon: '💻', fields: [{key:'html',label: t('field_html_code'),def:''}]},
 };
 
 let blocks = {{ layout_blocks_json | safe }};
