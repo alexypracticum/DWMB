@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{{ request.state.t.nav_search }} - DWMB{% endblock %}
+{% block title %}{{ request.state.t.btn_search }} - DWMB{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
     <a href="/" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.sidebar_all }}</a>
     <span class="mx-2">/</span>
-    <span style="color: var(--color-text);">{{ request.state.t.nav_search }}</span>
+    <span style="color: var(--color-text);">{{ request.state.t.btn_search }}</span>
 </nav>
 {% endblock %}
 
@@ -44,7 +44,7 @@
                        class="form-input w-24 px-3 py-1.5 rounded-lg text-sm outline-none"
                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
 
-                <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_year_to }}:</span>
+                <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_to }}:</span>
                 <input type="number" name="rating_min" value="{{ rating_min or '' }}" placeholder="0" min="0" max="10" step="0.1"
                        class="form-input w-20 px-3 py-1.5 rounded-lg text-sm outline-none"
                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
@@ -81,7 +81,7 @@
                            class="form-input w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
 
-                    <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_language }}:</span>
+                    <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.label_language }}:</span>
                     <input type="text" name="language" value="{{ language or '' }}" placeholder="Russian, English..."
                            class="form-input w-32 px-3 py-1.5 rounded-lg text-sm outline-none"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">

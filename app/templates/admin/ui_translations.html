@@ -50,7 +50,7 @@
             <input type="text" name="value" placeholder="{{ request.state.t.admin_value }}" required
                    class="flex-1 px-3 py-1.5 text-sm rounded-lg border outline-none"
                    style="background: var(--color-bg); border-color: var(--color-border); color: var(--color-text);">
-            <button type="submit" class="px-4 py-1.5 text-sm rounded-lg" style="background: var(--color-success); color: #fff;">{{ request.state.t.admin_create }}</button>
+            <button type="submit" class="px-4 py-1.5 text-sm rounded-lg" style="background: var(--color-success); color: #fff;">{{ request.state.t.btn_create }}</button>
         </form>
     </div>
 
@@ -59,9 +59,9 @@
         <table class="w-full text-sm">
             <thead>
                 <tr style="border-bottom: 1px solid var(--color-border);">
-                    <th class="px-4 py-3 text-left font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.table_key }}</th>
+                    <th class="px-4 py-3 text-left font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.label_key }}</th>
                     <th class="px-4 py-3 text-left font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.admin_value }} ({{ current_lang }})</th>
-                    <th class="px-4 py-3 text-right font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.admin_actions }}</th>
+                    <th class="px-4 py-3 text-right font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.label_actions }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -92,7 +92,7 @@
     </div>
 
     <div class="mt-4 text-sm" style="color: var(--color-text-secondary);">
-        {{ request.state.t.admin_total }}: {{ translations|length }} {{ request.state.t.admin_rows }} | {{ request.state.t.admin_language }}: {{ current_lang }}
+        {{ request.state.t.admin_total }}: {{ translations|length }} {{ request.state.t.admin_rows }} | {{ request.state.t.label_language }}: {{ current_lang }}
     </div>
 </div>
 

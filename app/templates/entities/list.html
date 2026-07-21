@@ -31,7 +31,7 @@
                 <input type="text" name="search" value="{{ search or '' }}" placeholder="{{ request.state.t.label_search_placeholder }}" class="flex-1 px-4 py-2 rounded-lg outline-none transition text-sm" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 <button type="submit" class="px-4 py-2 text-white rounded-lg transition text-sm" style="background: var(--color-primary);">{{ request.state.t.search_btn }}</button>
                 {% if search %}
-                <a href="/entities?kind={{ current_kind or '' }}" class="px-4 py-2 rounded-lg transition text-sm" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.search_reset }}</a>
+                <a href="/entities?kind={{ current_kind or '' }}" class="px-4 py-2 rounded-lg transition text-sm" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.label_reset }}</a>
                 {% endif %}
             </form>
 
@@ -139,9 +139,9 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr style="border-bottom: 1px solid var(--color-border);">
-                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.table_name }}</th>
-                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.table_type }}</th>
-                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.table_updated }}</th>
+                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.label_name }}</th>
+                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.label_type }}</th>
+                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.label_updated }}</th>
                     </tr>
                 </thead>
                 <tbody>

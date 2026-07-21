@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}{{ request.state.t.ai_profiles }} - DWMB{% endblock %}
+{% block title %}{{ request.state.t.admin_ai_profiles }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-3xl mx-auto">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold" style="color: var(--color-text);">{{ request.state.t.ai_profiles }}</h1>
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">{{ request.state.t.admin_ai_profiles }}</h1>
         <a href="/admin/ai" class="text-sm" style="color: var(--color-primary);">{{ request.state.t.admin_back_to }} AI</a>
     </div>
 
@@ -14,7 +14,7 @@
         <form action="/admin/ai/profiles/create" method="post" class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">{{ request.state.t.ai_profile_name }}</label>
+                    <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">{{ request.state.t.label_name }}</label>
                     <input type="text" name="profile_name" required placeholder="{{ request.state.t.ai_profile_placeholder }}"
                         class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 </div>
@@ -47,7 +47,7 @@
 
     <!-- Profiles List -->
     <div class="rounded-xl p-6 shadow-sm border" style="background: var(--color-surface); border-color: var(--color-border);">
-        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.ai_profiles_list }} ({{ profiles|length }})</h2>
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.admin_profiles_count }} ({{ profiles|length }})</h2>
         {% if profiles %}
         <div class="space-y-3">
             {% for profile in profiles %}
@@ -58,13 +58,13 @@
                 </div>
                 <div class="flex items-center gap-2">
                     {% if profile.is_active %}
-                    <span class="px-2 py-0.5 text-xs rounded-full" style="background: #10b981; color: #fff;">{{ request.state.t.admin_active }}</span>
+                    <span class="px-2 py-0.5 text-xs rounded-full" style="background: #10b981; color: #fff;">{{ request.state.t.status_active }}</span>
                     {% else %}
                     <form action="/admin/ai/profiles/{{ profile.profile_id }}/activate" method="post" class="inline">
                         <button type="submit" class="px-3 py-1 text-xs rounded-lg" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.admin_activate }}</button>
                     </form>
                     {% endif %}
-                    <form action="/admin/ai/profiles/{{ profile.profile_id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ request.state.t.ai_confirm_delete_profile }}')">
+                    <form action="/admin/ai/profiles/{{ profile.profile_id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ request.state.t.btn_confirm_delete_profile }}')">
                         <button type="submit" class="px-3 py-1 text-xs rounded-lg" style="background: #fef2e2; border: 1px solid #fecaca; color: #dc2626;">{{ request.state.t.btn_delete }}</button>
                     </form>
                 </div>

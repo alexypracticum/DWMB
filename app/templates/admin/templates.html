@@ -22,7 +22,7 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.admin_template_model }} *</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.label_model }} *</label>
                     <select name="model_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                         {% for m in models %}
                         <option value="{{ m.model_id }}">{{ m.model_code }} ({{ m.domain }})</option>
@@ -40,7 +40,7 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.admin_template_desc }}</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.label_description }}</label>
                     <input type="text" name="description" placeholder="{{ request.state.t.admin_template_desc_placeholder }}"
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
@@ -61,13 +61,13 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="text-left text-gray-500 border-b">
-                        <th class="pb-2">{{ request.state.t.table_status }}</th>
-                        <th class="pb-2">{{ request.state.t.table_type }}</th>
+                        <th class="pb-2">{{ request.state.t.label_status }}</th>
+                        <th class="pb-2">{{ request.state.t.label_type }}</th>
                         <th class="pb-2">{{ request.state.t.table_code }}</th>
-                        <th class="pb-2">{{ request.state.t.table_name }}</th>
-                        <th class="pb-2">{{ request.state.t.table_model }}</th>
+                        <th class="pb-2">{{ request.state.t.label_name }}</th>
+                        <th class="pb-2">{{ request.state.t.label_model }}</th>
                         <th class="pb-2">{{ request.state.t.table_layout }}</th>
-                        <th class="pb-2">{{ request.state.t.admin_actions }}</th>
+                        <th class="pb-2">{{ request.state.t.label_actions }}</th>
                     </tr>
                 </thead>
                 <tbody>

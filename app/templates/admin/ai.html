@@ -4,9 +4,9 @@
 {% block content %}
 <div class="fade-in max-w-3xl mx-auto">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold" style="color: var(--color-text);">{{ request.state.t.ai_configuration }}</h1>
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">{{ request.state.t.admin_ai }}</h1>
         <div class="flex items-center gap-3">
-            <a href="/admin/ai/profiles" class="px-4 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.ai_profiles }}</a>
+            <a href="/admin/ai/profiles" class="px-4 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.admin_ai_profiles }}</a>
             <a href="/admin" class="text-sm" style="color: var(--color-primary);">{{ request.state.t.admin_back }}</a>
         </div>
     </div>
@@ -91,9 +91,9 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr style="border-bottom: 1px solid var(--color-border);">
-                        <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.ai_log_type }}</th>
-                        <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.ai_log_model }}</th>
-                        <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.ai_log_status }}</th>
+                        <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.label_type }}</th>
+                        <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.label_model }}</th>
+                        <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.label_status }}</th>
                         <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.ai_log_tokens }}</th>
                         <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.ai_log_cost }}</th>
                         <th class="text-left py-2 px-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.ai_log_date }}</th>

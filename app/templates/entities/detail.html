@@ -13,7 +13,7 @@
 <nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
     <a href="/" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.breadcrumb_home }}</a>
     <span class="mx-2">/</span>
-    <a href="/entities" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.breadcrumb_entities }}</a>
+    <a href="/entities" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.nav_entities }}</a>
     <span class="mx-2">/</span>
     <a href="/entities?kind={{ kind.kind_code }}" class="hover:underline" style="color: var(--color-primary);">{{ kind_label }}</a>
     <span class="mx-2">/</span>
@@ -176,7 +176,7 @@
                 <span class="px-2 py-0.5 text-xs font-mono bg-gray-100 text-gray-600 rounded">{{ label.language.code }}</span>
                 <span class="font-medium text-gray-800">{{ label.label }}</span>
                 {% if label.is_primary %}
-                <span class="px-1.5 py-0.5 text-xs bg-green-100 text-green-700 rounded">{{ request.state.t.label_primary_badge }}</span>
+                <span class="px-1.5 py-0.5 text-xs bg-green-100 text-green-700 rounded">{{ request.state.t.label_primary }}</span>
                 {% endif %}
             </div>
             {% if label.description %}
@@ -245,15 +245,15 @@
                 <dd class="font-mono text-gray-700 text-xs">{{ entity.entity_id }}</dd>
             </div>
             <div>
-                <dt class="text-gray-400">{{ request.state.t.meta_status }}</dt>
+                <dt class="text-gray-400">{{ request.state.t.label_status }}</dt>
                 <dd class="text-gray-700">{{ entity.status }}</dd>
             </div>
             <div>
-                <dt class="text-gray-400">{{ request.state.t.meta_created }}</dt>
+                <dt class="text-gray-400">{{ request.state.t.label_created }}</dt>
                 <dd class="text-gray-700">{{ entity.created_at.strftime('%d.%m.%Y %H:%M') if entity.created_at else '-' }}</dd>
             </div>
             <div>
-                <dt class="text-gray-400">{{ request.state.t.meta_updated }}</dt>
+                <dt class="text-gray-400">{{ request.state.t.label_updated }}</dt>
                 <dd class="text-gray-700">{{ entity.updated_at.strftime('%d.%m.%Y %H:%M') if entity.updated_at else '-' }}</dd>
             </div>
         </dl>

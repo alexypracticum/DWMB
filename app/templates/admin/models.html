@@ -18,9 +18,9 @@
                 <tr class="text-left text-gray-500 border-b">
                     <th class="pb-2 px-4">{{ request.state.t.table_code }}</th>
                     <th class="pb-2 px-4">{{ request.state.t.table_domain }}</th>
-                    <th class="pb-2 px-4">{{ request.state.t.table_description }}</th>
-                    <th class="pb-2 px-4">{{ request.state.t.table_templates_count }}</th>
-                    <th class="pb-2 px-4">{{ request.state.t.admin_actions }}</th>
+                    <th class="pb-2 px-4">{{ request.state.t.label_description }}</th>
+                    <th class="pb-2 px-4">{{ request.state.t.admin_templates_count }}</th>
+                    <th class="pb-2 px-4">{{ request.state.t.label_actions }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -36,7 +36,7 @@
                     </td>
                     <td class="py-3 px-4">
                         <div class="flex items-center gap-2">
-                            <a href="/admin/models/{{ item.model.model_id }}/edit" class="text-blue-600 hover:text-blue-800 text-xs">{{ request.state.t.admin_edit }}</a>
+                            <a href="/admin/models/{{ item.model.model_id }}/edit" class="text-blue-600 hover:text-blue-800 text-xs">{{ request.state.t.btn_edit }}</a>
                             <form action="/admin/models/{{ item.model.model_id }}/delete" method="post" onsubmit="return confirm('{{ request.state.t.admin_confirm_delete_model }}')">
                                 <button type="submit" class="text-red-500 hover:text-red-700 text-xs">{{ request.state.t.btn_delete }}</button>
                             </form>

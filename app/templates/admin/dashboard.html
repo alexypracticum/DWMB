@@ -10,8 +10,8 @@
             <a href="/admin/fields" class="btn btn-outline px-4 py-2 rounded-lg transition text-sm" style="border-color: var(--color-secondary); color: var(--color-secondary);">{{ request.state.t.admin_fields }}</a>
             <a href="/admin/models" class="btn px-4 py-2 rounded-lg transition text-sm" style="background: #f59e0b; color: #fff;">{{ request.state.t.admin_models }}</a>
             <a href="/admin/templates" class="btn btn-secondary px-4 py-2 rounded-lg transition text-sm">{{ request.state.t.admin_templates }}</a>
-            <a href="/admin/pages/" class="btn px-4 py-2 rounded-lg transition text-sm" style="background: #06b6d4; color: #fff;">{{ request.state.t.admin_pages }}</a>
-            <a href="/admin/kinds" class="btn btn-success px-4 py-2 rounded-lg transition text-sm">{{ request.state.t.admin_kinds }}</a>
+            <a href="/admin/pages/" class="btn px-4 py-2 rounded-lg transition text-sm" style="background: #06b6d4; color: #fff;">{{ request.state.t.sidebar_pages }}</a>
+            <a href="/admin/kinds" class="btn btn-success px-4 py-2 rounded-lg transition text-sm">{{ request.state.t.sidebar_kinds }}</a>
             <a href="/admin/relation-types" class="btn px-4 py-2 rounded-lg transition text-sm" style="background: #0ea5e9; color: #fff;">{{ request.state.t.admin_relation_types }}</a>
             <a href="/admin/users" class="btn btn-accent px-4 py-2 rounded-lg transition text-sm">{{ request.state.t.admin_users }}</a>
             <a href="/admin/ai" class="btn px-4 py-2 rounded-lg transition text-sm" style="background: #8b5cf6; color: #fff;">AI</a>
@@ -55,16 +55,16 @@
 
     <!-- Users -->
     <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
-        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.admin_users_table }}</h2>
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.admin_users }}</h2>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
                     <tr class="text-left table-header" style="border-bottom: 1px solid var(--color-border); color: var(--color-text-secondary);">
-                        <th class="pb-2">{{ request.state.t.admin_table_name }}</th>
-                        <th class="pb-2">{{ request.state.t.admin_table_email }}</th>
-                        <th class="pb-2">{{ request.state.t.admin_table_role }}</th>
-                        <th class="pb-2">{{ request.state.t.admin_table_status }}</th>
-                        <th class="pb-2">{{ request.state.t.admin_table_actions }}</th>
+                        <th class="pb-2">{{ request.state.t.label_name }}</th>
+                        <th class="pb-2">{{ request.state.t.admin_user_email }}</th>
+                        <th class="pb-2">{{ request.state.t.admin_user_role }}</th>
+                        <th class="pb-2">{{ request.state.t.label_status }}</th>
+                        <th class="pb-2">{{ request.state.t.label_actions }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -81,21 +81,21 @@
                         </td>
                         <td class="py-3">
                             {% if u.is_active %}
-                            <span class="badge-success px-2 py-0.5 text-xs rounded-full">{{ request.state.t.admin_status_active }}</span>
+                            <span class="badge-success px-2 py-0.5 text-xs rounded-full">{{ request.state.t.status_active }}</span>
                             {% else %}
-                            <span class="badge-error px-2 py-0.5 text-xs rounded-full">{{ request.state.t.admin_status_blocked }}</span>
+                            <span class="badge-error px-2 py-0.5 text-xs rounded-full">{{ request.state.t.status_blocked }}</span>
                             {% endif %}
                         </td>
                         <td class="py-3">
                             <div class="flex gap-2">
                                 <form action="/admin/users/{{ u.user_id }}/toggle-admin" method="post" class="inline">
                                     <button type="submit" class="text-xs hover-primary" style="color: var(--color-primary);">
-                                        {% if u.is_admin %}{{ request.state.t.admin_toggle_admin_off }}{% else %}{{ request.state.t.admin_toggle_admin_on }}{% endif %}
+                                        {% if u.is_admin %}{{ request.state.t.admin_remove_admin }}{% else %}{{ request.state.t.admin_make_admin }}{% endif %}
                                     </button>
                                 </form>
                                 <form action="/admin/users/{{ u.user_id }}/toggle-active" method="post" class="inline">
                                     <button type="submit" class="text-xs" style="color: var(--color-accent);">
-                                        {% if u.is_active %}{{ request.state.t.admin_block_user }}{% else %}{{ request.state.t.admin_unblock_user }}{% endif %}
+                                        {% if u.is_active %}{{ request.state.t.admin_block }}{% else %}{{ request.state.t.admin_unblock }}{% endif %}
                                     </button>
                                 </form>
                             </div>

@@ -124,10 +124,10 @@
                     {% if theme_item.is_active %}<span class="text-xs font-medium" style="color: var(--color-primary);">{{ request.state.t.label_active }}</span>{% endif %}
                 </div>
                 <div class="flex gap-2">
-                    <a href="/profile/theme-editor/{{ theme_item.theme_id }}" class="text-xs hover-primary" style="color: var(--color-primary);">{{ request.state.t.label_edit_theme }}</a>
+                    <a href="/profile/theme-editor/{{ theme_item.theme_id }}" class="text-xs hover-primary" style="color: var(--color-primary);">{{ request.state.t.btn_edit }}</a>
                     {% if not theme_item.is_active %}
                     <form action="/profile/theme/{{ theme_item.theme_id }}/activate" method="post" class="inline">
-                        <button type="submit" class="text-xs hover-primary" style="color: var(--color-primary);">{{ request.state.t.label_activate }}</button>
+                        <button type="submit" class="text-xs hover-primary" style="color: var(--color-primary);">{{ request.state.t.admin_activate }}</button>
                     </form>
                     {% endif %}
                     <form action="/profile/theme/{{ theme_item.theme_id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ request.state.t.label_confirm_delete_theme }}')">

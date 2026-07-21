@@ -22,7 +22,7 @@
                     <input type="text" name="category_key" required placeholder="my_category" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <div class="flex-1">
-                    <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.admin_category_name }}</label>
+                    <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.label_name }}</label>
                     <input type="text" name="category_name" required placeholder="{{ request.state.t.admin_category_placeholder }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition">{{ request.state.t.btn_create }}</button>
@@ -30,7 +30,7 @@
         </div>
         <!-- Category filter pills -->
         <div class="flex flex-wrap gap-2">
-            <a href="/admin/fields" class="px-3 py-1 rounded-full text-xs font-medium transition {% if not active_category %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">{{ request.state.t.admin_all }}</a>
+            <a href="/admin/fields" class="px-3 py-1 rounded-full text-xs font-medium transition {% if not active_category %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">{{ request.state.t.sidebar_all }}</a>
             {% for ck, cn in categories %}
             <div class="flex items-center gap-1">
                 <a href="/admin/fields?category={{ ck }}" class="px-3 py-1 rounded-full text-xs font-medium transition {% if active_category == ck %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">{{ cn }}</a>
@@ -48,15 +48,15 @@
         <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.admin_new_field }}</h2>
         <form action="/admin/fields/create" method="post" class="flex flex-wrap items-end gap-3">
             <div class="flex-1 min-w-[150px]">
-                <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.admin_field_key }} *</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.label_key }} *</label>
                 <input type="text" name="field_key" required placeholder="my_field" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div class="flex-1 min-w-[150px]">
-                <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.admin_field_name }} *</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.label_name }} *</label>
                 <input type="text" name="field_label" required placeholder="{{ request.state.t.admin_field_name_placeholder }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div class="w-40">
-                <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.admin_field_type }}</label>
+                <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.label_type }}</label>
                 <select name="field_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                     {% for tkey, tname in field_types %}
                     <option value="{{ tkey }}">{{ tname }}</option>
@@ -86,19 +86,19 @@
             {% for ck, cn in categories %}{% if ck == active_category %}{{ cn }}{% endif %}{% endfor %}
             ({{ fields | length }})
             {% else %}
-            {{ request.state.t.admin_all_fields }} ({{ fields | length }})
+            {{ request.state.t.admin_fields_count }} ({{ fields | length }})
             {% endif %}
         </h2>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
                     <tr class="text-left text-gray-500 border-b">
-                        <th class="pb-2">{{ request.state.t.admin_field_key }}</th>
-                        <th class="pb-2">{{ request.state.t.admin_field_name }}</th>
-                        <th class="pb-2">{{ request.state.t.admin_field_type }}</th>
+                        <th class="pb-2">{{ request.state.t.label_key }}</th>
+                        <th class="pb-2">{{ request.state.t.label_name }}</th>
+                        <th class="pb-2">{{ request.state.t.label_type }}</th>
                         <th class="pb-2">{{ request.state.t.admin_field_category }}</th>
                         <th class="pb-2">{{ request.state.t.admin_field_default }}</th>
-                        <th class="pb-2">{{ request.state.t.admin_actions }}</th>
+                        <th class="pb-2">{{ request.state.t.label_actions }}</th>
                     </tr>
                 </thead>
                 <tbody>

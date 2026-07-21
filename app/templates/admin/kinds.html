@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}{{ request.state.t.admin_entity_types }} - DWMB{% endblock %}
+{% block title %}{{ request.state.t.sidebar_entity_types }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">{{ request.state.t.admin_entity_types }}</h1>
+        <h1 class="text-2xl font-bold text-gray-800">{{ request.state.t.sidebar_entity_types }}</h1>
         <div class="flex gap-2">
             <a href="/admin/kinds/create" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">+ {{ request.state.t.admin_create_type }}</a>
             <a href="/admin" class="text-sm text-blue-600 hover:text-blue-800">{{ request.state.t.admin_back }}</a>
@@ -16,10 +16,10 @@
         <table class="w-full text-sm">
             <thead>
                 <tr class="text-left text-gray-500 border-b">
-                    <th class="pb-2 px-4">{{ request.state.t.table_type }}</th>
-                    <th class="pb-2 px-4">{{ request.state.t.table_name }}</th>
+                    <th class="pb-2 px-4">{{ request.state.t.label_type }}</th>
+                    <th class="pb-2 px-4">{{ request.state.t.label_name }}</th>
                     <th class="pb-2 px-4 text-center">{{ request.state.t.table_fields_count }}</th>
-                    <th class="pb-2 px-4">{{ request.state.t.admin_actions }}</th>
+                    <th class="pb-2 px-4">{{ request.state.t.label_actions }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -34,7 +34,7 @@
                     </td>
                     <td class="py-3 px-4">
                         <div class="flex items-center gap-2">
-                            <a href="/admin/kinds/{{ item.kind.kind_id }}/edit" class="text-blue-600 hover:text-blue-800 text-xs">{{ request.state.t.admin_edit }}</a>
+                            <a href="/admin/kinds/{{ item.kind.kind_id }}/edit" class="text-blue-600 hover:text-blue-800 text-xs">{{ request.state.t.btn_edit }}</a>
                             <form action="/admin/kinds/{{ item.kind.kind_id }}/delete" method="post" onsubmit="return confirm('{{ request.state.t.btn_confirm_delete_template }}')">
                                 <button type="submit" class="text-red-500 hover:text-red-700 text-xs">{{ request.state.t.btn_delete }}</button>
                             </form>
