@@ -79,6 +79,8 @@
 </div>
 
 <script>
+window.__ui_translations = {};
+function t(k) { return (window.__ui_translations || {})[k] || k; }
 let schema = {"required": [], "properties": {}};
 let REGISTRY = [];
 
@@ -105,8 +107,8 @@ document.getElementById('registrySelect').addEventListener('change', function() 
 });
 
 const FIELD_TYPES = [
-    ['string','Текст'],['integer','Целое'],['number','Дробное'],['boolean','Да/Нет'],
-    ['date','Дата'],['url','URL'],['email','Email'],['array','Массив'],
+    ['string',t('field_type_string')],['integer',t('field_type_integer')],['number',t('field_type_number')],['boolean',t('field_type_boolean')],
+    ['date',t('field_type_date')],['url',t('field_type_url')],['email',t('field_type_email')],['array',t('field_type_array')],
 ];
 
 function fieldKeys() { return Object.keys(schema.properties); }

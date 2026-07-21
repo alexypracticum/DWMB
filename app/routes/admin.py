@@ -672,9 +672,13 @@ async def admin_kind_edit_page(request: Request, kind_id: str, db: AsyncSession 
     import json
     fs = kind.field_schema if kind.field_schema else []
     field_schema_json = json.dumps(_ensure_json_schema(fs), ensure_ascii=False, indent=2)
+    t = getattr(request.state, "t", {})
+    import json as _json
+    ui_translations_json = _json.dumps(t, ensure_ascii=False)
     return templates.TemplateResponse("admin/kind_edit.html", {
         "request": request, "user": user, "kind": kind, "labels": labels,
         "field_schema_json": field_schema_json,
+        "ui_translations": ui_translations_json,
     })
 
 
@@ -759,8 +763,12 @@ async def admin_kind_edit_save(
 
 @router.get("/kinds/create", response_class=HTMLResponse)
 async def admin_kind_create_page(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+    t = getattr(request.state, "t", {})
+    import json as _json
+    ui_translations_json = _json.dumps(t, ensure_ascii=False)
     return templates.TemplateResponse("admin/kind_create.html", {
         "request": request, "user": user,
+        "ui_translations": ui_translations_json,
     })
 
 

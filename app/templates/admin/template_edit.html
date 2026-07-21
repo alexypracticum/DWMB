@@ -60,28 +60,28 @@
 
                 <!-- Add block buttons -->
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Добавить блок</h2>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.admin_add_block }}</h2>
                     <div class="grid grid-cols-2 gap-2" id="blockPalette">
-                        <button type="button" onclick="addBlock('image_data_row')" class="px-3 py-2 text-xs bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition border border-indigo-200 font-semibold">📸 Фото + данные</button>
-                        <button type="button" onclick="addBlock('hero_image')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">🖼️ Главное фото</button>
-                        <button type="button" onclick="addBlock('image')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">📷 Изображение</button>
-                        <button type="button" onclick="addBlock('gallery')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">🖼️ Галерея</button>
-                        <button type="button" onclick="addBlock('markdown')" class="px-3 py-2 text-xs bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition border border-green-200">📝 Текст Markdown</button>
-                        <button type="button" onclick="addBlock('video')" class="px-3 py-2 text-xs bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition border border-red-200">🎬 Видео</button>
-                        <button type="button" onclick="addBlock('audio')" class="px-3 py-2 text-xs bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition border border-purple-200">🎵 Аудио</button>
-                        <button type="button" onclick="addBlock('info_table')" class="px-3 py-2 text-xs bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition border border-orange-200">📊 Таблица</button>
-                        <button type="button" onclick="addBlock('relation_list')" class="px-3 py-2 text-xs bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition border border-teal-200">🔗 Связи</button>
-                        <button type="button" onclick="addBlock('aggregated_relations')" class="px-3 py-2 text-xs bg-violet-50 text-violet-700 rounded-lg hover:bg-violet-100 transition border border-violet-200">👥 Агрегир. связи</button>
-                        <button type="button" onclick="addBlock('file_link')" class="px-3 py-2 text-xs bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">📎 Файл-ссылка</button>
-                        <button type="button" onclick="addBlock('file_upload')" class="px-3 py-2 text-xs bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">📤 Загрузка файла</button>
-                        <button type="button" onclick="addBlock('horizontal_row')" class="px-3 py-2 text-xs bg-cyan-50 text-cyan-700 rounded-lg hover:bg-cyan-100 transition border border-cyan-200">↔️ Горизонт. ряд</button>
-                        <button type="button" onclick="addBlock('text_block')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">📄 Текстовый блок</button>
-                        <button type="button" onclick="addBlock('divider')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">➖ Разделитель</button>
-                        <button type="button" onclick="addBlock('spacer')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">↕️ Отступ</button>
-                        <button type="button" onclick="addBlock('actor_character_gallery')" class="px-3 py-2 text-xs bg-pink-50 text-pink-700 rounded-lg hover:bg-pink-100 transition border border-pink-200">🎬 Галерея актёров</button>
+                        <button type="button" onclick="addBlock('image_data_row')" class="px-3 py-2 text-xs bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition border border-indigo-200 font-semibold">📸 ${t('block_image_data_row')}</button>
+                        <button type="button" onclick="addBlock('hero_image')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">🖼️ ${t('block_hero_image')}</button>
+                        <button type="button" onclick="addBlock('image')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">📷 ${t('block_image')}</button>
+                        <button type="button" onclick="addBlock('gallery')" class="px-3 py-2 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200">🖼️ ${t('block_gallery')}</button>
+                        <button type="button" onclick="addBlock('markdown')" class="px-3 py-2 text-xs bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition border border-green-200">📝 ${t('block_markdown')}</button>
+                        <button type="button" onclick="addBlock('video')" class="px-3 py-2 text-xs bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition border border-red-200">🎬 ${t('block_video')}</button>
+                        <button type="button" onclick="addBlock('audio')" class="px-3 py-2 text-xs bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition border border-purple-200">🎵 ${t('block_audio')}</button>
+                        <button type="button" onclick="addBlock('info_table')" class="px-3 py-2 text-xs bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition border border-orange-200">📊 ${t('block_info_table')}</button>
+                        <button type="button" onclick="addBlock('relation_list')" class="px-3 py-2 text-xs bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition border border-teal-200">🔗 ${t('block_relation_list')}</button>
+                        <button type="button" onclick="addBlock('aggregated_relations')" class="px-3 py-2 text-xs bg-violet-50 text-violet-700 rounded-lg hover:bg-violet-100 transition border border-violet-200">👥 ${t('block_aggregated_relations')}</button>
+                        <button type="button" onclick="addBlock('file_link')" class="px-3 py-2 text-xs bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">📎 ${t('block_file_link')}</button>
+                        <button type="button" onclick="addBlock('file_upload')" class="px-3 py-2 text-xs bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200">📤 ${t('block_file_upload')}</button>
+                        <button type="button" onclick="addBlock('horizontal_row')" class="px-3 py-2 text-xs bg-cyan-50 text-cyan-700 rounded-lg hover:bg-cyan-100 transition border border-cyan-200">↔️ ${t('block_horizontal_row')}</button>
+                        <button type="button" onclick="addBlock('text_block')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">📄 ${t('block_text')}</button>
+                        <button type="button" onclick="addBlock('divider')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">➖ ${t('block_divider')}</button>
+                        <button type="button" onclick="addBlock('spacer')" class="px-3 py-2 text-xs bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition border border-gray-200">↕️ ${t('block_spacer')}</button>
+                        <button type="button" onclick="addBlock('actor_character_gallery')" class="px-3 py-2 text-xs bg-pink-50 text-pink-700 rounded-lg hover:bg-pink-100 transition border border-pink-200">🎬 ${t('block_actor_character_gallery')}</button>
                         <button type="button" onclick="addBlock('custom_html')" class="px-3 py-2 text-xs bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition border border-yellow-200">💻 HTML</button>
                     </div>
-                    <button type="button" onclick="syncSchemaToBlocks()" class="w-full mt-3 px-3 py-2 text-xs bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">🔄 Обновить данные схемы</button>
+                    <button type="button" onclick="syncSchemaToBlocks()" class="w-full mt-3 px-3 py-2 text-xs bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition border border-emerald-200">🔄 t('admin_sync_schema')</button>
                 </div>
             </div>
 
@@ -95,14 +95,14 @@
                     <div id="layoutCanvas" class="space-y-3 min-h-[200px] border-2 border-dashed border-gray-200 rounded-lg p-4">
                         <div id="emptyState" class="text-center py-12 text-gray-400">
                             <div class="text-4xl mb-3">📋</div>
-                            <div class="text-sm">Добавьте блоки из палитры слева</div>
+                            <div class="text-sm">t('admin_add_blocks_hint')</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Preview -->
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mt-6">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Превью</h2>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.admin_preview }}</h2>
                     <div id="layoutPreview" class="bg-gray-50 rounded-lg p-4 min-h-[100px] text-sm text-gray-500">
                         {{ request.state.t.admin_no_blocks }}
                     </div>
@@ -164,13 +164,13 @@ function renderBlocks() {
     if (blocks.length === 0) {
         canvas.innerHTML = '';
         canvas.appendChild(createEmptyState());
-        countEl.textContent = '0 блоков';
+        countEl.textContent = '0 ' + t('admin_blocks');
         syncJson();
         return;
     }
 
     canvas.innerHTML = '';
-    countEl.textContent = blocks.length + ' блок(ов)';
+    countEl.textContent = blocks.length + ' ' + t('admin_blocks');
 
     blocks.forEach((block, idx) => {
         const bt = BLOCK_TYPES[block.type] || {name: block.type, icon: '?', fields: []};
@@ -189,19 +189,19 @@ function renderBlocks() {
                 try { parsedFields = typeof val === 'string' ? JSON.parse(val || '[]') : (val || []); } catch(e) { parsedFields = []; }
                 const rowsHtml = parsedFields.map((pf, fi) => `<div class="flex items-center gap-1 bg-white rounded px-2 py-1 text-xs" data-fi="${fi}">
                     <input type="text" value="${esc(pf.key||'')}" placeholder="key" data-fi="${fi}" data-fk="key" onchange="updateFieldEditor('${editorId}',${fi},'key',this.value)" class="w-24 px-1 py-0.5 border border-gray-200 rounded text-xs">
-                    <input type="text" value="${esc(pf.label||'')}" placeholder="Метка" data-fi="${fi}" data-fk="label" onchange="updateFieldEditor('${editorId}',${fi},'label',this.value)" class="flex-1 px-1 py-0.5 border border-gray-200 rounded text-xs">
+                    <input type="text" value="${esc(pf.label||'')}" placeholder="${t('label_field_label')}" data-fi="${fi}" data-fk="label" onchange="updateFieldEditor('${editorId}',${fi},'label',this.value)" class="flex-1 px-1 py-0.5 border border-gray-200 rounded text-xs">
                     <select data-fi="${fi}" data-fk="type" onchange="updateFieldEditor('${editorId}',${fi},'type',this.value)" class="px-1 py-0.5 border border-gray-200 rounded text-xs">
-                        <option value="string"${pf.type==='string'?' selected':''}>Строка</option>
-                        <option value="integer"${pf.type==='integer'?' selected':''}>Целое</option>
-                        <option value="number"${pf.type==='number'?' selected':''}>Дробное</option>
-                        <option value="currency"${pf.type==='currency'?' selected':''}>Деньги</option>
-                        <option value="boolean"${pf.type==='boolean'?' selected':''}>Да/Нет</option>
-                        <option value="date"${pf.type==='date'?' selected':''}>Дата</option>
-                        <option value="datetime"${pf.type==='datetime'?' selected':''}>Дата+время</option>
-                        <option value="email"${pf.type==='email'?' selected':''}>Email</option>
-                        <option value="url"${pf.type==='url'?' selected':''}>URL</option>
-                        <option value="textarea"${pf.type==='textarea'?' selected':''}>Текст</option>
-                        <option value="select"${pf.type==='select'?' selected':''}>Выбор</option>
+                        <option value="string"${pf.type==='string'?' selected':''}>${t('field_type_string')}</option>
+                        <option value="integer"${pf.type==='integer'?' selected':''}>${t('field_type_integer')}</option>
+                        <option value="number"${pf.type==='number'?' selected':''}>${t('field_type_number')}</option>
+                        <option value="currency"${pf.type==='currency'?' selected':''}>${t('field_type_currency')}</option>
+                        <option value="boolean"${pf.type==='boolean'?' selected':''}>${t('field_type_boolean')}</option>
+                        <option value="date"${pf.type==='date'?' selected':''}>${t('field_type_date')}</option>
+                        <option value="datetime"${pf.type==='datetime'?' selected':''}>${t('field_type_datetime')}</option>
+                        <option value="email"${pf.type==='email'?' selected':''}>${t('field_type_email')}</option>
+                        <option value="url"${pf.type==='url'?' selected':''}>${t('field_type_url')}</option>
+                        <option value="textarea"${pf.type==='textarea'?' selected':''}>${t('field_type_textarea')}</option>
+                        <option value="select"${pf.type==='select'?' selected':''}>${t('field_type_select')}</option>
                     </select>
                     <button type="button" onclick="removeFieldEditor('${editorId}',${fi})" class="text-red-400 hover:text-red-600 px-1">✕</button>
                 </div>`).join('');
@@ -216,14 +216,14 @@ function renderBlocks() {
                 fieldsHtml += `<div class="mt-2"><label class="text-xs text-gray-500">${f.label}</label>
                     <select id="${selectId}" data-idx="${idx}" data-key="${f.key}" onchange="updateConfig(this)"
                     class="w-full px-2 py-1 border border-gray-200 rounded text-xs mt-1">
-                        <option value="">— загрузка...</option>
+                        <option value="">— ' + t('admin_loading') + '...'</option>
                     </select></div>`;
                 // Load relation types after render
                 setTimeout(() => {
                     fetch('/admin/api/relation-types').then(r => r.json()).then(data => {
                         const sel = document.getElementById(selectId);
                         if (!sel) return;
-                        sel.innerHTML = '<option value="">— выбрать тип связи —</option>';
+                        sel.innerHTML = '<option value="">— ' + t('admin_select_relation_type') + ' —</option>';
                         data.forEach(rt => {
                             const selected = val === rt.relation_code ? ' selected' : '';
                             sel.innerHTML += `<option value="${rt.relation_code}"${selected}>${rt.relation_name} (${rt.relation_code})</option>`;
@@ -269,7 +269,7 @@ function renderBlocks() {
                     <span class="text-lg">${bt.icon}</span>
                     <span class="font-medium text-sm text-gray-700">${bt.name}</span>
                     <span class="text-xs text-gray-400">#${idx + 1}</span>
-                    ${block.type === 'image_data_row' ? `<button type="button" onclick="syncBlockFromSchema(${idx})" class="px-2 py-0.5 text-xs bg-emerald-50 text-emerald-700 rounded border border-emerald-200 hover:bg-emerald-100" title="Обновить поля из схемы">🔄 Из схемы</button>` : ''}
+                    ${block.type === 'image_data_row' ? `<button type="button" onclick="syncBlockFromSchema(${idx})" class="px-2 py-0.5 text-xs bg-emerald-50 text-emerald-700 rounded border border-emerald-200 hover:bg-emerald-100" title="Обновить поля из схемы">🔄 t('admin_sync_schema_short')</button>` : ''}
                 </div>
                 <div class="flex gap-1">
                     ${idx > 0 ? `<button type="button" onclick="moveBlock(${idx},-1)" class="px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 rounded">↑</button>` : ''}
@@ -311,7 +311,7 @@ function createEmptyState() {
     const d = document.createElement('div');
     d.id = 'emptyState';
     d.className = 'text-center py-12 text-gray-400';
-    d.innerHTML = '<div class="text-4xl mb-3">📋</div><div class="text-sm">Добавьте блоки из палитры слева</div>';
+    d.innerHTML = '<div class="text-4xl mb-3">📋</div><div class="text-sm">t('admin_add_blocks_hint')</div>';
     return d;
 }
 
@@ -393,9 +393,9 @@ function syncSchemaToBlocks() {
         }
     });
     if (updated === 0) {
-        alert('Нет блоков "Фото + данные" для обновления.');
+        alert(t('admin_no_blocks "Фото + данные" для обновления.');
     } else {
-        alert('Обновлено блоков: ' + updated);
+        alert(t('admin_blocks_updated') + ': ' + updated);
     }
     renderBlocks();
     syncJson();
@@ -464,9 +464,9 @@ function renderFieldEditorRows(editorId) {
     const data = getFieldEditorData(editorId);
     const container = document.getElementById(editorId + '_rows');
     const types = [
-        ['string','Строка'],['integer','Целое'],['number','Дробное'],['currency','Деньги'],
-        ['boolean','Да/Нет'],['date','Дата'],['datetime','Дата+время'],
-        ['email','Email'],['url','URL'],['textarea','Текст'],['select','Выбор']
+        ['string',t('field_type_string')],['integer',t('field_type_integer')],['number',t('field_type_number')],['currency',t('field_type_currency')],
+        ['boolean',t('field_type_boolean')],['date',t('field_type_date')],['datetime',t('field_type_datetime')],
+        ['email',t('field_type_email')],['url',t('field_type_url')],['textarea',t('field_type_textarea')],['select',t('field_type_select')]
     ];
     // Build registry options grouped by category
     const cats = {};
@@ -474,7 +474,7 @@ function renderFieldEditorRows(editorId) {
         if (!cats[f.category]) cats[f.category] = [];
         cats[f.category].push(f);
     });
-    let regOpts = '<option value="">— из реестра —</option>';
+    let regOpts = '<option value="">— ' + t('admin_from_registry') + ' —</option>';
     Object.entries(cats).forEach(([cat, fields]) => {
         regOpts += `<optgroup label="${esc(cat)}">`;
         fields.forEach(f => {
@@ -484,10 +484,10 @@ function renderFieldEditorRows(editorId) {
     });
 
     container.innerHTML = data.map((f, i) => `<div class="flex items-center gap-1 bg-white rounded px-2 py-1 text-xs drag-field-row" draggable="true" data-fi="${i}">
-        <span class="cursor-grab text-gray-300 hover:text-gray-500 px-0.5" title="Перетащить для изменения порядка">⠿</span>
+        <span class="cursor-grab text-gray-300 hover:text-gray-500 px-0.5" title="t('admin_drag_reorder')">⠿</span>
         <select onchange="pickRegistryField('${editorId}',${i},this)" class="w-36 px-1 py-0.5 border border-gray-200 rounded text-xs text-gray-400">${regOpts}</select>
         <input type="text" value="${esc(f.key||'')}" placeholder="key" onchange="updateFieldEditor('${editorId}',${i},'key',this.value)" class="w-24 px-1 py-0.5 border border-gray-200 rounded text-xs">
-        <input type="text" value="${esc(f.label||'')}" placeholder="Метка" onchange="updateFieldEditor('${editorId}',${i},'label',this.value)" class="flex-1 px-1 py-0.5 border border-gray-200 rounded text-xs">
+        <input type="text" value="${esc(f.label||'')}" placeholder="${t('label_field_label')}" onchange="updateFieldEditor('${editorId}',${i},'label',this.value)" class="flex-1 px-1 py-0.5 border border-gray-200 rounded text-xs">
         <select onchange="updateFieldEditor('${editorId}',${i},'type',this.value)" class="px-1 py-0.5 border border-gray-200 rounded text-xs">
             ${types.map(([v,n]) => `<option value="${v}"${f.type===v?' selected':''}>${n}</option>`).join('')}
         </select>

@@ -68,17 +68,17 @@
                     'class="flex-1 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none">' +
                 '<select onchange="updateField(\'' + editorId + '\',' + i + ',\'type\',this.value)" ' +
                     'class="w-24 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none">' +
-                    '<option value="string"' + (f.type === 'string' ? ' selected' : '') + '>Строка</option>' +
-                    '<option value="integer"' + (f.type === 'integer' ? ' selected' : '') + '>Целое</option>' +
-                    '<option value="number"' + (f.type === 'number' ? ' selected' : '') + '>Дробное</option>' +
-                    '<option value="currency"' + (f.type === 'currency' ? ' selected' : '') + '>Деньги</option>' +
-                    '<option value="boolean"' + (f.type === 'boolean' ? ' selected' : '') + '>Да/Нет</option>' +
-                    '<option value="date"' + (f.type === 'date' ? ' selected' : '') + '>Дата</option>' +
-                    '<option value="datetime"' + (f.type === 'datetime' ? ' selected' : '') + '>Дата+время</option>' +
-                    '<option value="email"' + (f.type === 'email' ? ' selected' : '') + '>Email</option>' +
-                    '<option value="url"' + (f.type === 'url' ? ' selected' : '') + '>URL</option>' +
-                    '<option value="textarea"' + (f.type === 'textarea' ? ' selected' : '') + '>Текст</option>' +
-                    '<option value="select"' + (f.type === 'select' ? ' selected' : '') + '>Выбор</option>' +
+                    '<option value="string"' + (f.type === 'string' ? ' selected' : '') + '>' + t('field_type_string') + '</option>' +
+                    '<option value="integer"' + (f.type === 'integer' ? ' selected' : '') + '>' + t('field_type_integer') + '</option>' +
+                    '<option value="number"' + (f.type === 'number' ? ' selected' : '') + '>' + t('field_type_number') + '</option>' +
+                    '<option value="currency"' + (f.type === 'currency' ? ' selected' : '') + '>' + t('field_type_currency') + '</option>' +
+                    '<option value="boolean"' + (f.type === 'boolean' ? ' selected' : '') + '>' + t('field_type_boolean') + '</option>' +
+                    '<option value="date"' + (f.type === 'date' ? ' selected' : '') + '>' + t('field_type_date') + '</option>' +
+                    '<option value="datetime"' + (f.type === 'datetime' ? ' selected' : '') + '>' + t('field_type_datetime') + '</option>' +
+                    '<option value="email"' + (f.type === 'email' ? ' selected' : '') + '>' + t('field_type_email') + '</option>' +
+                    '<option value="url"' + (f.type === 'url' ? ' selected' : '') + '>' + t('field_type_url') + '</option>' +
+                    '<option value="textarea"' + (f.type === 'textarea' ? ' selected' : '') + '>' + t('field_type_textarea') + '</option>' +
+                    '<option value="select"' + (f.type === 'select' ? ' selected' : '') + '>' + t('field_type_select') + '</option>' +
                 '</select>' +
                 '<button type="button" onclick="removeField(\'' + editorId + '\',' + i + ')" ' +
                     'class="px-2 py-1 text-red-500 hover:bg-red-50 rounded text-xs">✕</button>';
