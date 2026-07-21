@@ -37,7 +37,7 @@
                 {% endif %}
             </div>
             <h1 class="text-3xl font-bold text-gray-800">
-                {% for label in labels %}{% if label.language.code == 'ru' %}{{ label.label }}{% endif %}{% endfor %}
+                {% set ns = namespace(title='') %}{% for label in labels %}{% if label.language.code == request.state.lang %}{% set ns.title = label.label %}{% endif %}{% endfor %}{% if not ns.title %}{% for label in labels %}{% if label.language.code == 'en' %}{% set ns.title = label.label %}{% endif %}{% endfor %}{% endif %}{% if not ns.title %}{% for label in labels %}{% if label.language.code == 'ru' %}{% set ns.title = label.label %}{% endif %}{% endfor %}{% endif %}{{ ns.title }}
                 {% set ws = entity.workflow_state or 'published' %}
                 <span class="ml-2 px-2 py-0.5 text-xs rounded-full align-middle
                     {% if ws == 'draft' %}bg-yellow-100 text-yellow-700
@@ -47,9 +47,9 @@
                     {% if ws == 'draft' %}{{ request.state.t.workflow_draft }}{% elif ws == 'archived' %}{{ request.state.t.workflow_archived }}{% else %}{{ request.state.t.workflow_published }}{% endif %}
                 </span>
             </h1>
-            {% for label in labels %}{% if label.language.code == 'en' %}
+            {% if request.state.lang != 'en' %}{% for label in labels %}{% if label.language.code == 'en' %}
             <div class="text-lg text-gray-500 mt-1">{{ label.label }}</div>
-            {% endif %}{% endfor %}
+            {% endif %}{% endfor %}{% endif %}
         </div>
         <div class="flex gap-2">
             {% if user %}

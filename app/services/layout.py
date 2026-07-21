@@ -814,7 +814,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
             )
         if not rows:
             return ""
-        label = config.get("label", "Актёры и персонажи")
+        label = config.get("label", "") or t.get("layout_show_cast", "Актёры и персонажи") if t else config.get("label", "Актёры и персонажи")
         return f'<div class="my-4"><h3 class="text-sm font-semibold text-gray-700 mb-2">{label}</h3>{rows}</div>'
 
     elif btype == "actor_character_gallery":
