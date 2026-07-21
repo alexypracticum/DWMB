@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Новая сущность - DWMB{% endblock %}
+{% block title %}{{ request.state.t.entity_new }} - DWMB{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
@@ -7,13 +7,13 @@
     <span class="mx-2">/</span>
     <a href="/entities" class="hover:underline" style="color: var(--color-primary);">Сущности</a>
     <span class="mx-2">/</span>
-    <span style="color: var(--color-text);">Новая сущность</span>
+    <span style="color: var(--color-text);">{{ request.state.t.entity_new }}</span>
 </nav>
 {% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-full">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Новая сущность</h1>
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ request.state.t.entity_new }}</h1>
 
     {% if error == 'exists' %}
     <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-6">Сущность с таким кодом уже существует</div>
@@ -21,17 +21,17 @@
 
     <!-- Step indicator -->
     <div class="flex items-center gap-2 mb-6 text-sm">
-        <span class="px-3 py-1 rounded-full {% if step == 1 %}bg-blue-600 text-white{% else %}bg-blue-100 text-blue-700{% endif %}">1. Тип</span>
+        <span class="px-3 py-1 rounded-full {% if step == 1 %}bg-blue-600 text-white{% else %}bg-blue-100 text-blue-700{% endif %}">1. {{ request.state.t.entity_type }}</span>
         <span class="text-gray-300">→</span>
-        <span class="px-3 py-1 rounded-full {% if step == 2 %}bg-blue-600 text-white{% elif step > 2 %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-400{% endif %}">2. Шаблон</span>
+        <span class="px-3 py-1 rounded-full {% if step == 2 %}bg-blue-600 text-white{% elif step > 2 %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-400{% endif %}">2. {{ request.state.t.entity_template }}</span>
         <span class="text-gray-300">→</span>
-        <span class="px-3 py-1 rounded-full {% if step == 3 %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-400{% endif %}">3. Данные</span>
+        <span class="px-3 py-1 rounded-full {% if step == 3 %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-400{% endif %}">3. {{ request.state.t.entity_data }}</span>
     </div>
 
     <!-- STEP 1: Select Kind -->
     {% if step == 1 %}
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Выберите тип сущности</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.entity_type }}</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             {% for item in kinds %}
             <a href="/entity/create?kind={{ item.kind.kind_code }}"
@@ -48,7 +48,7 @@
     {% if step == 2 %}
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-semibold text-gray-800">Выберите шаблоны для привязки к сущности</h2>
+            <h2 class="text-lg font-semibold text-gray-800">{{ request.state.t.entity_templates }}</h2>
             <a href="/entity/create" class="text-sm text-blue-600 hover:text-blue-800">← другой тип</a>
         </div>
         <p class="text-xs text-gray-400 mb-4">Можно выбрать шаблоны из любых типов сущностей — каждый добавит свои поля.</p>
@@ -103,7 +103,7 @@
         <div class="mt-4">
             <a href="/entity/create?kind={{ selected_kind_obj.kind_code }}&template_ids=none"
                class="inline-block px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
-                Создать без шаблонов →
+                {{ request.state.t.entity_new }} →
             </a>
         </div>
         {% endif %}
@@ -137,9 +137,9 @@
             <h3 class="text-md font-semibold text-gray-800 mb-4">Основная информация</h3>
             <div class="w-full">
                 <div class="flex items-center border-b border-gray-100 py-3">
-                    <div class="w-44 flex-shrink-0 text-sm text-gray-500 font-medium text-right pr-3">Название (RU) *</div>
+                    <div class="w-44 flex-shrink-0 text-sm text-gray-500 font-medium text-right pr-3">{{ request.state.t.label_name }} (RU) *</div>
                     <div class="text-gray-400 pr-3">:</div>
-                    <div class="flex-1"><input type="text" name="label_ru" required placeholder="Название" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+                    <div class="flex-1"><input type="text" name="label_ru" required placeholder="{{ request.state.t.label_name }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
                 </div>
                 <div class="flex items-center border-b border-gray-100 py-3">
                     <div class="w-44 flex-shrink-0 text-sm text-gray-500 font-medium text-right pr-3">Описание (RU)</div>
@@ -147,7 +147,7 @@
                     <div class="flex-1"><textarea name="description_ru" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></textarea></div>
                 </div>
                 <div class="flex items-center border-b border-gray-100 py-3">
-                    <div class="w-44 flex-shrink-0 text-sm text-gray-500 font-medium text-right pr-3">Название (EN)</div>
+                    <div class="w-44 flex-shrink-0 text-sm text-gray-500 font-medium text-right pr-3">{{ request.state.t.label_name }} (EN)</div>
                     <div class="text-gray-400 pr-3">:</div>
                     <div class="flex-1"><input type="text" name="label_en" placeholder="English name" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
                 </div>
@@ -219,7 +219,7 @@
         {% endif %}
 
         <div class="flex gap-3">
-            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition" onclick="return validateCreateForm()">Создать</button>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition" onclick="return validateCreateForm()">{{ request.state.t.btn_create }}</button>
             <a href="/entity/create?kind={{ selected_kind_obj.kind_code }}" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Назад</a>
         </div>
     </form>
@@ -229,7 +229,7 @@
         const form = document.getElementById('entityForm');
         const labelRu = form.querySelector('[name="label_ru"]');
         if (!labelRu || !labelRu.value.trim()) {
-            alert('Заполните поле "Название (RU)"');
+            alert('{{ request.state.t.label_name }}');
             if (labelRu) labelRu.focus();
             return false;
         }

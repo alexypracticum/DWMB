@@ -22,19 +22,19 @@
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white text-lg font-bold">TM</div>
             <div>
-                <div class="text-sm font-semibold text-gray-800">Импорт из TMDB</div>
+                <div class="text-sm font-semibold text-gray-800">{{ request.state.t.entity_tmdb_import }}</div>
                 <div class="text-xs text-gray-500">Обновить данные из The Movie Database</div>
             </div>
         </div>
         <div class="flex gap-2">
             <button type="button" onclick="openFillMissing()" class="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition text-sm">
-                Заполнить недостающее
+                {{ request.state.t.entity_tmdb_fill_missing }}
             </button>
             <button type="button" onclick="openTmdbImport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
-                Импортировать
+                {{ request.state.t.entity_tmdb_import }}
             </button>
             <button type="button" onclick="importTmdbCredits()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm">
-                Импорт связей
+                {{ request.state.t.entity_tmdb_import_credits }}
             </button>
         </div>
     </div>
@@ -289,7 +289,7 @@
                 {% if available_templates %}
                 <form action="/entity/{{ entity.entity_id }}/add-projection" method="post" id="addProjectionForm">
                     <!-- Search -->
-                    <input type="text" id="templateSearch" placeholder="Поиск шаблона..."
+                    <input type="text" id="templateSearch" placeholder="{{ request.state.t.search_placeholder }}"
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm mb-4 focus:ring-2 focus:ring-blue-500 outline-none"
                            oninput="filterTemplates(this.value)">
                     
@@ -448,7 +448,7 @@
                     <!-- Target entity search -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Связанная сущность</label>
-                        <input type="text" id="entitySearch" placeholder="Поиск сущности..."
+                        <input type="text" id="entitySearch" placeholder="{{ request.state.t.search_placeholder }}"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none mb-2"
                                oninput="searchEntities(this.value)">
                         <input type="hidden" name="target_entity_id" id="targetEntityId" required>
@@ -759,7 +759,7 @@
     <div id="fillMissingModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col">
             <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-800">Заполнить недостающее</h3>
+                <h3 class="text-lg font-semibold text-gray-800">{{ request.state.t.entity_tmdb_fill_missing }}</h3>
                 <button onclick="document.getElementById('fillMissingModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
             <div class="p-4 overflow-y-auto flex-1">
@@ -777,7 +777,7 @@
             <div class="flex items-center justify-between p-4 border-b border-gray-200">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">TM</div>
-                    <h3 class="text-lg font-semibold text-gray-800">Импорт из TMDB</h3>
+                    <h3 class="text-lg font-semibold text-gray-800">{{ request.state.t.entity_tmdb_import }}</h3>
                 </div>
                 <button onclick="closeTmdbModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
@@ -806,7 +806,7 @@
     <div id="importCreditsModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">Импорт связей</h3>
+                <h3 class="text-lg font-semibold text-gray-800">{{ request.state.t.entity_tmdb_import_credits }}</h3>
                 <button onclick="document.getElementById('importCreditsModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
             <div id="importCreditsContent" class="text-sm text-gray-700">Загрузка...</div>
