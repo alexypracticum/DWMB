@@ -343,7 +343,9 @@ async def admin_template_edit_page(
                 schema_source = fs
 
     t = getattr(request.state, "t", {})
-    return templates.TemplateResponse("admin/template_edit.html", {
+    from starlette.responses import HTMLResponse as HResp
+    response = HResp(content=None)
+    response = templates.TemplateResponse("admin/template_edit.html", {
         "request": request,
         "user": user,
         "template": tmpl,
@@ -355,6 +357,9 @@ async def admin_template_edit_page(
         "layout_blocks_json": json.dumps(layout_blocks, ensure_ascii=False),
         "ui_translations": json.dumps(t, ensure_ascii=False),
     })
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    return response
 
 
 @router.post("/templates/{template_id}/edit")

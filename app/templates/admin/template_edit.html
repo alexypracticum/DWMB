@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ request.state.t.admin_edit_template }}: {{ request.state.t.get(template.template_code, template.template_name) if request.state.t else template.template_name }} - DWMB{% endblock %}
+{# v1784668265 #}{% block title %}{{ request.state.t.admin_edit_template }}: {{ request.state.t.get(template.template_code, template.template_name) if request.state.t else template.template_name }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-5xl">
@@ -567,6 +567,12 @@ function syncJson() {
 }
 
 // Init
-try { renderBlocks(); } catch(e) { console.error('renderBlocks error:', e); document.getElementById('blockCount').textContent = 'JS Error: ' + e.message; }
+try {
+    renderBlocks();
+} catch(e) {
+    console.error('DWMB renderBlocks error:', e);
+    if (document.getElementById('blockCount'))
+        document.getElementById('blockCount').textContent = 'Error: ' + e.message;
+}
 </script>
 {% endblock %}
