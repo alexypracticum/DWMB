@@ -4,7 +4,7 @@ Tests language table, i18n translations, and language switching.
 """
 import pytest
 import pytest_asyncio
-from app.services.i18n import get_translation
+from app.services.language_service import get_lang
 
 
 # =============================================================================
@@ -12,21 +12,21 @@ from app.services.i18n import get_translation
 # =============================================================================
 
 def test_get_translation_ru():
-    t = get_translation("ru")
+    t = get_lang("ru")
     assert t["nav_entities"] == "Сущности"
     assert t["nav_search"] == "Поиск"
     assert t["btn_save"] == "Сохранить"
 
 
 def test_get_translation_en():
-    t = get_translation("en")
+    t = get_lang("en")
     assert t["nav_entities"] == "Entities"
     assert t["nav_search"] == "Search"
     assert t["btn_save"] == "Save"
 
 
 def test_unknown_language_falls_back_to_ru():
-    t = get_translation("xyz")
+    t = get_lang("xyz")
     assert t["nav_entities"] == "Сущности"
 
 
