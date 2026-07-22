@@ -1,0 +1,36 @@
+# Production overrides - use with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  db:
+    ports: []  # Remove exposed ports in production
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  app:
+    ports: []  # Remove exposed ports in production (use reverse proxy)
+    volumes:
+      - media_data:/app/media
+      # Remove development volume mounts
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-dwmb}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-dwmb}
+
+  minio:
+    ports: []  # Remove exposed ports in production
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+volumes:
+  pgdata:
+  minio_data:
+  media_data:

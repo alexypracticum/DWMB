@@ -1,0 +1,64 @@
+# Version control
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info
+dist
+build
+.eggs
+
+# Virtual environment
+.venv
+venv
+env
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Testing
+.pytest_cache
+htmlcov
+.coverage
+coverage.xml
+
+# Docker
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Documentation
+*.md
+!README.md
+LICENSE
+docs/
+
+# Wiki
+wiki/
+wiki2/
+
+# Raw data
+raw/
+
+# Logs
+*.log
+
+# Environment files (except .env.example)
+.env
+.env.*
+
+# Temporary files
+temp*
+*.tmp
+*.bak
+
+# MiMO
+.mimocode
