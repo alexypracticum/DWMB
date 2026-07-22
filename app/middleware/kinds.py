@@ -3,6 +3,7 @@ Middleware that loads entity kinds for the navigation dropdown.
 Uses cache for performance (Redis with in-memory fallback).
 """
 from starlette.middleware.base import BaseHTTPMiddleware
+import logging
 from starlette.requests import Request
 from sqlalchemy import select, or_
 
@@ -12,13 +13,15 @@ from app.services.cache import cache_get, cache_set
 from app.services.language import get_language_id
 
 
+logger = logging.getLogger(__name__)
+
 class KindsMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         request.state.kinds = []
 
         try:
             lang = getattr(request.state, "lang", "ru") if hasattr(request.state, "lang") else "ru"
-            print(f'KindsMiddleware: lang={lang}')
+            logger.debug('KindsMiddleware: lang=%s', lang)
             cache_key = f"kinds:{lang}"
 
             # Try cache first
@@ -79,10 +82,7 @@ class KindsMiddleware(BaseHTTPMiddleware):
                             "sort_order": kind.sort_order,
                             "label": label,
                         })
-                    print(f'KindsMiddleware: loaded {len(kinds_with_labels)} kinds')
-                    for k in kinds_with_labels[:3]:
-                        print(f'  {k.kind_code}: {getattr(k, "_display_label", "NO_LABEL")}')
-                        print(f'  {k.kind_code}: {k._display_label}')
+                    logger.debug('KindsMiddleware: loaded %d kinds', len(kinds_with_labels))
                     request.state.kinds = kinds_with_labels
 
                     # Cache for 5 minutes
@@ -90,8 +90,7 @@ class KindsMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             import logging
             logging.getLogger(__name__).error(f'KindsMiddleware error: {e}')
-            import traceback
-            traceback.print_exc()
+            logger.exception('KindsMiddleware error')
 
         response = await call_next(request)
         return response

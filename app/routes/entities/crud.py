@@ -13,58 +13,11 @@ from app.models.relations import SemanticRelation, RelationType
 from app.models.users import UserAccount
 from app.services.auth import get_current_user, require_auth
 from app.services.layout import render_layout, get_state_field, get_localized_value
-from app.services.language import get_language_id
+from app.services.language_service import get_language_id, get_kind_label, get_entity_label, entity_label_filter, lang_priority_case, get_lang_ids, get_lang
 
-
-
-async def _get_lang_id(db, code: str):
-    """Get language UUID by code, with caching."""
-    from app.services.language import get_language_id as _get_id
-    return await _get_id(db, code)
-
-
-router = APIRouter(tags=["entities"])
 templates = Jinja2Templates(directory="app/templates")
 
-
-async def _get_kind_label(db, kind_id, lang="ru"):
-    """Get kind label with language fallback: current → 'ru' → kind_code."""
-    from sqlalchemy import or_
-    lang_id = await _get_lang_id(db, lang)
-    ru_lang_id = await _get_lang_id(db, "ru")
-    if not lang_id and not ru_lang_id:
-        return None
-    or_clauses = []
-    if lang_id:
-        or_clauses.append(EntityKindLabel.language_id == lang_id)
-    if ru_lang_id:
-        or_clauses.append(EntityKindLabel.language_id == ru_lang_id)
-    result = await db.execute(
-        select(EntityKindLabel.label).where(
-            EntityKindLabel.kind_id == kind_id,
-            or_(*or_clauses)
-        ).order_by(
-            (EntityKindLabel.language_id == lang_id).desc() if lang_id else True
-        ).limit(1)
-    )
-    return result.scalar_one_or_none()
-
-
-async def _get_entity_label_filter(lang="ru", db=None):
-    """Return SQLAlchemy filter for entity label with language fallback."""
-    from sqlalchemy import or_
-    lang_id = await _get_lang_id(db, lang) if db else None
-    ru_lang_id = await _get_lang_id(db, "ru") if db else None
-    or_clauses = []
-    if lang_id:
-        or_clauses.append(EntityLabel.language_id == lang_id)
-    if ru_lang_id:
-        or_clauses.append(EntityLabel.language_id == ru_lang_id)
-    if or_clauses:
-        return or_(*or_clauses)
-    return EntityLabel.is_primary == True  # ultimate fallback
-
-
+router = APIRouter(tags=["entities"])
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(get_current_user)):
     # Stats
@@ -74,23 +27,14 @@ async def index(request: Request, db: AsyncSession = Depends(get_db), user: User
 
     # Recent entities
     lang = getattr(request.state, "lang", "ru")
-    lang_id = await _get_lang_id(db, lang)
-    ru_lang_id = await _get_lang_id(db, "ru")
-    or_clauses_el = []
-    if lang_id:
-        or_clauses_el.append(EntityLabel.language_id == lang_id)
-    if ru_lang_id:
-        or_clauses_el.append(EntityLabel.language_id == ru_lang_id)
-    from sqlalchemy import text, case
-    lang_priority = case(
-        (EntityLabel.language_id == lang_id, 0),
-        else_=1
-    )
+    lang_id, ru_lang_id = await get_lang_ids(db, lang)
+    entity_filter = entity_label_filter(lang_id, ru_lang_id)
+    lang_priority = lang_priority_case(lang_id)
     result = await db.execute(
         select(Entity, EntityLabel, EntityKind)
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
-        .where(Entity.status == "active", or_(*or_clauses_el))
+        .where(Entity.status == "active", entity_filter)
         .distinct(Entity.entity_id)
         .order_by(Entity.entity_id, lang_priority)
         .limit(12)
@@ -98,7 +42,7 @@ async def index(request: Request, db: AsyncSession = Depends(get_db), user: User
     recent = []
     lang = getattr(request.state, "lang", "ru")
     for entity, label, ek in result.unique():
-        kl = await _get_kind_label(db, ek.kind_id, lang) or ek.kind_code
+        kl = await get_kind_label(db, ek.kind_id, lang) or ek.kind_code
         recent.append({"entity": entity, "label": label, "kind": ek, "kind_label": kl})
 
     # Kinds for sidebar
@@ -130,26 +74,21 @@ async def list_entities(
     per_page = 20
     offset = (page - 1) * per_page
     lang = getattr(request.state, "lang", "ru")
-    lang_id = await _get_lang_id(db, lang)
-    ru_lang_id = await _get_lang_id(db, "ru")
-    or_clauses_el = []
-    if lang_id:
-        or_clauses_el.append(EntityLabel.language_id == lang_id)
-    if ru_lang_id:
-        or_clauses_el.append(EntityLabel.language_id == ru_lang_id)
+    lang_id, ru_lang_id = await get_lang_ids(db, lang)
+    entity_filter = entity_label_filter(lang_id, ru_lang_id)
 
     query = (
         select(Entity, EntityLabel, EntityKind)
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
-        .where(Entity.status == "active", or_(*or_clauses_el), EntityLabel.is_primary == True)
+        .where(Entity.status == "active", entity_filter, EntityLabel.is_primary == True)
     )
 
     count_query = (
         select(func.count(Entity.entity_id))
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
-        .where(Entity.status == "active", or_(*or_clauses_el), EntityLabel.is_primary == True)
+        .where(Entity.status == "active", entity_filter, EntityLabel.is_primary == True)
     )
 
     if kind:
@@ -171,7 +110,7 @@ async def list_entities(
     entities = []
     lang = getattr(request.state, "lang", "ru")
     for entity, label, ek in result.unique():
-        kl = await _get_kind_label(db, ek.kind_id, lang) or ek.kind_code
+        kl = await get_kind_label(db, ek.kind_id, lang) or ek.kind_code
         # Use image_url directly from entity (fallback to projection state)
         poster = entity.image_url
         if not poster:
@@ -201,8 +140,8 @@ async def list_entities(
     current_kind_label = ""
     if kind:
         lang = getattr(request.state, "lang", "ru")
-        lang_id = await _get_lang_id(db, lang)
-        ru_lang_id = await _get_lang_id(db, "ru")
+        lang_id = await get_language_id(db, lang)
+        ru_lang_id = await get_language_id(db, "ru")
         or_clauses_ekl = []
         if lang_id:
             or_clauses_ekl.append(EntityKindLabel.language_id == lang_id)
@@ -238,7 +177,7 @@ async def _get_kinds_with_labels(db, lang="ru"):
     kinds = kinds_result.scalars().all()
     result = []
     for k in kinds:
-        kl = await _get_kind_label(db, k.kind_id, lang) or k.kind_code
+        kl = await get_kind_label(db, k.kind_id, lang) or k.kind_code
         result.append({"kind": k, "label": kl})
     return result
 
@@ -276,7 +215,7 @@ async def entity_create_page(
             for tmpl, model, kind_obj in tmpl_result:
                 kc = kind_obj.kind_code
                 if kc not in kind_groups:
-                    kind_label = await _get_kind_label(db, kind_obj.kind_id, lang) or kind_obj.kind_code
+                    kind_label = await get_kind_label(db, kind_obj.kind_id, lang) or kind_obj.kind_code
                     kind_groups[kc] = {"kind_code": kc, "kind_label": kind_label, "templates": []}
                 kind_groups[kc]["templates"].append({
                     "template": tmpl,
@@ -330,7 +269,7 @@ async def entity_create_page(
                         _ld = tmpl.layout_definition
                         if isinstance(_ld, str):
                             try: _ld = json.loads(_ld)
-                            except: _ld = []
+                            except (json.JSONDecodeError, ValueError, TypeError): _ld = []
                         if isinstance(_ld, list):
                             all_layout_blocks.extend(_ld)
 
@@ -418,7 +357,7 @@ async def entity_create(
     await db.flush()
 
     # Russian label
-    ru_lang_id = await _get_lang_id(db, "ru")
+    ru_lang_id = await get_language_id(db, "ru")
     ru_label = EntityLabel(
         entity_id=entity_id, language_id=ru_lang_id, label=label_ru,
         description=description_ru, is_primary=True, owner_id=user.user_id, version_id=version_id,
@@ -427,7 +366,7 @@ async def entity_create(
 
     # English label
     if label_en:
-        en_lang_id = await _get_lang_id(db, "en")
+        en_lang_id = await get_language_id(db, "en")
         en_label = EntityLabel(
             entity_id=entity_id, language_id=en_lang_id, label=label_en,
             is_primary=False, version_id=version_id,
@@ -494,10 +433,10 @@ async def entity_create(
                     if val:
                         if prop_type == "integer":
                             try: val = int(val)
-                            except: pass
+                            except (json.JSONDecodeError, ValueError, TypeError): pass
                         elif prop_type == "number":
                             try: val = float(val)
-                            except: pass
+                            except (json.JSONDecodeError, ValueError, TypeError): pass
                         elif prop_type == "boolean":
                             val = val.lower() in ("true", "1", "yes")
                         state_data[key] = val
@@ -506,7 +445,7 @@ async def entity_create(
         _ld = tmpl.layout_definition
         if isinstance(_ld, str):
             try: _ld = _json.loads(_ld)
-            except: _ld = []
+            except (json.JSONDecodeError, ValueError, TypeError): _ld = []
         if isinstance(_ld, list) and _ld:
             from app.services.layout import BLOCK_TYPES
             for block in _ld:
@@ -570,7 +509,7 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
     lang = getattr(request.state, "lang", "ru")
     kind_label = None
     if kind:
-        kind_label = await _get_kind_label(db, kind.kind_id, lang) or kind.kind_code
+        kind_label = await get_kind_label(db, kind.kind_id, lang) or kind.kind_code
 
     # Projections with states
     proj_result = await db.execute(
@@ -588,13 +527,8 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
 
     # Relations
     lang = getattr(request.state, "lang", "ru")
-    lang_id = await _get_lang_id(db, lang)
-    ru_lang_id = await _get_lang_id(db, "ru")
-    or_clauses_el = []
-    if lang_id:
-        or_clauses_el.append(EntityLabel.language_id == lang_id)
-    if ru_lang_id:
-        or_clauses_el.append(EntityLabel.language_id == ru_lang_id)
+    lang_id, ru_lang_id = await get_lang_ids(db, lang)
+    entity_filter = entity_label_filter(lang_id, ru_lang_id)
     source_rels = await db.execute(
         select(SemanticRelation, RelationType, EntityProjection, Entity, EntityLabel)
         .join(RelationType, RelationType.relation_type_id == SemanticRelation.relation_type_id)
@@ -603,7 +537,7 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .where(SemanticRelation.source_projection_id.in_(
             select(EntityProjection.projection_id).where(EntityProjection.entity_id == eid)
-        ), or_(*or_clauses_el), EntityLabel.is_primary == True)
+        ), entity_filter, EntityLabel.is_primary == True)
     )
     outgoing = []
     for rel, rtype, proj, ent, lbl in source_rels.unique():
@@ -617,7 +551,7 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .where(SemanticRelation.target_projection_id.in_(
             select(EntityProjection.projection_id).where(EntityProjection.entity_id == eid)
-        ), or_(*or_clauses_el), EntityLabel.is_primary == True)
+        ), entity_filter, EntityLabel.is_primary == True)
     )
     incoming = []
     for rel, rtype, proj, ent, lbl in target_rels.unique():
@@ -693,7 +627,7 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
     # Get primary label for template
     label = None
     if labels:
-        _lang_id = await _get_lang_id(db, lang)
+        _lang_id = await get_language_id(db, lang)
         label = next((l for l in labels if l.language_id == _lang_id and l.is_primary), labels[0])
 
     # Extract SEO fields from state_data
@@ -760,7 +694,7 @@ async def entity_history(request: Request, entity_id: str, db: AsyncSession = De
     kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_id == entity.kind_id))
     kind = kind_result.scalar_one_or_none()
     lang = getattr(request.state, "lang", "ru")
-    kind_label = await _get_kind_label(db, kind.kind_id, lang) if kind else None
+    kind_label = await get_kind_label(db, kind.kind_id, lang) if kind else None
 
     # Get entity label
     label_result = await db.execute(
@@ -905,7 +839,7 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
                 _ld = tmpl.layout_definition
                 if isinstance(_ld, str):
                     try: _ld = _json.loads(_ld)
-                    except: _ld = []
+                    except (json.JSONDecodeError, ValueError, TypeError): _ld = []
                 if isinstance(_ld, list):
                     all_layout_blocks.extend(_ld)
 
@@ -934,7 +868,7 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
         kc = kind_obj.kind_code
         if kc not in avail_by_kind:
             lang = getattr(request.state, "lang", "ru")
-            kind_label = await _get_kind_label(db, kind_obj.kind_id, lang) or kind_obj.kind_code
+            kind_label = await get_kind_label(db, kind_obj.kind_id, lang) or kind_obj.kind_code
             avail_by_kind[kc] = {"kind_code": kc, "kind_label": kind_label, "templates": []}
         avail_by_kind[kc]["templates"].append({
             "template_id": tmpl.template_id,
@@ -949,13 +883,8 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
     # Get all projection IDs for this entity
     proj_ids = [p["projection"].projection_id for p in projections]
     lang = getattr(request.state, "lang", "ru")
-    lang_id = await _get_lang_id(db, lang)
-    ru_lang_id = await _get_lang_id(db, "ru")
-    or_clauses_el = []
-    if lang_id:
-        or_clauses_el.append(EntityLabel.language_id == lang_id)
-    if ru_lang_id:
-        or_clauses_el.append(EntityLabel.language_id == ru_lang_id)
+    lang_id, ru_lang_id = await get_lang_ids(db, lang)
+    entity_filter = entity_label_filter(lang_id, ru_lang_id)
 
     # Outgoing relations
     outgoing = []
@@ -966,7 +895,7 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
             .join(EntityProjection, EntityProjection.projection_id == SemanticRelation.target_projection_id)
             .join(Entity, Entity.entity_id == EntityProjection.entity_id)
             .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
-            .where(SemanticRelation.source_projection_id.in_(proj_ids), or_(*or_clauses_el), EntityLabel.is_primary == True)
+            .where(SemanticRelation.source_projection_id.in_(proj_ids), entity_filter, EntityLabel.is_primary == True)
         )
         for rel, rtype, proj, ent, lbl in out_result.unique():
             outgoing.append({"relation": rel, "type": rtype, "target": ent, "label": lbl})
@@ -980,7 +909,7 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
             .join(EntityProjection, EntityProjection.projection_id == SemanticRelation.source_projection_id)
             .join(Entity, Entity.entity_id == EntityProjection.entity_id)
             .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
-            .where(SemanticRelation.target_projection_id.in_(proj_ids), or_(*or_clauses_el), EntityLabel.is_primary == True)
+            .where(SemanticRelation.target_projection_id.in_(proj_ids), entity_filter, EntityLabel.is_primary == True)
         )
         for rel, rtype, proj, ent, lbl in in_result.unique():
             incoming.append({"relation": rel, "type": rtype, "source": ent, "label": lbl})
@@ -1006,237 +935,6 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
     })
 
 
-@router.post("/entity/{entity_id}/add-projection")
-async def entity_add_projection(
-    entity_id: str,
-    template_id: str = Form(...),
-    db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_auth),
-):
-    from uuid import UUID
-    import json as _json, hashlib
-
-    eid = UUID(entity_id)
-    tid = UUID(template_id)
-
-    # Verify entity exists
-    entity_result = await db.execute(select(Entity).where(Entity.entity_id == eid))
-    entity = entity_result.scalar_one_or_none()
-    if not entity:
-        raise HTTPException(404)
-
-    # Get template
-    tmpl_result = await db.execute(select(OntologyTemplate).where(OntologyTemplate.template_id == tid))
-    tmpl = tmpl_result.scalar_one_or_none()
-    if not tmpl:
-        raise HTTPException(400, "Invalid template")
-
-    # Check if already linked
-    existing = await db.execute(
-        select(EntityProjection).where(
-            EntityProjection.entity_id == eid,
-            EntityProjection.template_id == tid,
-        )
-    )
-    if existing.scalar_one_or_none():
-        return RedirectResponse(url=f"/entity/{entity_id}/edit", status_code=303)
-
-    # Get version
-    version_result = await db.execute(select(func.max(Entity.version_id)))
-    version_id = (version_result.scalar() or 0) + 1
-
-    # Get default context
-    ctx_result = await db.execute(select(Context).where(Context.context_code == "default"))
-    ctx = ctx_result.scalar_one_or_none()
-
-    # Create projection
-    import uuid
-    proj_id = uuid.uuid4()
-    proj = EntityProjection(
-        projection_id=proj_id,
-        entity_id=eid,
-        model_id=tmpl.model_id,
-        template_id=tmpl.template_id,
-        context_id=ctx.context_id if ctx else None,
-        projection_code=f"{entity.entity_code}_{tmpl.template_code}",
-        projection_name=entity.entity_code,
-        confidence=1.0,
-        version_id=version_id,
-    )
-    db.add(proj)
-    await db.flush()
-
-    # Create empty state
-    state_hash = hashlib.sha256(b"{}").hexdigest()
-    ps = ProjectionState(
-        projection_id=proj_id,
-        state_data={},
-        state_hash=state_hash,
-        is_current=True,
-        version_id=version_id,
-    )
-    db.add(ps)
-    await db.commit()
-
-    return RedirectResponse(url=f"/entity/{entity_id}/edit", status_code=303)
-
-
-@router.post("/entity/{entity_id}/remove-projection")
-async def entity_remove_projection(
-    entity_id: str,
-    projection_id: str = Form(...),
-    db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_auth),
-):
-    from uuid import UUID
-    from app.models.relations import SemanticRelation
-
-    eid = UUID(entity_id)
-    pid = UUID(projection_id)
-
-    proj = await db.get(EntityProjection, pid)
-    if not proj or proj.entity_id != eid:
-        raise HTTPException(404)
-
-    rels = await db.execute(
-        select(SemanticRelation).where(
-            (SemanticRelation.source_projection_id == pid) | (SemanticRelation.target_projection_id == pid)
-        )
-    )
-    for rel in rels.scalars().all():
-        await db.delete(rel)
-
-    states = await db.execute(
-        select(ProjectionState).where(ProjectionState.projection_id == pid)
-    )
-    for st in states.scalars().all():
-        await db.delete(st)
-
-    await db.delete(proj)
-    await db.commit()
-    return RedirectResponse(url=f"/entity/{entity_id}/edit", status_code=303)
-
-
-@router.post("/entity/{entity_id}/add-relation")
-async def entity_add_relation(
-    entity_id: str,
-    relation_type_id: str = Form(...),
-    target_entity_id: str = Form(...),
-    role: str = Form(""),
-    confidence: float = Form(1.0),
-    weight: float = Form(1.0),
-    db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_auth),
-):
-    from uuid import UUID
-    from app.models.relations import SemanticRelation, RelationType
-
-    eid = UUID(entity_id)
-    target_eid = UUID(target_entity_id)
-    rtid = UUID(relation_type_id)
-
-    # Get source entity's first projection
-    src_proj_result = await db.execute(
-        select(EntityProjection).where(EntityProjection.entity_id == eid).limit(1)
-    )
-    src_proj = src_proj_result.scalar_one_or_none()
-    if not src_proj:
-        return RedirectResponse(url=f"/entity/{entity_id}/edit", status_code=303)
-
-    # Get target entity's first projection
-    tgt_proj_result = await db.execute(
-        select(EntityProjection).where(EntityProjection.entity_id == target_eid).limit(1)
-    )
-    tgt_proj = tgt_proj_result.scalar_one_or_none()
-    if not tgt_proj:
-        return RedirectResponse(url=f"/entity/{entity_id}/edit", status_code=303)
-
-    # Get version
-    version_result = await db.execute(select(func.max(SemanticRelation.version_id)))
-    version_id = (version_result.scalar() or 0) + 1
-
-    # Get relation type and its inverse
-    rt_result = await db.execute(select(RelationType).where(RelationType.relation_type_id == rtid))
-    rt = rt_result.scalar_one_or_none()
-    inverse_rtid = rt.inverse_type_id if rt else None
-
-    # Build metadata
-    import json
-    metadata = {}
-    if role and role.strip():
-        metadata["role"] = role.strip()
-    if confidence != 1.0:
-        metadata["confidence"] = confidence
-    if weight != 1.0:
-        metadata["weight"] = weight
-
-    # Create direct relation (source → target)
-    relation = SemanticRelation(
-        source_projection_id=src_proj.projection_id,
-        relation_type_id=rtid,
-        target_projection_id=tgt_proj.projection_id,
-        confidence=confidence,
-        weight=weight,
-        metadata_=metadata,
-        version_id=version_id,
-    )
-    db.add(relation)
-
-    # Create inverse relation (target → source) automatically
-    # Skip if self-inverse (undirected relation)
-    if inverse_rtid and inverse_rtid != rtid:
-        inverse_relation = SemanticRelation(
-            source_projection_id=tgt_proj.projection_id,
-            relation_type_id=inverse_rtid,
-            target_projection_id=src_proj.projection_id,
-            confidence=confidence,
-            weight=weight,
-            metadata_=metadata,
-            version_id=version_id,
-        )
-        db.add(inverse_relation)
-
-    await db.commit()
-
-    return RedirectResponse(url=f"/entity/{entity_id}/edit", status_code=303)
-
-
-@router.post("/entity/{entity_id}/delete-relation/{relation_id}")
-async def entity_delete_relation(
-    entity_id: str,
-    relation_id: str,
-    db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_auth),
-):
-    from uuid import UUID
-    from app.models.relations import SemanticRelation, RelationType
-
-    rid = UUID(relation_id)
-    result = await db.execute(select(SemanticRelation).where(SemanticRelation.relation_id == rid))
-    rel = result.scalar_one_or_none()
-    if rel:
-        # Find and delete the inverse relation (skip if self-inverse)
-        rt_result = await db.execute(select(RelationType).where(RelationType.relation_type_id == rel.relation_type_id))
-        rt = rt_result.scalar_one_or_none()
-        if rt and rt.inverse_type_id and rt.inverse_type_id != rel.relation_type_id:
-            # Find inverse: source=this.target, target=this.source, type=inverse_type
-            inverse_result = await db.execute(
-                select(SemanticRelation).where(
-                    SemanticRelation.source_projection_id == rel.target_projection_id,
-                    SemanticRelation.target_projection_id == rel.source_projection_id,
-                    SemanticRelation.relation_type_id == rt.inverse_type_id,
-                )
-            )
-            inverse_rel = inverse_result.scalar_one_or_none()
-            if inverse_rel:
-                await db.delete(inverse_rel)
-
-        await db.delete(rel)
-        await db.commit()
-
-    return RedirectResponse(url=f"/entity/{entity_id}/edit", status_code=303)
-
-
 @router.post("/entity/{entity_id}/edit")
 async def entity_edit(
     request: Request,
@@ -1253,8 +951,8 @@ async def entity_edit(
     eid = UUID(entity_id)
 
     # Update Russian label (skip if label_ru is empty — partial update from popup)
-    ru_lang_id = await _get_lang_id(db, "ru")
-    en_lang_id = await _get_lang_id(db, "en")
+    ru_lang_id = await get_language_id(db, "ru")
+    en_lang_id = await get_language_id(db, "en")
     if label_ru:
         result = await db.execute(
             select(EntityLabel).where(EntityLabel.entity_id == eid, EntityLabel.language_id == ru_lang_id)
@@ -1329,10 +1027,10 @@ async def entity_edit(
                             if val is not None:
                                 if prop_type == "integer":
                                     try: val = int(val)
-                                    except: pass
+                                    except (json.JSONDecodeError, ValueError, TypeError): pass
                                 elif prop_type == "number":
                                     try: val = float(val)
-                                    except: pass
+                                    except (json.JSONDecodeError, ValueError, TypeError): pass
                                 elif prop_type == "boolean":
                                     val = val.lower() in ("true", "1", "yes")
                                 state_data[key] = val
@@ -1340,7 +1038,7 @@ async def entity_edit(
                 _ld = tmpl.layout_definition
                 if isinstance(_ld, str):
                     try: _ld = _json.loads(_ld)
-                    except: _ld = []
+                    except (json.JSONDecodeError, ValueError, TypeError): _ld = []
                 if isinstance(_ld, list):
                     from app.services.layout import BLOCK_TYPES
                     for block in _ld:
@@ -1455,311 +1153,3 @@ BLOCKED_EXTENSIONS = {
 }
 
 
-@router.post("/upload")
-async def upload_file(
-    request: Request,
-    user: UserAccount = Depends(require_auth),
-    file: UploadFile = File(...),
-    db: AsyncSession = Depends(get_db),
-):
-    import os, hashlib as _hl
-    from uuid import uuid4
-    from app.services.storage import storage_service
-    from app.models.entities import MediaAsset
-
-    filename = file.filename or "file"
-    ext = os.path.splitext(filename)[1].lower()
-
-    if ext in BLOCKED_EXTENSIONS:
-        return JSONResponse(
-            {"error": f"Загрузка файлов типа {ext} запрещена"},
-            status_code=400,
-        )
-
-    # Read content and compute hash BEFORE upload (for dedup check)
-    content = await file.read()
-    file_hash = _hl.sha256(content).hexdigest()
-
-    # Check for duplicate by hash
-    existing = await db.execute(
-        select(MediaAsset).where(MediaAsset.file_hash == file_hash)
-    )
-    existing_asset = existing.scalar_one_or_none()
-    if existing_asset:
-        # Duplicate found — return existing URL without re-uploading
-        url = storage_service.get_presigned_url(existing_asset.storage_key)
-        return JSONResponse({
-            "url": url,
-            "filename": existing_asset.original_name,
-            "size": existing_asset.size_bytes,
-            "storage_key": existing_asset.storage_key,
-            "entity_id": str(existing_asset.entity_id),
-            "duplicate": True,
-        })
-
-    # No duplicate — upload to MinIO (reset file position after hash read)
-    entity_id = uuid4()
-    await file.seek(0)
-    result = await storage_service.upload_file(file, entity_id)
-
-    url = storage_service.get_presigned_url(result["key"])
-    is_image = ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg")
-
-    # Create Entity for ALL files (kind='digital_file')
-    file_kind = await db.execute(
-        select(EntityKind).where(EntityKind.kind_code == "digital_file")
-    )
-    file_kind_obj = file_kind.scalar_one_or_none()
-    if file_kind_obj:
-        entity = Entity(
-            entity_id=entity_id,
-            entity_code=f"file-{entity_id.hex[:12]}",
-            kind_id=file_kind_obj.kind_id,
-            status="active",
-            owner_id=user.user_id,
-            version_id=1,
-        )
-        db.add(entity)
-        await db.flush()
-
-        label = EntityLabel(
-            entity_id=entity_id,
-            language_id=await _get_lang_id(db, "ru"),
-            label=os.path.splitext(filename)[0].replace("_", " ").replace("-", " "),
-            is_primary=True,
-            owner_id=user.user_id,
-            version_id=1,
-        )
-        db.add(label)
-
-        # Create projection with state containing file metadata
-        from app.models.projections import EntityProjection, ProjectionState, OntologyTemplate
-        import json as _json, hashlib
-
-        tmpl_result = await db.execute(
-            select(OntologyTemplate)
-            .join(EntityKind, EntityKind.kind_id == OntologyTemplate.kind_id)
-            .where(EntityKind.kind_code == "digital_file", OntologyTemplate.is_active == True)
-            .limit(1)
-        )
-        tmpl = tmpl_result.scalar_one_or_none()
-        if tmpl:
-            proj_id = uuid4()
-            proj = EntityProjection(
-                projection_id=proj_id,
-                entity_id=entity_id,
-                model_id=tmpl.model_id,
-                template_id=tmpl.template_id,
-                projection_code=f"file_{entity_id.hex[:12]}",
-                projection_name=os.path.splitext(filename)[0],
-                confidence=1.0,
-                version_id=1,
-            )
-            db.add(proj)
-            await db.flush()
-
-            state_data = {
-                "original_name": filename,
-                "mime_type": file.content_type or "application/octet-stream",
-                "size_bytes": result["size"],
-                "file_hash": result["hash"],
-                "storage_key": result["key"],
-                "storage_backend": "s3",
-                "url": url,
-                "is_image": is_image,
-                "poster_url": url if is_image else None,
-            }
-            state_hash = hashlib.sha256(_json.dumps(state_data, sort_keys=True, default=str).encode()).hexdigest()
-            ps = ProjectionState(
-                projection_id=proj_id,
-                state_data=state_data,
-                state_hash=state_hash,
-                is_current=True,
-                version_id=1,
-            )
-            db.add(ps)
-
-    # Create MediaAsset record (after Entity so FK is satisfied)
-    from app.models.entities import MediaAsset
-    media_asset = MediaAsset(
-        entity_id=entity_id,
-        original_name=filename,
-        mime_type=file.content_type or "application/octet-stream",
-        size_bytes=result["size"],
-        file_hash=result["hash"],
-        storage_key=result["key"],
-        version_id=1,
-    )
-    db.add(media_asset)
-
-    await db.commit()
-
-    return JSONResponse({
-        "url": url,
-        "filename": filename,
-        "size": result["size"],
-        "storage_key": result["key"],
-        "entity_id": str(entity_id),
-    })
-
-
-# =============================================================================
-#  MEDIA MANAGEMENT (entity CRUD for media_asset)
-# =============================================================================
-
-@router.get("/media/{asset_id}")
-async def get_media(
-    asset_id: str,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    """Get media asset metadata by asset_id."""
-    from uuid import UUID
-    from app.models.entities import MediaAsset
-
-    result = await db.execute(
-        select(MediaAsset).where(MediaAsset.asset_id == UUID(asset_id))
-    )
-    asset = result.scalar_one_or_none()
-    if not asset:
-        raise HTTPException(status_code=404, detail="Media asset not found")
-
-    from app.services.storage import storage_service
-    url = storage_service.get_presigned_url(asset.storage_key)
-
-    return JSONResponse({
-        "asset_id": str(asset.asset_id),
-        "entity_id": str(asset.entity_id) if asset.entity_id else None,
-        "original_name": asset.original_name,
-        "mime_type": asset.mime_type,
-        "size_bytes": asset.size_bytes,
-        "file_hash": asset.file_hash,
-        "storage_key": asset.storage_key,
-        "url": url,
-        "is_processed": asset.is_processed,
-        "created_at": asset.created_at.isoformat() if asset.created_at else None,
-    })
-
-
-@router.get("/media/{asset_id}/info")
-async def get_media_info(
-    asset_id: str,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-):
-    """Get detailed media info via entity projection."""
-    from uuid import UUID
-    from app.models.entities import MediaAsset
-
-    result = await db.execute(
-        select(MediaAsset).where(MediaAsset.asset_id == UUID(asset_id))
-    )
-    asset = result.scalar_one_or_none()
-    if not asset:
-        raise HTTPException(status_code=404, detail="Media asset not found")
-
-    if not asset.entity_id:
-        return JSONResponse({
-            "asset_id": str(asset.asset_id),
-            "original_name": asset.original_name,
-            "mime_type": asset.mime_type,
-            "size_bytes": asset.size_bytes,
-            "entity": None,
-        })
-
-    # Get entity info
-    entity_result = await db.execute(
-        select(Entity).where(Entity.entity_id == asset.entity_id)
-    )
-    entity = entity_result.scalar_one_or_none()
-
-    # Get projection state
-    proj_result = await db.execute(
-        select(EntityProjection)
-        .where(EntityProjection.entity_id == asset.entity_id)
-        .limit(1)
-    )
-    proj = proj_result.scalar_one_or_none()
-
-    state_data = None
-    if proj:
-        state_result = await db.execute(
-            select(ProjectionState)
-            .where(ProjectionState.projection_id == proj.projection_id, ProjectionState.is_current == True)
-            .limit(1)
-        )
-        state = state_result.scalar_one_or_none()
-        if state:
-            state_data = state.state_data
-
-    # Get label
-    label_result = await db.execute(
-        select(EntityLabel)
-        .where(EntityLabel.entity_id == asset.entity_id, EntityLabel.is_primary == True)
-        .limit(1)
-    )
-    label = label_result.scalar_one_or_none()
-
-    from app.services.storage import storage_service
-    url = storage_service.get_presigned_url(asset.storage_key)
-
-    return JSONResponse({
-        "asset_id": str(asset.asset_id),
-        "entity_id": str(asset.entity_id),
-        "entity_code": entity.entity_code if entity else None,
-        "label": label.label if label else None,
-        "original_name": asset.original_name,
-        "mime_type": asset.mime_type,
-        "size_bytes": asset.size_bytes,
-        "file_hash": asset.file_hash,
-        "storage_key": asset.storage_key,
-        "url": url,
-        "state_data": state_data,
-        "is_processed": asset.is_processed,
-        "created_at": asset.created_at.isoformat() if asset.created_at else None,
-    })
-
-
-@router.delete("/media/{asset_id}")
-async def delete_media(
-    asset_id: str,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_auth),
-):
-    """Delete media asset and its entity."""
-    from uuid import UUID
-    from app.models.entities import MediaAsset
-    from app.services.storage import storage_service
-
-    result = await db.execute(
-        select(MediaAsset).where(MediaAsset.asset_id == UUID(asset_id))
-    )
-    asset = result.scalar_one_or_none()
-    if not asset:
-        raise HTTPException(status_code=404, detail="Media asset not found")
-
-    # Delete from storage
-    try:
-        storage_service.delete_file(asset.storage_key)
-    except Exception as e:
-        # Log but don't fail — storage might be already deleted
-        pass
-
-    # Delete entity if exists
-    if asset.entity_id:
-        entity_result = await db.execute(
-            select(Entity).where(Entity.entity_id == asset.entity_id)
-        )
-        entity = entity_result.scalar_one_or_none()
-        if entity:
-            # Soft delete entity
-            entity.status = "deleted"
-            entity.updated_at = datetime.now(timezone.utc)
-            entity.version_id = (entity.version_id or 1) + 1
-
-    # Delete media_asset record
-    await db.delete(asset)
-    await db.commit()
-
-    return JSONResponse({"status": "deleted", "asset_id": str(asset_id)})

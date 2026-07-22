@@ -10,7 +10,7 @@ from app.models.projections import EntityProjection, ProjectionState
 from app.models.relations import SemanticRelation, RelationType
 from app.models.users import UserAccount
 from app.services.auth import get_current_user
-from app.routes.entities import _get_kind_label
+from app.services.language_service import get_kind_label
 
 router = APIRouter(tags=["stats"])
 templates = Jinja2Templates(directory="app/templates")
@@ -51,7 +51,7 @@ async def stats_page(request: Request, db: AsyncSession = Depends(get_db), user:
         kind_result = await db.execute(select(EntityKind).where(EntityKind.kind_code == s["code"]))
         kind = kind_result.scalar_one_or_none()
         if kind:
-            label = await _get_kind_label(db, kind.kind_id, lang) or s["code"]
+            label = await get_kind_label(db, kind.kind_id, lang) or s["code"]
         else:
             label = s["code"]
         chart_labels.append(label)

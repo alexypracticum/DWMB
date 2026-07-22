@@ -44,6 +44,20 @@ async def register_page(request: Request, user: UserAccount = Depends(get_curren
 @router.post("/register")
 @limiter.limit(get_rate_limit("auth"))
 async def register(request: Request, username: str = Form(...), email: str = Form(...), password: str = Form(...), db: AsyncSession = Depends(get_db)):
+    # Password validation
+    if len(password) < 8:
+        return templates.TemplateResponse("auth/register.html", {"request": request, "error": "Пароль должен содержать минимум 8 символов"})
+    if not any(c.isupper() for c in password):
+        return templates.TemplateResponse("auth/register.html", {"request": request, "error": "Пароль должен содержать хотя бы одну заглавную букву"})
+    if not any(c.islower() for c in password):
+        return templates.TemplateResponse("auth/register.html", {"request": request, "error": "Пароль должен содержать хотя бы одну строчную букву"})
+    if not any(c.isdigit() for c in password):
+        return templates.TemplateResponse("auth/register.html", {"request": request, "error": "Пароль должен содержать хотя бы одну цифру"})
+    
+    # Username validation
+    if len(username) < 3:
+        return templates.TemplateResponse("auth/register.html", {"request": request, "error": "Имя пользователя должно содержать минимум 3 символа"})
+    
     existing = await db.execute(select(UserAccount).where(UserAccount.username == username))
     if existing.scalar_one_or_none():
         return templates.TemplateResponse("auth/register.html", {"request": request, "error": "Пользователь уже существует"})

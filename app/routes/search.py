@@ -11,32 +11,13 @@ from app.models.users import UserAccount
 from app.models.relations import RelationType, SemanticRelation
 from app.services.auth import get_current_user
 from app.services.ai import ai_service
-from app.services.language import get_language_id
+from app.services.language_service import get_language_id, get_kind_label, get_lang
 
 router = APIRouter(tags=["search"])
 templates = Jinja2Templates(directory="app/templates")
 
 
-async def _get_kind_label(db, kind_id, lang="ru"):
-    """Get kind label with language fallback: current → 'ru' → kind_code."""
-    lang_id = await get_language_id(db, lang)
-    ru_lang_id = await get_language_id(db, "ru")
-    if not lang_id and not ru_lang_id:
-        return None
-    or_clauses = []
-    if lang_id:
-        or_clauses.append(EntityKindLabel.language_id == lang_id)
-    if ru_lang_id:
-        or_clauses.append(EntityKindLabel.language_id == ru_lang_id)
-    result = await db.execute(
-        select(EntityKindLabel.label).where(
-            EntityKindLabel.kind_id == kind_id,
-            or_(*or_clauses)
-        ).order_by(
-            (EntityKindLabel.language_id == lang_id).desc() if lang_id else True
-        ).limit(1)
-    )
-    return result.scalar_one_or_none()
+
 
 
 @router.get("/search", response_class=HTMLResponse)
@@ -142,7 +123,7 @@ async def search_page(
         for entity, label, kind in result.unique():
             if entity.entity_id not in seen:
                 seen.add(entity.entity_id)
-                kl = await _get_kind_label(db, kind.kind_id, lang) or kind.kind_code
+                kl = await get_kind_label(db, kind.kind_id, lang) or kind.kind_code
 
                 # Get state_data for metadata
                 state_result = await db.execute(

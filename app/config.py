@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # TMDB (The Movie Database)
     TMDB_API_KEY: str = ""
 
+    # CORS
+    CORS_ORIGINS: list[str] = ["http://localhost:8000", "http://127.0.0.1:8000"]
+
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
@@ -45,4 +48,12 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings():
-    return Settings()
+    settings = Settings()
+    # Security validation
+    if settings.SECRET_KEY == "dwmb-super-secret-key-change-in-production":
+        import warnings
+        warnings.warn("SECURITY: Using default SECRET_KEY! Set a strong SECRET_KEY in .env", stacklevel=2)
+    if len(settings.SECRET_KEY) < 32:
+        import warnings
+        warnings.warn(f"SECURITY: SECRET_KEY is too short ({len(settings.SECRET_KEY)} chars). Use at least 32 characters.", stacklevel=2)
+    return settings

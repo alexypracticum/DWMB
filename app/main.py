@@ -14,7 +14,7 @@ from app.config import get_settings
 from app.database import async_session
 from app.middleware.theme import ThemeMiddleware
 from app.middleware.kinds import KindsMiddleware
-from app.middleware.rate_limit import limiter, get_rate_limit
+from app.middleware.rate_limit import limiter, rate_limit_exceeded_handler
 
 settings = get_settings()
 
@@ -35,9 +35,9 @@ app.add_middleware(KindsMiddleware)
 app.add_middleware(ThemeMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -46,7 +46,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # ─── Rate limiting ────────────────────────────────────────────
 app.state.limiter = limiter
-app.add_exception_handler(429, get_rate_limit)
+app.add_exception_handler(429, rate_limit_exceeded_handler)
 
 
 # ─── Language switch ──────────────────────────────────────────
@@ -97,9 +97,26 @@ async def set_language(request: Request, lang: str = "ru", next: str = "/"):
 # ─── Media proxy (before routers to avoid /media/{asset_id} conflict) ──
 @app.get("/media/proxy")
 async def media_proxy(url: str = Query(...)):
-    """Proxy media files to avoid CORS issues."""
+    """Proxy media files to avoid CORS issues. SSRF-protected."""
     import httpx
     import re
+    from urllib.parse import urlparse
+    
+    # SSRF protection: validate URL
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return JSONResponse({"error": "Invalid URL scheme"}, status_code=400)
+        
+        # Block internal/private IPs
+        hostname = parsed.hostname or ""
+        blocked = ["localhost", "127.0.0.1", "0.0.0.0", "::1", "169.254.", "10.", "172.16.", "172.17.", "172.18.", "172.19.", "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.", "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.", "192.168."]
+        for b in blocked:
+            if hostname.startswith(b) or hostname == b.rstrip("."):
+                return JSONResponse({"error": "Internal URLs not allowed"}, status_code=400)
+    except Exception:
+        return JSONResponse({"error": "Invalid URL"}, status_code=400)
+    
     try:
         # Check if it's a MinIO URL (contains /entities/)
         match = re.search(r'/entities/([^/]+)/([^?]+)', url)
@@ -119,9 +136,12 @@ async def media_proxy(url: str = Query(...)):
                 headers={"Content-Disposition": f"inline; filename={match.group(2)}"},
             )
         else:
-            # External URL — proxy with httpx
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                resp = await client.get(url, follow_redirects=True)
+            # External URL — proxy with httpx (timeout + size limit)
+            async with httpx.AsyncClient(timeout=10.0, follow_redirects=False) as client:
+                resp = await client.get(url)
+                # Limit response size to 10MB
+                if len(resp.content) > 10 * 1024 * 1024:
+                    return JSONResponse({"error": "File too large"}, status_code=413)
                 content_type = resp.headers.get("content-type", "application/octet-stream")
                 return StreamingResponse(
                     iter([resp.content]),
@@ -130,15 +150,16 @@ async def media_proxy(url: str = Query(...)):
                 )
     except Exception as e:
         logger.error(f"Media proxy error: {e}")
-        return JSONResponse({"error": str(e)}, status_code=502)
+        return JSONResponse({"error": "Proxy error"}, status_code=502)
 
 
 # ─── Core routers (always loaded) ─────────────────────────────
-from app.routes import auth, entities, search, admin, editor_api, profile, comments, export, feeds, page_management, stats
+from app.routes import auth, entities, search, editor_api, profile, comments, export, feeds, page_management, stats, import_api, ai
 app.include_router(auth.router)
 app.include_router(entities.router)
 app.include_router(search.router)
-app.include_router(admin.router)
+from app.routes.admin import router as admin_router
+app.include_router(admin_router)
 app.include_router(editor_api.router)
 app.include_router(profile.router)
 app.include_router(comments.router)
@@ -146,6 +167,8 @@ app.include_router(export.router)
 app.include_router(feeds.router)
 app.include_router(page_management.router)
 app.include_router(stats.router)
+app.include_router(import_api.router)
+app.include_router(ai.router)
 
 
 # ─── Health check ─────────────────────────────────────────────

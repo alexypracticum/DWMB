@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 import io
+from html import escape
 
 from app.database import get_db
 from app.models.entities import Entity, EntityLabel, MediaAsset
@@ -236,8 +237,8 @@ async def export_html(
         if state:
             state_data = state.state_data or {}
 
-    title = label.label if label else entity.entity_code
-    description = label.description if label else ""
+    title = escape(label.label if label else entity.entity_code)
+    description = escape(label.description if label else "")
 
     html_content = f"""<!DOCTYPE html>
 <html lang="ru">
@@ -256,7 +257,7 @@ async def export_html(
 </head>
 <body>
     <h1>{title}</h1>
-    <p><span class="badge">{kind_label or entity.entity_code}</span></p>
+    <p><span class="badge">{escape(str(kind_label or entity.entity_code))}</span></p>
     {"<h2>Описание</h2><p>" + description + "</p>" if description else ""}
 """
 
@@ -270,7 +271,7 @@ async def export_html(
     fields_html = ""
     for key, val in state_data.items():
         if key in _field_labels and val:
-            fields_html += f"<li><strong>{_field_labels[key]}:</strong> {val}</li>\n"
+            fields_html += f"<li><strong>{escape(_field_labels[key])}:</strong> {escape(str(val))}</li>\n"
 
     if fields_html:
         html_content += f"<h2>Данные</h2>\n<ul>\n{fields_html}</ul>\n"
@@ -278,7 +279,7 @@ async def export_html(
     # Content
     content = state_data.get("content", "")
     if content:
-        html_content += f"<h2>Контент</h2>\n<div>{content}</div>\n"
+        html_content += f"<h2>Контент</h2>\n<div>{escape(str(content))}</div>\n"
 
     html_content += f"""
     <div class="meta">
