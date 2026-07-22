@@ -10,10 +10,10 @@ from sqlalchemy import select, or_
 from app.database import async_session
 from app.models.kinds import EntityKind, EntityKindLabel
 from app.services.cache import cache_get, cache_set
-from app.services.language import get_language_id
-
+from app.services.language_service import get_language_id, kind_label_filter
 
 logger = logging.getLogger(__name__)
+
 
 class KindsMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -21,7 +21,6 @@ class KindsMiddleware(BaseHTTPMiddleware):
 
         try:
             lang = getattr(request.state, "lang", "ru") if hasattr(request.state, "lang") else "ru"
-            logger.debug('KindsMiddleware: lang=%s', lang)
             cache_key = f"kinds:{lang}"
 
             # Try cache first
@@ -53,26 +52,15 @@ class KindsMiddleware(BaseHTTPMiddleware):
                     kinds_with_labels = []
                     cache_data = []
                     for kind in kinds:
-                        if lang_id or ru_lang_id:
-                            or_clauses = []
-                            if lang_id:
-                                or_clauses.append(EntityKindLabel.language_id == lang_id)
-                            if ru_lang_id:
-                                or_clauses.append(EntityKindLabel.language_id == ru_lang_id)
-                            label_result = await session.execute(
-                                select(EntityKindLabel.label).where(
-                                    EntityKindLabel.kind_id == kind.kind_id,
-                                    or_(*or_clauses)
-                                ).order_by(
-                                    (EntityKindLabel.language_id == lang_id).desc() if lang_id else True
-                                ).limit(1)
-                            )
-                        else:
-                            label_result = await session.execute(
-                                select(EntityKindLabel.label).where(
-                                    EntityKindLabel.kind_id == kind.kind_id,
-                                ).limit(1)
-                            )
+                        label_filter = kind_label_filter(lang_id, ru_lang_id)
+                        label_result = await session.execute(
+                            select(EntityKindLabel.label).where(
+                                EntityKindLabel.kind_id == kind.kind_id,
+                                label_filter
+                            ).order_by(
+                                (EntityKindLabel.language_id == lang_id).desc() if lang_id else True
+                            ).limit(1)
+                        )
                         label = label_result.scalar_one_or_none() or kind.kind_code
                         kind._display_label = label
                         kinds_with_labels.append(kind)
@@ -88,8 +76,6 @@ class KindsMiddleware(BaseHTTPMiddleware):
                     # Cache for 5 minutes
                     await cache_set(cache_key, cache_data, ttl=300)
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).error(f'KindsMiddleware error: {e}')
             logger.exception('KindsMiddleware error')
 
         response = await call_next(request)

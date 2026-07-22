@@ -37,3 +37,19 @@ class PluginBase(ABC):
     def get_middleware(self) -> list:
         """Return list of middleware classes to add. Override if needed."""
         return []
+
+    async def on_startup(self) -> None:
+        """Called when the application starts. Override for initialization."""
+        pass
+
+    async def on_shutdown(self) -> None:
+        """Called when the application shuts down. Override for cleanup."""
+        pass
+
+    def get_info(self) -> dict:
+        """Return plugin metadata."""
+        return {
+            "name": self.name,
+            "description": self.description,
+            "version": self.version,
+        }

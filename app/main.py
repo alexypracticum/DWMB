@@ -154,7 +154,8 @@ async def media_proxy(url: str = Query(...)):
 
 
 # ─── Core routers (always loaded) ─────────────────────────────
-from app.routes import auth, entities, search, editor_api, profile, comments, export, feeds, page_management, stats, import_api, ai
+from app.routes import auth, entities, search, editor_api, profile, comments, export, feeds
+from plugins import load_plugins
 app.include_router(auth.router)
 app.include_router(entities.router)
 app.include_router(search.router)
@@ -165,13 +166,25 @@ app.include_router(profile.router)
 app.include_router(comments.router)
 app.include_router(export.router)
 app.include_router(feeds.router)
-app.include_router(page_management.router)
-app.include_router(stats.router)
-app.include_router(import_api.router)
-app.include_router(ai.router)
 
+
+
+# ─── Plugins (loaded after core routers) ──────────────────────
+load_plugins(app)
 
 # ─── Health check ─────────────────────────────────────────────
 @app.get("/health")
 async def health():
     return {"status": "ok", "version": "0.8.0"}
+
+
+# ─── Startup/Shutdown events ──────────────────────────────────
+from plugins import startup_plugins, shutdown_plugins
+
+@app.on_event("startup")
+async def on_startup():
+    await startup_plugins()
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    await shutdown_plugins()

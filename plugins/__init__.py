@@ -50,6 +50,31 @@ def load_plugins(app) -> None:
 
             plugin_instance.register(app)
             _plugins.append(plugin_instance)
-            logger.info("Loaded plugin: %s", entry.name)
+            logger.info("Loaded plugin: %s (%s)", entry.name, plugin_instance.version)
         except Exception as e:
             logger.error("Failed to load plugin '%s': %s", entry.name, e)
+
+
+async def startup_plugins() -> None:
+    """Call on_startup for all loaded plugins."""
+    for plugin in _plugins:
+        try:
+            await plugin.on_startup()
+            logger.debug("Plugin '%s' startup complete", plugin.name)
+        except Exception as e:
+            logger.error("Plugin '%s' startup failed: %s", plugin.name, e)
+
+
+async def shutdown_plugins() -> None:
+    """Call on_shutdown for all loaded plugins."""
+    for plugin in _plugins:
+        try:
+            await plugin.on_shutdown()
+            logger.debug("Plugin '%s' shutdown complete", plugin.name)
+        except Exception as e:
+            logger.error("Plugin '%s' shutdown failed: %s", plugin.name, e)
+
+
+def get_plugins_info() -> list:
+    """Return info about all loaded plugins."""
+    return [p.get_info() for p in _plugins]
