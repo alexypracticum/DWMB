@@ -1,1 +1,0 @@
-Опять всё сломалось когда ошибка была найдена "Request Error: Multimodal data is corrupted or cannot be processed". Ты явно что-то нашел. Можешь локализовать проблему не уходя в ошибку?
