@@ -46,6 +46,33 @@
             </div>
         </div>
 
+        <!-- SEO -->
+        <div class="card rounded-xl p-6 shadow-sm space-y-4" style="border: 1px solid var(--color-border);">
+            <h2 class="text-lg font-semibold" style="color: var(--color-text);">SEO</h2>
+
+            <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">META заголовок</div>
+                <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
+                <div class="flex-1">
+                    <input type="text" name="meta_title" value="{{ page.meta_title if page else '' }}"
+                        class="form-input w-full px-3 py-2 rounded-lg outline-none text-sm"
+                        placeholder="Заголовок для поисковых систем"
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+            </div>
+
+            <div class="flex items-center py-3">
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">META описание</div>
+                <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
+                <div class="flex-1">
+                    <textarea name="meta_description" rows="2"
+                        class="form-textarea w-full px-3 py-2 rounded-lg outline-none text-sm"
+                        placeholder="Описание для поисковых систем"
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">{{ page.meta_description if page else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+
         <!-- Content -->
         <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
             <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Содержимое (JSON)</h2>

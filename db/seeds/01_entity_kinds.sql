@@ -94,29 +94,79 @@ SELECT 'scientist', kind_id, 'Scientist / researcher', false, 126, 1 FROM entity
 INSERT INTO entity_kind (kind_code, parent_kind_id, description, is_abstract, sort_order, version_id)
 SELECT 'artist', kind_id, 'Visual artist / painter', false, 127, 1 FROM entity_kind WHERE kind_code = 'human';
 
--- Мультиязычные названия
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Человек', 'Человек' FROM entity_kind WHERE kind_code = 'human';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Актёр', 'Актёр / исполнитель' FROM entity_kind WHERE kind_code = 'actor';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Режиссёр', 'Режиссёр театра / кино' FROM entity_kind WHERE kind_code = 'director';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Писатель', 'Писатель / автор' FROM entity_kind WHERE kind_code = 'writer';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Музыкант', 'Музыкант / композитор' FROM entity_kind WHERE kind_code = 'musician';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Учёный', 'Учёный / исследователь' FROM entity_kind WHERE kind_code = 'scientist';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Художник', 'Художник / живописец' FROM entity_kind WHERE kind_code = 'artist';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Фильм', 'Художественный фильм' FROM entity_kind WHERE kind_code = 'movie';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Песня', 'Музыкальное произведение' FROM entity_kind WHERE kind_code = 'song';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Альбом', 'Музыкальный альбом' FROM entity_kind WHERE kind_code = 'album';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Книга', 'Книжное издание' FROM entity_kind WHERE kind_code = 'book';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Статья', 'Статья / пост' FROM entity_kind WHERE kind_code = 'article';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Город', 'Город / населённый пункт' FROM entity_kind WHERE kind_code = 'place';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Животное', 'Животное' FROM entity_kind WHERE kind_code = 'animal';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Растение', 'Растение' FROM entity_kind WHERE kind_code = 'plant';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Химический элемент', 'Химический элемент таблицы Менделеева' FROM entity_kind WHERE kind_code = 'chemical_element';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Файл', 'Цифровой файл' FROM entity_kind WHERE kind_code = 'digital_file';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Концепция', 'Абстрактная концепция / идея' FROM entity_kind WHERE kind_code = 'concept';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Движение', 'Культурное / художественное движение' FROM entity_kind WHERE kind_code = 'movement';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Жанр', 'Жанр / категория' FROM entity_kind WHERE kind_code = 'genre';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Эпоха', 'Исторический период / эра' FROM entity_kind WHERE kind_code = 'period';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Классификатор', 'Классификатор / таксономия' FROM entity_kind WHERE kind_code = 'classifier';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Явление', 'Природное или социальное явление' FROM entity_kind WHERE kind_code = 'phenomenon';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Фото', 'Фотография / изображение' FROM entity_kind WHERE kind_code = 'photo';
-INSERT INTO entity_kind_label (kind_id, language, label, description) SELECT kind_id, 'ru', 'Объект', 'Физический объект / предмет' FROM entity_kind WHERE kind_code = 'physical_item';
+-- Мультиязычные названия (language_id FK через таблицу language)
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Человек', 'Человек'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'human' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Актёр', 'Актёр / исполнитель'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'actor' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Режиссёр', 'Режиссёр театра / кино'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'director' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Писатель', 'Писатель / автор'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'writer' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Музыкант', 'Музыкант / композитор'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'musician' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Учёный', 'Учёный / исследователь'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'scientist' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Художник', 'Художник / живописец'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'artist' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Фильм', 'Художественный фильм'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'movie' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Песня', 'Музыкальное произведение'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'song' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Альбом', 'Музыкальный альбом'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'album' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Книга', 'Книжное издание'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'book' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Статья', 'Статья / пост'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'article' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Город', 'Город / населённый пункт'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'place' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Животное', 'Животное'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'animal' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Растение', 'Растение'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'plant' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Химический элемент', 'Химический элемент таблицы Менделеева'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'chemical_element' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Файл', 'Цифровой файл'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'digital_file' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Концепция', 'Абстрактная концепция / идея'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'concept' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Движение', 'Культурное / художественное движение'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'movement' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Жанр', 'Жанр / категория'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'genre' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Эпоха', 'Исторический период / эра'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'period' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Классификатор', 'Классификатор / таксономия'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'classifier' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Явление', 'Природное или социальное явление'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'phenomenon' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Фото', 'Фотография / изображение'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'photo' AND l.code = 'ru';
+INSERT INTO entity_kind_label (kind_id, language_id, label, description)
+SELECT ek.kind_id, l.language_id, 'Объект', 'Физический объект / предмет'
+FROM entity_kind ek, language l WHERE ek.kind_code = 'physical_item' AND l.code = 'ru';

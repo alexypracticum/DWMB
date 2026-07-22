@@ -11,6 +11,7 @@ from datetime import datetime
 from app.database import get_db
 from app.models.entities import Entity, EntityLabel
 from app.models.kinds import EntityKind
+from app.models.projections import EntityProjection, ProjectionState
 from app.models.users import UserAccount
 from app.services.auth import get_current_user
 
@@ -95,26 +96,47 @@ async def feed_pages(
     db: AsyncSession = Depends(get_db),
     limit: int = Query(20, ge=1, le=100),
 ):
-    """RSS feed of published pages."""
-    from app.models.pages import PageRegistry
+    """RSS feed of published pages (entity kind='page')."""
+    from app.models.projections import ProjectionState, EntityProjection
 
     base_url = str(request.base_url).rstrip("/")
 
-    result = await db.execute(
-        select(PageRegistry)
-        .where(PageRegistry.is_published == True)
-        .order_by(PageRegistry.updated_at.desc())
+    # Get page kind
+    kind_result = await db.execute(
+        select(EntityKind).where(EntityKind.kind_code == "page")
+    )
+    page_kind = kind_result.scalar_one_or_none()
+    if not page_kind:
+        return Response(content=_generate_rss([], "DWMB — Страницы", base_url, "Нет страниц"), media_type="application/rss+xml; charset=utf-8")
+
+    # Query page entities with their labels and projection states
+    query = (
+        select(Entity, EntityLabel, EntityProjection, ProjectionState)
+        .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
+        .join(EntityProjection, EntityProjection.entity_id == Entity.entity_id)
+        .join(ProjectionState, ProjectionState.projection_id == EntityProjection.projection_id)
+        .where(
+            Entity.kind_id == page_kind.kind_id,
+            Entity.status == "active",
+            EntityLabel.is_primary == True,
+            ProjectionState.is_current == True,
+        )
+        .order_by(Entity.updated_at.desc())
         .limit(limit)
     )
-    pages = result.scalars().all()
+
+    result = await db.execute(query)
 
     items = []
-    for page in pages:
+    for entity, label, proj, state in result.unique():
+        state_data = state.state_data or {}
+        if not state_data.get("is_published", False):
+            continue
         items.append({
-            "title": page.title,
-            "link": f"{base_url}/page/{page.page_code}",
-            "description": page.meta_description or "",
-            "date": page.updated_at or page.created_at,
+            "title": label.label or entity.entity_code,
+            "link": f"{base_url}/page/{entity.entity_code}",
+            "description": state_data.get("meta_description", ""),
+            "date": entity.updated_at or entity.created_at,
         })
 
     rss_xml = _generate_rss(items, "DWMB — Страницы", base_url, "Опубликованные страницы DWMB")

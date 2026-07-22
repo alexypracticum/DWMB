@@ -309,18 +309,5 @@ INSERT INTO semantic_relation (source_projection_id, relation_type_id, target_pr
 -- Bohemian Rhapsody published by EMI (Greatest Hits)
 ('e0000004-0000-0000-0000-000000000002', (SELECT relation_type_id FROM relation_type WHERE relation_code='published_by'), 'e0000026-0000-0000-0000-000000000002', 0.85, 1);
 
--- Menu items
-INSERT INTO menu_item (menu_id, menu_code, label, label_en, url, sort_order) VALUES
-('f0000001-0000-0000-0000-000000000001', 'main', 'Главная', 'Home', '/', 1),
-('f0000002-0000-0000-0000-000000000001', 'main', 'Каталог', 'Catalog', '/entities', 2),
-('f0000003-0000-0000-0000-000000000001', 'main', 'Поиск', 'Search', '/search', 3),
-('f0000004-0000-0000-0000-000000000001', 'main', 'Карта знаний', 'Knowledge Graph', '/graph', 4),
-('f0000005-0000-0000-0000-000000000001', 'main', 'Загрузка файлов', 'File Upload', '/upload', 5),
-('f0000006-0000-0000-0000-000000000001', 'main', 'Настройки', 'Settings', '/settings', 6),
-('f0000007-0000-0000-0000-000000000001', 'main', 'Справочники', 'Classifiers', '/classifiers', 7);
-
--- Page registry
-INSERT INTO page_registry (page_id, page_code, title, title_en, template_name, content, is_published, sort_order) VALUES
-('60000001-0000-0000-0000-000000000001', 'home', 'Главная страница', 'Home Page', 'default', '{"blocks": [{"type": "hero", "title": "META-SYSTEM", "subtitle": "Universal Knowledge Storage"}]}', true, 1),
-('60000002-0000-0000-0000-000000000001', 'catalog', 'Каталог сущностей', 'Entity Catalog', 'catalog', '{"pagination": 20, "show_filters": true}', true, 2),
-('60000003-0000-0000-0000-000000000001', 'search', 'Поиск', 'Search', 'search', '{"search_types": ["fulltext", "vector", "ai"]}', true, 3);
+-- Pages (migrated to entity kind='page' — see migration 009)
+-- INSERT INTO page_registry ... -- REMOVED: migrated to entity model

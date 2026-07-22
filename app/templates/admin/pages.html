@@ -33,6 +33,10 @@
                     <td class="py-3 px-4">
                         {% if page.is_published %}
                         <span class="badge-success px-2 py-1 text-xs rounded-full">Опубликована</span>
+                        {% elif page.status == "active" %}
+                        <span class="badge-success px-2 py-1 text-xs rounded-full">Активна</span>
+                        {% elif page.status == "deleted" %}
+                        <span class="px-2 py-1 text-xs rounded-full" style="background: color-mix(in srgb, var(--color-error) 15%, transparent); color: var(--color-error);">Удалена</span>
                         {% else %}
                         <span class="px-2 py-1 text-xs rounded-full" style="background: color-mix(in srgb, var(--color-text-secondary) 15%, transparent); color: var(--color-text-secondary);">Черновик</span>
                         {% endif %}

@@ -1,0 +1,239 @@
+{
+  "main": {
+    "id": "8dfdbd10014e8b8f",
+    "type": "split",
+    "children": [
+      {
+        "id": "7fa5125f696235c9",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6eeb4d193acdbbb6",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "index.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "index"
+            }
+          }
+        ]
+      },
+      {
+        "id": "249620914dcb4208",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "23da49670ef6af16",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Граф"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "ec25858e63870cd3",
+    "type": "split",
+    "children": [
+      {
+        "id": "cd277a8493efa02a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e4f316661d47e091",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Файловый менеджер"
+            }
+          },
+          {
+            "id": "4e352cd05825394b",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Поиск"
+            }
+          },
+          {
+            "id": "cf6da0d594e1b176",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Закладки"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "823050d64bd3a7ce",
+    "type": "split",
+    "children": [
+      {
+        "id": "0a287ad277061c1d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "eacac25523d6de14",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "index.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Обратные ссылки для index"
+            }
+          },
+          {
+            "id": "5c8be2bc4fe81642",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "index.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Исходящие ссылки из index"
+            }
+          },
+          {
+            "id": "c299785b7ac2cefe",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Теги"
+            }
+          },
+          {
+            "id": "aab39a3a99b9c712",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Все свойства"
+            }
+          },
+          {
+            "id": "1d332434d70b3474",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "index.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Структура index"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Меню быстрого перехода": false,
+      "graph:Граф": false,
+      "canvas:Создать новый холст": false,
+      "daily-notes:Сегодняшняя заметка": false,
+      "templates:Вставить шаблон": false,
+      "command-palette:Открыть палитру команд": false,
+      "bases:Создать новую базу": false
+    }
+  },
+  "active": "6eeb4d193acdbbb6",
+  "lastOpenFiles": [
+    "moc.md",
+    "index.md",
+    "philosophy/world-models.md",
+    "overview.md",
+    "Добро пожаловать.md",
+    "log.md",
+    "api/search.md",
+    "api/router.md",
+    "api/rest-api.md",
+    "api",
+    "architecture/overview.md",
+    "architecture/layers.md",
+    "architecture/data-model.md",
+    "architecture",
+    "database/temporal.md",
+    "database/relations.md",
+    "database/projections.md",
+    "database/ontology.md",
+    "database/multilingual.md",
+    "database/media.md",
+    "database/entity-model.md",
+    "database",
+    "deployment/environment.md",
+    "deployment/docker.md",
+    "deployment",
+    "development/testing.md",
+    "development/roadmap.md",
+    "development/contributing.md",
+    "development",
+    "frontend/templates.md",
+    "frontend/multilingual-ui.md",
+    "frontend",
+    "philosophy",
+    "plugins"
+  ]
+}
