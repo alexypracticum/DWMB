@@ -17,6 +17,7 @@
         <!-- Add category form (hidden) -->
         <div id="addCatForm" class="hidden mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
             <form action="/admin/fields/categories/create" method="post" class="flex items-end gap-3">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                 <div class="flex-1">
                     <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.admin_key_latin }}</label>
                     <input type="text" name="category_key" required placeholder="my_category" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -35,6 +36,7 @@
             <div class="flex items-center gap-1">
                 <a href="/admin/fields?category={{ ck }}" class="px-3 py-1 rounded-full text-xs font-medium transition {% if active_category == ck %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}">{{ cn }}</a>
                 <form action="/admin/fields/categories/delete" method="post" class="inline" onsubmit="return confirm('{{ request.state.t.admin_confirm_delete_category }}')">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                     <input type="hidden" name="category_key" value="{{ ck }}">
                     <button type="submit" class="text-red-400 hover:text-red-600 text-xs" title="{{ request.state.t.btn_delete }}">×</button>
                 </form>
@@ -47,6 +49,7 @@
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.admin_new_field }}</h2>
         <form action="/admin/fields/create" method="post" class="flex flex-wrap items-end gap-3">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
             <div class="flex-1 min-w-[150px]">
                 <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.label_key }} *</label>
                 <input type="text" name="field_key" required placeholder="my_field" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -130,6 +133,7 @@
                             <div class="flex gap-2">
                                 <button onclick="toggleEditField('{{ field.field_id }}')" class="text-xs text-blue-600 hover:text-blue-800">{{ request.state.t.btn_short_edit }}</button>
                                 <form action="/admin/fields/{{ field.field_id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ request.state.t.btn_confirm_delete_field }}')">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                                     <button type="submit" class="text-xs text-red-600 hover:text-red-800">{{ request.state.t.btn_short_delete }}</button>
                                 </form>
                             </div>
@@ -139,6 +143,7 @@
                     <tr id="edit_{{ field.field_id }}" class="hidden bg-blue-50">
                         <td colspan="6" class="p-4">
                             <form action="/admin/fields/{{ field.field_id }}/edit" method="post" class="flex flex-wrap items-end gap-3">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                                 <input type="text" name="field_key" value="{{ field.field_key }}" required class="flex-1 min-w-[120px] px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <input type="text" name="field_label" value="{{ field.field_label }}" required class="flex-1 min-w-[120px] px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <select name="field_type" class="w-36 px-3 py-2 border border-gray-300 rounded-lg text-sm">

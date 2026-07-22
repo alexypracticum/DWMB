@@ -9,7 +9,7 @@
 ```
 ├── app/
 │   ├── main.py              # FastAPI приложение + плагин-система
-│   ├── config.py             # Настройки (Pydantic)
+│   ├── config.py             # Настройки (Pydantic) + CORS
 │   ├── database.py           # Async SQLAlchemy
 │   ├── models/               # ORM-модели
 │   │   ├── entities.py       # Entity (image_url), EntityLabel, MediaAsset, EventLog
@@ -20,12 +20,11 @@
 │   │   ├── users.py          # UserAccount
 │   │   ├── themes.py         # UserTheme
 │   │   ├── ai.py             # AiConfig, AiConfigProfile, AiTaskLog, AiSuggestion
-│   │   ├── pages.py          # PageRegistry, MenuItem
 │   │   ├── rbac.py           # Role, Permission, UserRole
 │   │   └── comments.py       # Comment
-│   ├── routes/               # HTTP-эндпоинты
-│   │   ├── entities.py       # CRUD сущностей + история + workflow
-│   │   ├── admin.py          # Админ-панель + AI profiles + plugins
+│   ├── routes/               # HTTP-эндпоинты (разбиты на подмодули)
+│   │   ├── entities/         # CRUD сущностей (4 файла: crud, projections, relations, media)
+│   │   ├── admin/            # Админ-панель (11 файлов)
 │   │   ├── auth.py           # Авторизация + rate limiting
 │   │   ├── search.py         # Поиск с фильтрами
 │   │   ├── ai.py             # AI API
@@ -43,12 +42,12 @@
 │   │   ├── cache.py          # Redis кэширование
 │   │   ├── email.py          # Email service
 │   │   ├── event_log.py      # Аудит-журнал
-│   │   ├── storage.py        # MinIO S3
-│   │   ├── layout.py         # Рендеринг макетов (21 тип блоков)
+│   │   ├── storage.py        # MinIO S3 (lazy init)
+│   │   ├── layout/           # Рендеринг макетов (4 файла: block_types, helpers, block_renderers, renderer)
 │   │   ├── theme.py          # CSS-переменные тем
-│   │   └── i18n.py           # Переводы интерфейса (ru/en)
+│   │   └── language_service.py # Общие утилиты для языков
 │   ├── middleware/            # Middleware
-│   │   ├── theme.py          # Тема + i18n + cookie
+│   │   ├── theme.py          # Тема + i18n + cookie (кэширование)
 │   │   ├── kinds.py          # Контекст типов (кэширование)
 │   │   └── rate_limit.py     # Rate limiting (slowapi)
 │   ├── templates/            # Jinja2 шаблоны
@@ -61,7 +60,7 @@
 │   ├── stats/                # Статистика
 │   ├── rbac/                 # RBAC
 │   └── email/                # Email уведомления
-├── tests/                    # 40 unit-тестов
+├── tests/                    # 20+ unit-тестов
 ├── db/                       # SQL-скрипты + миграции
 │   ├── init.sql              # Полная схема БД (30+ таблиц)
 │   ├── seeds/                # Seed данные (250+ сущностей)

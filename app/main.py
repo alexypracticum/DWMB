@@ -15,6 +15,7 @@ from app.database import async_session
 from app.middleware.theme import ThemeMiddleware
 from app.middleware.kinds import KindsMiddleware
 from app.middleware.rate_limit import limiter, rate_limit_exceeded_handler
+from app.middleware.csrf import CSRFMiddleware, csrf_token_context
 
 settings = get_settings()
 
@@ -30,6 +31,8 @@ app = FastAPI(
 )
 
 # ─── Middleware (order matters: last added = first executed) ───
+# CSRFMiddleware must be outermost for form validation
+app.add_middleware(CSRFMiddleware)
 # ThemeMiddleware MUST run before KindsMiddleware to set request.state.lang
 app.add_middleware(KindsMiddleware)
 app.add_middleware(ThemeMiddleware)
@@ -171,6 +174,11 @@ app.include_router(feeds.router)
 
 # ─── Plugins (loaded after core routers) ──────────────────────
 load_plugins(app)
+
+# ─── Template context processor ───────────────────────────────
+from fastapi.templating import Jinja2Templates
+templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["csrf_token_context"] = csrf_token_context
 
 # ─── Health check ─────────────────────────────────────────────
 @app.get("/health")

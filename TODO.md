@@ -1,6 +1,21 @@
 # TODO
 
-## Текущий статус: v0.6.1
+## Текущий статус: v0.11.0
+
+### Выполнено (v0.11.0) — Безопасность и архитектура
+- [x] CORS: ограничение доменов
+- [x] SSRF: валидация URL в media_proxy
+- [x] XSS: html.escape в export
+- [x] Валидация паролей при регистрации
+- [x] language_service.py: общие утилиты
+- [x] Разбиение admin.py на 11 подмодулей
+- [x] Разбиение entities.py на 4 подмодуля
+- [x] Разбиение layout.py на 4 подмодуля
+- [x] Кэширование в theme.py
+- [x] Интеграция плагин-системы
+- [x] Batch get_kind_labels_batch() для N+1
+- [x] Lazy init для StorageService/AIService
+- [x] Удалён мёртвый код (i18n.py, pages.py)
 
 ### Выполнено (v0.6.1) — Перевод admin panel
 - [x] Перевод кнопки "Языки" в admin dashboard

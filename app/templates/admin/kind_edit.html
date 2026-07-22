@@ -9,6 +9,7 @@
     </div>
 
     <form method="post" action="/admin/kinds/{{ kind.kind_id }}/edit">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
         <!-- Basic info -->
         <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
             <h2 class="text-lg font-semibold text-gray-800 mb-4">Основная информация</h2>

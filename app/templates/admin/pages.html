@@ -43,6 +43,7 @@
                     </td>
                     <td class="py-3 px-4 text-right">
                         <form action="/admin/pages/{{ page.page_id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ request.state.t.admin_page_confirm_delete }}')">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                             <button type="submit" class="text-xs" style="color: var(--color-error);">{{ request.state.t.btn_delete }}</button>
                         </form>
                     </td>

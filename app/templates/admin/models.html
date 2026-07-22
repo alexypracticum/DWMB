@@ -38,6 +38,7 @@
                         <div class="flex items-center gap-2">
                             <a href="/admin/models/{{ item.model.model_id }}/edit" class="text-blue-600 hover:text-blue-800 text-xs">{{ request.state.t.btn_edit }}</a>
                             <form action="/admin/models/{{ item.model.model_id }}/delete" method="post" onsubmit="return confirm('{{ request.state.t.admin_confirm_delete_model }}')">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                                 <button type="submit" class="text-red-500 hover:text-red-700 text-xs">{{ request.state.t.btn_delete }}</button>
                             </form>
                         </div>

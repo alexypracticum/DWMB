@@ -1,3 +1,42 @@
+## [0.11.0] — 2026-07-22
+
+### Безопасность
+- **CORS**: заменён `allow_origins=["*"]` на `settings.CORS_ORIGINS` (только localhost)
+- **SSRF**: добавлена валидация URL в media_proxy (блокировка internal IPs, limit 10MB)
+- **XSS**: добавлен `html.escape()` в HTML export (title, description, fields)
+- **Пароли**: добавлена валидация при регистрации (≥8 символов, заглавная, строчная, цифра)
+- **SECRET_KEY**: добавлены предупреждения при default/коротком ключе
+- **Роуты**: зарегистрированы import_api и ai роуты
+
+### Архитектура (реструктуризация)
+- **language_service.py**: общие утилиты (get_kind_label, entity_label_filter, get_lang_ids)
+- **admin.py**: разбит на 11 подмодулей (2391 → 11 файлов)
+- **entities.py**: разбит на 4 подмодуля (1721 → 4 файла)
+- **layout.py**: разбит на 4 подмодуля (973 → 4 файла)
+- **Удалено дублирование**: 3 копии `_get_kind_label`, 11+ копий `or_clauses`
+- **Исправлены bare except**: все заменены на конкретные типы исключений
+- **Убраны debug print**: из middleware/kinds.py
+
+### Middleware
+- **theme.py**: добавлено кэширование (user, lang, translations, theme — 5 мин TTL)
+- **kinds.py**: оптимизирован с language_service
+- **rate_limit.py**: исправлен handler (get_rate_limit → rate_limit_exceeded_handler)
+
+### Плагины
+- **Интеграция**: добавлен `load_plugins(app)` в main.py
+- **Lifecycle hooks**: добавлены `on_startup()` / `on_shutdown()` в PluginBase
+- **Загружены**: 7 плагинов (ai, cms, email, rbac, stats, themes, tmdb)
+
+### Производительность
+- **N+1 queries**: добавлена `get_kind_labels_batch()` для batch-получения labels
+- **Lazy init**: StorageService и AIService инициализируются при первом обращении
+
+### Удалён мёртвый код
+- `app/services/i18n.py` (DEPRECATED)
+- `app/models/pages.py` (пустой)
+
+---
+
 # Changelog
 
 ## [0.10.0] — 2026-07-22

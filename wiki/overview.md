@@ -44,7 +44,7 @@ status: stable
 - **28+ таблиц** в 10 архитектурных слоях
 - **7 плагинов**: AI, TMDB, Themes, CMS, Stats, RBAC, Email
 - **7 языков**: ru, en, de, fr, es, zh, ja
-- **100+ эндпоинтов** API
+- **135 эндпоинтов** API
 - **20+ тестов**
 - **Версионирование** через event sourcing
 - **AI-интеграция**: OpenAI, Anthropic, Google, MiMo

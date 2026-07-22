@@ -6,6 +6,7 @@
     <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ request.state.t.admin_edit_template }}: {{ request.state.t.get(template.template_code, template.template_name) if request.state.t else template.template_name }}</h1>
 
     <form action="/admin/templates/{{ template.template_id }}/edit" method="post" id="templateForm">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
         <input type="hidden" name="layout_definition" id="layoutJson" value="{{ layout_json }}">
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

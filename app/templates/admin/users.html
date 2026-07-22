@@ -43,11 +43,13 @@
                     <td class="px-4 py-3">
                         <div class="flex gap-2">
                             <form action="/admin/users/{{ u.user_id }}/toggle-admin" method="post" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                                 <button type="submit" class="text-xs text-blue-600 hover:text-blue-800 underline">
                                     {% if u.is_admin %}{{ request.state.t.admin_remove_admin }}{% else %}{{ request.state.t.admin_make_admin }}{% endif %}
                                 </button>
                             </form>
                             <form action="/admin/users/{{ u.user_id }}/toggle-active" method="post" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                                 <button type="submit" class="text-xs text-orange-600 hover:text-orange-800 underline">
                                     {% if u.is_active %}{{ request.state.t.admin_block }}{% else %}{{ request.state.t.admin_unblock }}{% endif %}
                                 </button>

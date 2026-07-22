@@ -43,6 +43,7 @@
     <div class="rounded-xl p-4 mb-6" style="background: var(--color-surface); border: 1px solid var(--color-border);">
         <h3 class="text-sm font-medium mb-3" style="color: var(--color-text);">{{ request.state.t.admin_new_string }}</h3>
         <form action="/admin/ui-translations/create" method="post" class="flex gap-2">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
             <input type="hidden" name="lang" value="{{ current_lang }}">
             <input type="text" name="key" placeholder="key_name" required
                    class="px-3 py-1.5 text-sm rounded-lg border outline-none font-mono"
@@ -70,6 +71,7 @@
                     <td class="px-4 py-3 font-mono text-xs" style="color: var(--color-text);">{{ t.key }}</td>
                     <td class="px-4 py-3" style="color: var(--color-text);">
                         <form action="/admin/ui-translations/update" method="post" class="flex gap-2">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                             <input type="hidden" name="key" value="{{ t.key }}">
                             <input type="hidden" name="lang" value="{{ current_lang }}">
                             <input type="text" name="value" value="{{ t.value }}"
@@ -80,6 +82,7 @@
                     </td>
                     <td class="px-4 py-3 text-right">
                         <form action="/admin/ui-translations/delete" method="post" class="inline" onsubmit="return confirm('{{ request.state.t.btn_confirm_delete_string }}')">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                             <input type="hidden" name="key" value="{{ t.key }}">
                             <input type="hidden" name="lang" value="{{ current_lang }}">
                             <button type="submit" class="text-xs" style="color: var(--color-error);">{{ request.state.t.btn_delete }}</button>

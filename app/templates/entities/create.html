@@ -113,6 +113,7 @@
     <!-- STEP 3: Fill Data -->
     {% if step == 3 %}
     <form action="/entity/create" method="post" enctype="multipart/form-data" class="space-y-6" id="entityForm">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
         <input type="hidden" name="kind_code" value="{{ selected_kind_obj.kind_code }}">
         {% for tmpl in selected_templates %}
         <input type="hidden" name="template_ids" value="{{ tmpl.template_id }}">

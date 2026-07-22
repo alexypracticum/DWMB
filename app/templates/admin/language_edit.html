@@ -10,6 +10,7 @@
     <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">{% if language %}Редактировать язык{% else %}Новый язык{% endif %}</h1>
 
     <form action="{% if language %}/admin/languages/{{ language.language_id }}/edit{% else %}/admin/languages/create{% endif %}" method="post" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
         <div>
             <label class="block text-sm font-medium mb-1" style="color: var(--color-text-secondary);">Код языка (ISO 639-1)</label>
             <input type="text" name="code" value="{{ language.code if language else '' }}" required maxlength="10"

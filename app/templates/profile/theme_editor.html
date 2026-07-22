@@ -9,6 +9,7 @@
     </div>
 
     <form action="/profile/theme-editor/{{ theme.theme_id }}/save" method="post" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
 
         <!-- Presets -->
         <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
@@ -16,6 +17,7 @@
             <div class="flex flex-wrap gap-3">
                 {% for key, preset in presets.items() %}
                 <form action="/profile/theme-editor/{{ theme.theme_id }}/apply-preset" method="post" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                     <input type="hidden" name="preset_key" value="{{ key }}">
                     <button type="submit" class="flex items-center gap-2 px-4 py-2 rounded-lg transition text-sm"
                             style="border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text);">

@@ -37,6 +37,7 @@
                     <td class="px-4 py-3 text-right">
                         <a href="/admin/languages/{{ lang.language_id }}/edit" class="text-sm hover:underline" style="color: var(--color-primary);">{{ request.state.t.btn_edit }}</a>
                         <form action="/admin/languages/{{ lang.language_id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ request.state.t.btn_confirm_delete_language }}')">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                             <button type="submit" class="text-sm hover:underline ml-2" style="color: var(--color-error);">{{ request.state.t.btn_delete }}</button>
                         </form>
                     </td>
