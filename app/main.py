@@ -159,6 +159,7 @@ async def media_proxy(url: str = Query(...)):
 # ─── Core routers (always loaded) ─────────────────────────────
 from app.routes import auth, entities, search, editor_api, profile, comments, export, feeds
 from plugins import load_plugins
+from app.graphql.schema import graphql_router
 app.include_router(auth.router)
 app.include_router(entities.router)
 app.include_router(search.router)
@@ -179,6 +180,9 @@ load_plugins(app)
 from fastapi.templating import Jinja2Templates
 templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["csrf_token_context"] = csrf_token_context
+
+# ─── GraphQL ──────────────────────────────────────────────────
+app.include_router(graphql_router, prefix="/graphql")
 
 # ─── Health check ─────────────────────────────────────────────
 @app.get("/health")
