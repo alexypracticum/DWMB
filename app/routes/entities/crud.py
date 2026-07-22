@@ -13,7 +13,7 @@ from app.models.relations import SemanticRelation, RelationType
 from app.models.users import UserAccount
 from app.services.auth import get_current_user, require_auth
 from app.services.layout import render_layout, get_state_field, get_localized_value
-from app.services.language_service import get_language_id, get_kind_label, get_entity_label, entity_label_filter, lang_priority_case, get_lang_ids, get_lang
+from app.services.language_service import get_language_id, get_kind_label, get_kind_labels_batch, get_entity_label, entity_label_filter, lang_priority_case, get_lang_ids, get_lang
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -41,8 +41,11 @@ async def index(request: Request, db: AsyncSession = Depends(get_db), user: User
     )
     recent = []
     lang = getattr(request.state, "lang", "ru")
-    for entity, label, ek in result.unique():
-        kl = await get_kind_label(db, ek.kind_id, lang) or ek.kind_code
+    rows = result.unique().all()
+    kind_ids = [ek.kind_id for _, _, ek in rows]
+    kind_labels = await get_kind_labels_batch(db, kind_ids, lang)
+    for entity, label, ek in rows:
+        kl = kind_labels.get(ek.kind_id, ek.kind_code)
         recent.append({"entity": entity, "label": label, "kind": ek, "kind_label": kl})
 
     # Kinds for sidebar
@@ -109,8 +112,11 @@ async def list_entities(
     result = await db.execute(query.order_by(EntityLabel.label).offset(offset).limit(per_page))
     entities = []
     lang = getattr(request.state, "lang", "ru")
-    for entity, label, ek in result.unique():
-        kl = await get_kind_label(db, ek.kind_id, lang) or ek.kind_code
+    rows = result.unique().all()
+    kind_ids = [ek.kind_id for _, _, ek in rows]
+    kind_labels = await get_kind_labels_batch(db, kind_ids, lang)
+    for entity, label, ek in rows:
+        kl = kind_labels.get(ek.kind_id, ek.kind_code)
         # Use image_url directly from entity (fallback to projection state)
         poster = entity.image_url
         if not poster:

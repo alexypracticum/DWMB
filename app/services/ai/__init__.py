@@ -412,4 +412,20 @@ Only return valid JSON, no explanation."""
         return []
 
 
-ai_service = AIService()
+# Lazy initialization
+_ai_instance = None
+
+def get_ai_service():
+    """Get or create AIService instance (lazy init)."""
+    global _ai_instance
+    if _ai_instance is None:
+        _ai_instance = AIService()
+    return _ai_instance
+
+
+# Backward compatibility - lazy proxy
+class _AIProxy:
+    def __getattr__(self, name):
+        return getattr(get_ai_service(), name)
+
+ai_service = _AIProxy()

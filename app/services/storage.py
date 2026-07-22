@@ -120,4 +120,20 @@ class StorageService:
             return []
 
 
-storage_service = StorageService()
+# Lazy initialization - import and use get_storage_service() instead of storage_service
+_storage_instance = None
+
+def get_storage_service():
+    """Get or create StorageService instance (lazy init)."""
+    global _storage_instance
+    if _storage_instance is None:
+        _storage_instance = StorageService()
+    return _storage_instance
+
+
+# Backward compatibility - lazy proxy
+class _StorageProxy:
+    def __getattr__(self, name):
+        return getattr(get_storage_service(), name)
+
+storage_service = _StorageProxy()

@@ -12,6 +12,7 @@ import json
 import hashlib
 
 from app.database import get_db
+from app.services.language_service import get_language_id
 from app.models.users import UserAccount
 from app.models.entities import Entity, EntityLabel
 from app.models.kinds import EntityKind
@@ -47,13 +48,7 @@ async def _get_page_template(db: AsyncSession, kind: EntityKind) -> OntologyTemp
     return tmpl
 
 
-async def _get_lang_id(db: AsyncSession, code: str) -> UUID:
-    """Get language ID by code."""
-    result = await db.execute(select(Language).where(Language.code == code))
-    lang = result.scalar_one_or_none()
-    if not lang:
-        raise HTTPException(status_code=500, detail=f"Language '{code}' not found.")
-    return lang.language_id
+
 
 
 async def _load_page_data(db: AsyncSession, entity: Entity) -> dict:
@@ -95,7 +90,7 @@ async def _save_page_data(db: AsyncSession, entity: Entity, data: dict, lang_cod
     """Save page data to entity projection + state."""
     kind = await _get_page_kind(db)
     tmpl = await _get_page_template(db, kind)
-    lang_id = await _get_lang_id(db, lang_code)
+    lang_id = await get_language_id(db, lang_code)
 
     # Get or create current projection
     result = await db.execute(
