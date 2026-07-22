@@ -1,6 +1,6 @@
 # TODO
 
-## Текущий статус: v0.11.0
+## Текущий статус: v0.12.0
 
 ### Выполнено (v0.11.0) — Безопасность и архитектура
 - [x] CORS: ограничение доменов
@@ -66,7 +66,35 @@
 - [x] RSS/Atom фиды: /feed/entities, /feed/pages
 - [x] Backup: pg_dump через CLI (timestamped SQL files)
 
-### Приоритет 1: Мультиязычность через проекции (v0.7.0)
+### Выполнено (v0.12.0) — GraphQL, Docker, Tests
+- [x] CSRF защита на формах
+- [x] GraphQL API (strawberry-graphql)
+- [x] Docker optimization (multi-stage, non-root, healthcheck)
+- [x] 165 тестов (было 125)
+- [x] Исправлены устаревшие импорты
+
+### Нереализованное (требует внимания)
+- [ ] RBAC: require_permission() не используется в роутах
+- [ ] Email: send_verification_email/send_password_reset не вызываются
+- [ ] Redis: init_cache() не вызывается при старте
+- [ ] GraphQL: greenlet ошибки в некоторых запросах
+
+### Приоритет 1: Активация существующего функционала
+- [ ] Подключить RBAC require_permission к роутам
+- [ ] Подключить Email service к регистрации/сбросу пароля
+- [ ] Инициализировать Redis кэш при старте
+- [ ] Исправить greenlet ошибки в GraphQL
+
+### Приоритет 2: Новая функциональность
+- [ ] D3.js/Cytoscape.js граф связей
+- [ ] Внешние API (IMDB, Wikipedia, MusicBrainz)
+- [ ] Автосохранение при переключении языков
+- [ ] GraphQL mutations (create, update, delete)
+
+### Приоритет 3: Промышленная версия
+- [ ] Микросервисы (AI, поиск, медиа)
+- [ ] Row-Level Security (RLS)
+- [ ] WebSocket real-time обновления
 - [ ] Вынести UI-строки в сущности с мультиязычными проекциями
 - [ ] Мигрировать переводы из i18n.py в сущности
 - [ ] Обновить шаблоны для чтения переводов из сущностей

@@ -186,10 +186,43 @@
 
 ---
 
+## v0.12.0 — GraphQL, Docker, Tests (выполнено)
+
+### Цель: Добавление GraphQL API, оптимизация Docker, тесты
+
+**GraphQL API:**
+- [x] Установлен strawberry-graphql
+- [x] Созданы GraphQL типы (Entity, Kind, Stats, etc.)
+- [x] Созданы query резолверы (stats, kinds, models, search)
+- [x] Интеграция GraphQL router на /graphql
+
+**Docker:**
+- [x] Multi-stage Dockerfile (builder + production)
+- [x] Non-root user (dwmb)
+- [x] Healthcheck (curl /health)
+- [x] .dockerignore (исключены .git, __pycache__, docs)
+- [x] Resource limits (cpu, memory)
+- [x] docker-compose.prod.yml для production
+
+**Тесты:**
+- [x] 165 тестов (было 125)
+- [x] Исправлены устаревшие импорты (i18n → language_service)
+- [x] Новые тесты: CSRF, language_service, security, plugins
+
+**CSRF:**
+- [x] CSRF middleware (cookie + header validation)
+- [x] csrf.js хелпер для AJAX
+- [x] Обновлены 27 шаблонов с CSRF токенами
+
+---
+
 ## v1.0.0 — Промышленная версия
 
-### Цель: Микросервисы + GraphQL + RLS
+### Цель: Микросервисы + RLS + Граф связей
 
 - [ ] Микросервисы (AI, поиск, медиа)
-- [ ] GraphQL API
-- [ ] Row-Level Security
+- [ ] Row-Level Security (RLS)
+- [ ] D3.js/Cytoscape.js граф связей
+- [ ] Внешние API (IMDB, Wikipedia, MusicBrainz)
+- [ ] GraphQL mutations (create, update, delete)
+- [ ] WebSocket real-time обновления

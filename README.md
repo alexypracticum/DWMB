@@ -113,6 +113,18 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/
 
 ## Возможности
 
+- **47 типов** сущностей
+- **71 тип** связей
+- **28+ таблиц** в 10 архитектурных слоях
+- **7 плагинов**: AI, TMDB, Themes, CMS, Stats, RBAC, Email
+- **7 языков**: ru, en, de, fr, es, zh, ja
+- **138 эндпоинтов** API (REST + GraphQL)
+- **165 тестов**
+- **Версионирование** через event sourcing
+- **AI-интеграция**: OpenAI, Anthropic, Google, MiMo
+- **GraphQL API**: strawberry-graphql с 7 запросами
+- **CSRF защита** на всех формах
+
 ### Ядро
 - Онтологическая модель: kinds, projections, templates, contexts
 - Семантические связи: directed/undirected, inverse, transitive

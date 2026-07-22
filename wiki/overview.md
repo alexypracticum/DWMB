@@ -45,7 +45,7 @@ status: stable
 - **7 плагинов**: AI, TMDB, Themes, CMS, Stats, RBAC, Email
 - **7 языков**: ru, en, de, fr, es, zh, ja
 - **135 эндпоинтов** API
-- **20+ тестов**
+- **165 тестов**
 - **Версионирование** через event sourcing
 - **AI-интеграция**: OpenAI, Anthropic, Google, MiMo
 

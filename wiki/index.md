@@ -49,6 +49,7 @@ status: stable
 | [[api/rest-api]] | REST API: эндпоинты, CRUD |
 | [[api/router]] | Маршрутизация FastAPI |
 | [[api/search]] | Полнотекстовый и векторный поиск |
+| [[api/graphql]] | GraphQL API (strawberry-graphql) |
 
 ## Frontend
 
@@ -99,6 +100,7 @@ status: stable
 | [[development/roadmap]] | Дорожная карта проекта |
 | [[development/testing]] | Тестирование |
 | [[development/contributing]] | Руководство по вкладу |
+| [[development/improvements]] | План улучшений |
 
 ## Навигация
 

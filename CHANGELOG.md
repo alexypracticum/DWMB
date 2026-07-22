@@ -1,3 +1,26 @@
+## [0.12.0] — 2026-07-22
+
+### Добавлено
+- **CSRF защита**: middleware + JS хелпер для форм
+- **GraphQL API**: strawberry-graphql с 7 запросами (stats, kinds, models, relationTypes, entities, entity, search)
+- **Docker optimization**: multi-stage, non-root user, healthcheck, .dockerignore, resource limits
+- **Tests**: 165 тестов (было 125), исправлены устаревшие импорты
+- **Documentation**: обновлены ROADMAP, TODO, CHANGELOG
+
+### Исправлено
+- **CSRF**: добавлена защита на все POST формы (27 шаблонов)
+- **GraphQL**: исправлены синтаксические ошибки в queries.py
+- **Docker**: добавлен healthcheck, убран --reload для production
+
+### Улучшения
+- **Security**: CORS, SSRF, XSS, CSRF, password validation
+- **Architecture**: language_service, split admin/entities/layout
+- **Middleware**: caching in theme.py, optimized kinds.py
+- **Plugins**: lifecycle hooks, 7 plugins loaded
+- **Performance**: batch queries, lazy init
+
+---
+
 ## [0.11.0] — 2026-07-22
 
 ### Безопасность
