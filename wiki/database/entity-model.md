@@ -54,26 +54,26 @@ CREATE TABLE entity_kind (
 );
 ```
 
-### Текущие типы (40+)
+### Текущие типы (47)
 
 Типы организованы по доменам:
 
 | Домен | Типы |
 |-------|------|
-| Кино | movie, actor, director, series |
-| Музыка | song, musician, album, band |
-| Литература | book, writer, poem |
-| Наука | chemical_element, element, phenomenon |
+| Кино | movie, actor, director, series, character, genre, award |
+| Музыка | song, musician, album, band, channel, podcast |
+| Литература | book, writer, article |
+| Наука | chemical_element, formula, theorem, unit, phenomenon, concept, field |
 | Люди | person, human, artist, scientist |
 | Места | place, city, country, location |
 | Природа | animal, plant, mineral |
-| Концепты | concept, event, period, movement |
+| Концепты | event, period, movement, collection, tag, label_entity |
 | Цифровые | digital_file, photo, video, audio |
 | Организации | organization, company, institution |
 | Игры | game, character, platform |
 | CMS | page (мигрировано из page_registry) |
 | UI | ui_string (мультиязычность) |
-| Прочие | classifier, physical_item, article |
+| Прочие | classifier, physical_item, currency, software, ontology_model, ontology_template, language, language_entity |
 
 ## Соответствие философии "Всё как сущность"
 

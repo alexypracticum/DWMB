@@ -20,8 +20,8 @@ WHERE ek.kind_code = 'page'
   AND NOT EXISTS (SELECT 1 FROM meta.entity_kind_label WHERE kind_id = ek.kind_id AND language_id = l.language_id);
 
 -- Step 2: Create ontology_model 'cms'
-INSERT INTO meta.ontology_model (model_id, model_code, model_name, description, version_id)
-SELECT gen_random_uuid(), 'cms', 'CMS', 'Модель мира для контент-страниц', 1
+INSERT INTO meta.ontology_model (model_id, model_code, domain, description, version_id)
+SELECT gen_random_uuid(), 'cms', 'general', 'Модель мира для контент-страниц', 1
 WHERE NOT EXISTS (SELECT 1 FROM meta.ontology_model WHERE model_code = 'cms');
 
 -- Step 3: Create ontology_template for 'page'
@@ -79,7 +79,7 @@ INSERT INTO meta.projection_state (state_id, projection_id, state_data, state_ha
 SELECT
     gen_random_uuid(),
     (SELECT ep.projection_id FROM meta.entity_projection ep
-     WHERE ep.entity_id = pr.page_id AND ep.is_current = true),
+     WHERE ep.entity_id = pr.page_id LIMIT 1),
     jsonb_build_object(
         'content', pr.content,
         'template_name', pr.template_name,

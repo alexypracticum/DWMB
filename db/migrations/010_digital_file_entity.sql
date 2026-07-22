@@ -21,8 +21,8 @@ WHERE ek.kind_code = 'digital_file'
   AND NOT EXISTS (SELECT 1 FROM meta.entity_kind_label WHERE kind_id = ek.kind_id AND language_id = l.language_id);
 
 -- Step 2: Create ontology_model 'storage'
-INSERT INTO meta.ontology_model (model_id, model_code, model_name, description, version_id)
-SELECT gen_random_uuid(), 'storage', 'Хранилище', 'Модель мира для файлов хранения', 1
+INSERT INTO meta.ontology_model (model_id, model_code, domain, description, version_id)
+SELECT gen_random_uuid(), 'storage', 'general', 'Модель мира для файлов хранения', 1
 WHERE NOT EXISTS (SELECT 1 FROM meta.ontology_model WHERE model_code = 'storage');
 
 -- Step 3: Create ontology_template for 'digital_file'

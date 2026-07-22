@@ -1,149 +1,154 @@
 ---
-type: development
 title: "Тестирование"
-description: "Подходы к тестированию DWMB: unit-тесты, интеграционные тесты, E2E, покрытие"
-tags: [development, testing, pytest, coverage]
-date_created: 2026-07-22
-date_updated: 2026-07-22
+description: "pytest + pytest-asyncio, 18 тестовых файлов, интеграционные и unit-тесты"
+date_created: "2026-07-20"
+date_updated: "2026-07-22"
 sources:
-  - 19.07.2026.ANALYSIS_REPORT.md
-  - 18.07.2027.PLAN.md
-status: stable
+  - "tests/conftest.py"
+  - "pytest.ini"
+  - "requirements.txt"
+status: "active"
+okf_version: "0.1"
 ---
 
-# Тестирование
+## Стек
 
-Подходы к тестированию [[architecture/overview|DWMB]].
+- **pytest** >= 8.0.0
+- **pytest-asyncio** >= 0.23.0
+- Режим: `asyncio_mode = auto`
 
-## Типы тестов
+## Конфигурация
 
-### 1. Unit-тесты
+```ini
+# pytest.ini
+[pytest]
+asyncio_mode = auto
+testpaths = tests
+python_files = test_*.py
+python_classes = Test*
+python_functions = test_*
+```
 
-Тестирование отдельных функций и классов.
+## Запуск
+
+```bash
+docker compose exec app python -m pytest tests/ -v
+```
+
+Тесты работают против **реальной PostgreSQL** через Docker. Нет in-memory SQLite.
+
+## Фикстуры (`tests/conftest.py`)
 
 ```python
-# tests/test_entity_service.py
-def test_create_entity():
-    service = EntityService(db)
-    entity = service.create(kind_code="movie", entity_code="matrix")
-    assert entity.entity_code == "matrix"
-    assert entity.kind_id is not None
+@pytest_asyncio.fixture
+async def db_session():
+    """Реальная сессия БД, rollback после каждого теста."""
+    async with async_session() as session:
+        yield session
+        await session.rollback()
+
+@pytest_asyncio.fixture
+async def client(db_session):
+    """Async HTTP client (ASGITransport, без реального HTTP)."""
+    app.dependency_overrides[get_db] = _override
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+
+@pytest_asyncio.fixture
+async def auth_client(db_session):
+    """HTTP client с JWT cookie admin-пользователя."""
+    token = create_access_token(data={"sub": "admin"})
+    async with AsyncClient(transport=transport, base_url="http://test",
+        cookies={"access_token": token}) as ac:
+        yield ac
 ```
 
-### 2. Интеграционные тесты
+## Тестовые файлы (18)
 
-Тестирование взаимодействия с БД и внешними сервисами.
+| Файл | Тестов | Что проверяет |
+|------|--------|---------------|
+| `test_auth.py` | 5 | Страницы логина/регистрации, невалидные credentials, профиль |
+| `test_admin.py` | 15 | Все admin-страницы (kinds/templates/fields/users/AI), `_sync_layout_fields_from_schema` |
+| `test_admin_crud.py` | 3 | Admin kinds list → 200 |
+| `test_entities.py` | 10 | Entity list, detail, edit, create — проверка auth |
+| `test_entity_crud.py` | 8 | Entity create/edit страницы, auth requirements |
+| `test_import_api.py` | 25 | `_ensure_kind_and_relation`, `_find_or_create_related_entity`, TMDB retry/error |
+| `test_security.py` | 8 | Config, .env, .gitignore, отсутствие hardcoded паролей |
+| `test_multilingual.py` | 12 | i18n переводы, смена языка, model columns, cache clear |
+| `test_new_features.py` | 5 | `/set-lang` route, cookie setting, redirects |
+| `test_upload.py` | 3 | Upload требует auth, обработка отсутствия файла |
+| `test_i18n.py` | 3 | Неавторизованный пользователь → русский интерфейс |
+| `test_i18n_service.py` | 5 | `get_translation`, `get_language_id`, `clear_language_cache` |
+| `test_layout.py` | 5 | Рендеринг layout |
+| `test_ontology_entities.py` | 4 | Ontology entity |
+| `test_ontology_entity_sync.py` | 4 | Ontology entity sync |
+| `test_relation_types_crud.py` | 4 | Relation type CRUD |
+| `test_relation_metadata.py` | 4 | Relation metadata |
+| `test_relationships.py` | 4 | Relationship editor |
+
+**Примеры тестов (реальные):**
 
 ```python
-# tests/test_api.py
-def test_entity_api(client):
-    response = client.post("/api/v1/entities", json={
-        "kind_code": "movie",
-        "entity_code": "matrix"
-    })
-    assert response.status_code == 201
-    assert response.json()["entity_code"] == "matrix"
+# tests/test_admin.py
+async def test_admin_kinds_page(auth_client):
+    response = await auth_client.get("/admin/kinds")
+    assert response.status_code == 200
+
+async def test_sync_layout_fields_from_schema(db_session):
+    # Проверяет маппинг JSON schema → layout fields
+    ...
+
+# tests/test_auth.py
+async def test_login_page(client):
+    response = await client.get("/auth/login")
+    assert response.status_code == 200
+
+async def test_invalid_credentials(client):
+    response = await client.post("/auth/login",
+        data={"username": "wrong", "password": "wrong"}, follow_redirects=False)
+    assert response.status_code == 303  # redirect back to login
+
+# tests/test_security.py
+def test_no_hardcoded_passwords():
+    # Проверяет .env.example на наличие CHANGE_ME
+    ...
 ```
 
-### 3. E2E тесты
+## Паттерны
 
-Тестирование полного пользовательского сценария.
+### Интеграционные тесты (HTTP)
 
 ```python
-# tests/test_e2e.py
-def test_create_and_view_entity(client, browser):
-    # Создание сущности
-    browser.fill("entity_code", "matrix")
-    browser.click("submit")
-    
-    # Просмотр сущности
-    assert browser.url.contains("/entity/")
-    assert browser.locator("h1").text_contains("Matrix")
+async def test_entity_list(auth_client):
+    response = await auth_client.get("/entities")
+    assert response.status_code == 200
 ```
 
-## Структура тестов
+### Unit-тесты с моками
 
-```
-tests/
-├── conftest.py           — Фикстуры
-├── test_entity_service.py — Unit-тесты сервиса
-├── test_api.py           — Интеграционные тесты API
-├── test_database.py      — Тесты БД
-└── test_e2e.py           — E2E тесты
+```python
+from unittest.mock import AsyncMock, patch, MagicMock
+
+@patch("app.services.importers.tmdb.httpx.AsyncClient")
+async def test_tmdb_retry(mock_client):
+    # Проверяет retry логику TMDB
+    ...
 ```
 
 ## Покрытие
 
-| Компонент | Покрытие | Приоритет |
-|-----------|----------|-----------|
-| EntityService | 80% | Высокий |
-| API endpoints | 70% | Высокий |
-| Database operations | 60% | Средний |
-| Frontend | 30% | Низкий |
-| Plugins | 50% | Средний |
+Нет настроенного `pytest-cov`. Нет CI/CD конфигурации.
 
-## Запуск тестов
+## Известные ограничения
 
-```bash
-# Все тесты
-pytest
-
-# С покрытием
-pytest --cov=app --cov-report=html
-
-# Только unit-тесты
-pytest -m "not integration"
-
-# Только интеграционные
-pytest -m integration
-```
-
-## CI/CD
-
-```yaml
-# .github/workflows/test.yml
-name: Tests
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Run tests
-        run: pytest --cov=app
-```
-
-## Проблемы
-
-### 1. Нет тестов
-
-Текущий проект не имеет тестов.
-
-### 2. Нет CI/CD
-
-Нет автоматического запуска тестов.
-
-### 3. Нет E2E тестов
-
-Нет тестирования пользовательских сценариев.
-
-## Планы
-
-- Написать unit-тесты для EntityService
-- Написать интеграционные тесты для API
-- Настроить CI/CD
-- Добавить E2E тесты
-- Достичь покрытия 70%
+- Нет `pytest-cov` в `requirements.txt`
+- Нет `.github/workflows/` конфигурации
+- Нет E2E тестов (Playwright и т.д.)
+- Тесты требуют запущенных Docker-контейнеров
 
 ## Связанные страницы
 
-- [[architecture/overview]] — Обзор архитектуры
-- [[development/roadmap]] — Дорожная карта
-- [[development/contributing]] — Вклад в проект
-- [[deployment/docker]] — Настройка окружения
+- [[architecture/overview]] — обзор архитектуры
+- [[development/contributing]] — вклад в проект
+- [[deployment/docker]] — Docker Compose

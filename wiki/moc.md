@@ -35,6 +35,8 @@ status: stable
 - **[[architecture/overview|Системная архитектура]]** — FastAPI + PostgreSQL + Docker Compose
 - **[[architecture/layers|Архитектурные слои]]** — 10 слоёв: Identity, Ontology, Projection, Relation, Temporal, Context, Event, Media, AI, Classification
 - **[[architecture/plugin-system|Система плагинов]]** — 7 плагинов: ai, tmdb, themes, cms, stats, rbac, email
+- **[[architecture/caching|Кэширование]]** — Redis + in-memory fallback, KindsMiddleware, language cache
+- **[[architecture/security|Безопасность]]** — JWT, bcrypt, RBAC, rate limiting, CORS
 
 Связано с:
 - [[architecture/data-model]] — полная схема данных
@@ -75,6 +77,9 @@ status: stable
 - **[[features/comments|Комментарии]]** — вложенность, ответы на ответы
 - **[[features/export|Экспорт]]** — Markdown/HTML
 - **[[features/feeds|Фиды]]** — RSS/Atom
+- **[[features/workflow|Workflow]]** — 3 состояния (draft/published/archived), аудит переходов
+- **[[features/wysiwyg|WYSIWYG (TipTap)]]** — rich text редактор, 13 кнопок, CDN
+- **[[features/backup|Бэкапы]]** — pg_dump, экспорт/импорт сущностей, TMDB импорт
 
 ---
 
@@ -124,8 +129,9 @@ status: stable
 Процессы и стандарты:
 
 - **[[development/roadmap|Дорожная карта]]** — v0.9.0 → v1.0.0
-- **[[development/testing|Тестирование]]** — pytest,覆盖率
+- **[[development/testing|Тестирование]]** — pytest, 18 файлов, 100+ тестов
 - **[[development/contributing|Вклад в проект]]** — код-стайл, PR, issues
+- **[[development/cli|CLI]]** — cli.py: status, seed, stats, backup, restore, migrate
 
 ---
 

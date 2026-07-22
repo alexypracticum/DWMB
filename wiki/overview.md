@@ -29,20 +29,23 @@ status: stable
 
 | Компонент | Технология |
 |-----------|-----------|
-| Язык | Python 3.11+ |
-| Backend | FastAPI |
+| Язык | Python 3.12 |
+| Backend | FastAPI + SQLAlchemy async |
 | БД | PostgreSQL 16 + pgvector + pg_trgm |
 | Хранилище | MinIO (S3) |
-| Frontend | Jinja2 + Tailwind CSS + HTMX |
+| Кэш | Redis |
+| Frontend | Jinja2 + Tailwind CSS + TipTap + HTMX |
 | Оркестрация | Docker Compose |
 
 ## Возможности
 
+- **47 типов** сущностей
+- **71 тип** связей
 - **28+ таблиц** в 10 архитектурных слоях
-- **160+ типов** сущностей
 - **7 плагинов**: AI, TMDB, Themes, CMS, Stats, RBAC, Email
 - **7 языков**: ru, en, de, fr, es, zh, ja
-- **71 эндпоинт** API
+- **100+ эндпоинтов** API
+- **20+ тестов**
 - **Версионирование** через event sourcing
 - **AI-интеграция**: OpenAI, Anthropic, Google, MiMo
 
@@ -59,14 +62,18 @@ wiki/
 ├── architecture/
 │   ├── overview.md
 │   ├── layers.md
-│   └── data-model.md
+│   ├── data-model.md
+│   ├── entity-migration.md  ← План миграции таблиц
+│   └── plugin-system.md
 ├── database/
 │   ├── entity-model.md
 │   ├── ontology.md
 │   ├── multilingual.md
 │   ├── relations.md
 │   ├── temporal.md
-│   └── media.md
+│   ├── media.md
+│   ├── projections.md
+│   └── seed-data.md
 ├── api/
 │   ├── rest-api.md
 │   ├── router.md
@@ -75,6 +82,18 @@ wiki/
 │   ├── templates.md
 │   ├── multilingual-ui.md
 │   └── cms.md
+├── features/
+│   ├── entity-crud.md
+│   ├── comments.md
+│   ├── visual-editor.md
+│   ├── rbac.md
+│   ├── admin-panel.md
+│   ├── export.md
+│   └── feeds.md
+├── ui/
+│   ├── display-modes.md
+│   ├── theme-system.md
+│   └── localization.md
 ├── plugins/
 │   ├── plugins.md
 │   └── ai-plugin.md

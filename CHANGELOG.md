@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.10.0] — 2026-07-22
+
+### Философия "Всё как сущность"
+- **page_registry → entity**: CMS страницы мигрированы в entity kind='page'
+- **media_asset → entity CRUD**: загрузка файлов создаёт entity kind='digital_file'
+- **MenuItem**: удалён мёртвый код (не использовался ни в одном маршруте)
+
+### Миграции
+- Migration 009: page_registry → entity (entity_kind='page', ontology_model='cms')
+- Migration 010: entity_kind='digital_file', ontology_model='storage'
+
+### API
+- `GET /media/{asset_id}` — метаданные media asset
+- `GET /media/{asset_id}/info` — детальная информация через entity projection
+- `DELETE /media/{asset_id}` — удаление media asset и entity
+- Upload создаёт entity kind='digital_file' для ВСЕХ файлов (не только изображений)
+
+### Исправлено
+- Удалён баг: `EntityProjection.is_current` не существует в БД (убран из кода)
+- Обновлена схема entity_projection в wiki (убран is_current)
+- Media proxy (`/media/proxy`) — исправлен Internal Server Error (минуты работы)
+  - Перенесён перед роутерами для корректного матчинга URL
+  - Добавлена поддержка MinIO (boto3) и внешних URL (httpx)
+- Template editor: исправлен JS-синтаксис (отсутствующий `+`, несовпадающие кавычки в alert), блоки теперь рендерятся
+
+### Wiki
+- Обновлён статус философии "Всё как сущность"
+- Добавлен раздел "Компромисс: media_asset как sidecar" в database/media.md
+- Исправлено количество entity_kind (40+ вместо 160+)
+
+---
+
 ## [0.9.0] — 2026-07-21
 
 ### Исправлено

@@ -12,6 +12,28 @@ status: stable
 
 Хронология создания и обновления страниц wiki [[overview|DWMB]].
 
+## 2026-07-22 (обновление)
+
+### Исправлено
+- Media proxy (`/media/proxy`) — исправлен Internal Server Error (минуты работы)
+  - Перенесён перед роутерами для корректного матчинга URL
+  - Добавлена поддержка MinIO (boto3) и внешних URL (httpx)
+  - URL-реврайт `localhost:9000` → `minio:9000` для Docker-окружения
+
+### Добавлено
+- `architecture/entity-migration.md` — План миграции таблиц в сущности (42 страница)
+- Wiki обновлена: philosophy/everything-as-entity.md, database/entity-model.md, architecture/data-model.md, database/media.md
+
+### Обновлено (фактические данные)
+- `overview.md` — Python 3.12, Redis, TipTap, 47 типов, 71 связь, 100+ эндпоинтов
+- `database/entity-model.md` — 47 типов сущностей (актуально из БД)
+- `database/relations.md` — 71 тип связей (актуально из БД)
+- `database/ontology.md` — 13 моделей, исправлены схемы таблиц
+- `architecture/data-model.md` — исправлены схемы ontology_model, ontology_template, field_registry
+- `index.md` — 42 страницы, DWMB v0.10.0
+
+---
+
 ## 2026-07-22
 
 ### Создано (раунд 1 — 28 страниц)

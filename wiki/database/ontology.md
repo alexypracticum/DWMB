@@ -30,25 +30,33 @@ CREATE TABLE ontology_model (
 );
 ```
 
-### Модели по умолчанию
+### Модели по умолчанию (13)
 
-| Код | Название | Домен | Описание |
-|-----|----------|-------|----------|
-| default | Default | — | Базовая модель для общих данных |
-| cinema | Cinema | art | Кинематограф |
-| music | Music | art | Музыка |
-| literature | Literature | art | Литература |
-| science | Science | science | Наука |
-| geography | Geography | science | География |
-| history | History | social | История |
-| technology | Technology | science | Технологии |
+| Код | Домен | Описание |
+|-----|-------|----------|
+| default | general | Базовая модель для общих данных |
+| cinema | art | Кинематограф |
+| music | art | Музыка |
+| literature | art | Литература |
+| science | science | Наука |
+| geography | social | География |
+| history | social | История |
+| technology | digital | Технологии |
+| cms | general | CMS для контента |
+| storage | general | Хранилище файлов |
+| field_model | meta | Модель полей |
+| ontology_entity_model | meta | Модель онтологии |
+| language | social | Языки |
 
 ### Домены моделей
 
-Модели разделены на 3 домена:
+Модели разделены на 4 домена:
 - **art** — cinema, music, literature
-- **science** — science, geography, technology
-- **social** — history
+- **science** — science
+- **social** — geography, history, language
+- **general** — default, cms, storage
+- **meta** — field_model, ontology_entity_model
+- **digital** — technology
 
 **Проблема:** домены — искусственное ограничение. Модели не должны быть жёстко привязаны к доменам.
 
@@ -56,17 +64,22 @@ CREATE TABLE ontology_model (
 
 ```sql
 CREATE TABLE ontology_template (
-    template_id  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    model_id     UUID NOT NULL REFERENCES ontology_model(model_id),
-    kind_id      UUID NOT NULL REFERENCES entity_kind(kind_id),
-    field_schema JSONB NOT NULL DEFAULT '[]'::jsonb,
-    version      INTEGER DEFAULT 1,
-    is_active    BOOLEAN DEFAULT true,
-    created_at   TIMESTAMPTZ DEFAULT now()
+    template_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    model_id UUID NOT NULL REFERENCES ontology_model(model_id),
+    kind_id UUID NOT NULL REFERENCES entity_kind(kind_id),
+    template_code TEXT NOT NULL UNIQUE,
+    template_name TEXT NOT NULL,
+    description TEXT,
+    schema_definition JSONB NOT NULL DEFAULT '[]'::jsonb,
+    layout_definition JSONB,
+    is_active BOOLEAN DEFAULT true,
+    constraints_definition JSONB,
+    version_id BIGINT,
+    created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
 
-### field_schema
+### schema_definition
 
 JSONB-массив, описывающий доступные поля:
 
@@ -91,12 +104,13 @@ JSONB-массив, описывающий доступные поля:
 
 ```sql
 CREATE TABLE field_registry (
-    field_id    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    field_code  TEXT NOT NULL UNIQUE,
-    field_name  TEXT NOT NULL,
-    field_type  TEXT NOT NULL,
-    validation  JSONB,
-    created_at  TIMESTAMPTZ DEFAULT now()
+    field_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    field_code TEXT NOT NULL UNIQUE,
+    field_name TEXT NOT NULL,
+    field_type TEXT NOT NULL,
+    domain TEXT,
+    validation JSONB,
+    created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
 

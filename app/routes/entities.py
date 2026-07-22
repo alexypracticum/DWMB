@@ -1567,6 +1567,7 @@ async def upload_file(
                 "storage_backend": "s3",
                 "url": url,
                 "is_image": is_image,
+                "poster_url": url if is_image else None,
             }
             state_hash = hashlib.sha256(_json.dumps(state_data, sort_keys=True, default=str).encode()).hexdigest()
             ps = ProjectionState(

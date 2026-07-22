@@ -50,20 +50,16 @@ CREATE TABLE relation_type (
 );
 ```
 
-### Типы связей
+### Типы связей (71)
 
-| Код | Описание | Направление |
-|-----|----------|-------------|
-| performed_by | Исполнено | directed |
-| directed_by | Снял | directed |
-| written_by | Написал | directed |
-| composed_by | Композитор | directed |
-| part_of | Часть | directed |
-| related_to | Связано | bidirectional |
-| same_as | То же самое | bidirectional |
-| located_in | Находится в | directed |
-| born_in | Родился в | directed |
-| member_of | Член | directed |
+| Домен | Типы |
+|-------|------|
+| Кино | acted_in, directed_by, produced_by, written_by, genre_of, has_genre, award_won_by, nominated_for, has_nomination, played_by, plays, appears_in |
+| Музыка | performed_by, performed_in, composed_by, composer_of, covered_by, covers, has_remix, remix_of, has_sample, sampled_in |
+| Литература | author_of, wrote, narrated_by, narrator_of, published_by, publishes, adaptation_of, has_adaptation, based_on, has_theme, theme_of |
+| Связи | related_to, similar_to, part_of, has_part, member_of, has_member, located_in, location_of, contains, contained_in |
+| Временны́е | sequel_of, has_sequel, prequel_of, has_prequel, spin_off_of, has_spin_off, influenced_by, influences, developed_by, develops |
+| Прочие | born_in, birthplace_of, died_in, deathplace_of, founded, founder_of, distributed_by, distributes, features, references, referenced_by, alternative_title, has_alternative_title, won_award, asset_of, has_asset |
 
 ## Графовые операции
 

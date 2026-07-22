@@ -1,23 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Страницы - Админ{% endblock %}
+{% block title %}{{ request.state.t.admin_pages }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold" style="color: var(--color-text);">Управление страницами</h1>
-        <a href="/admin/pages/new" class="btn btn-primary px-4 py-2 rounded-lg transition text-sm">+ Создать</a>
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">{{ request.state.t.admin_pages_title }}</h1>
+        <a href="/admin/pages/new" class="btn btn-primary px-4 py-2 rounded-lg transition text-sm">+ {{ request.state.t.admin_create_page }}</a>
     </div>
 
     <div class="card rounded-xl shadow-sm" style="border: 1px solid var(--color-border);">
         <table class="w-full">
             <thead class="table-header" style="border-bottom: 1px solid var(--color-border);">
                 <tr>
-                    <th class="text-left py-3 px-4 text-sm font-medium" style="color: var(--color-text-secondary);">Название</th>
-                    <th class="text-left py-3 px-4 text-sm font-medium" style="color: var(--color-text-secondary);">Код</th>
-                    <th class="text-left py-3 px-4 text-sm font-medium" style="color: var(--color-text-secondary);">Шаблон</th>
-                    <th class="text-left py-3 px-4 text-sm font-medium" style="color: var(--color-text-secondary);">Статус</th>
-                    <th class="text-right py-3 px-4 text-sm font-medium" style="color: var(--color-text-secondary);">Действия</th>
+                    <th class="text-left py-3 px-4 text-sm font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.admin_page_title }}</th>
+                    <th class="text-left py-3 px-4 text-sm font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.admin_page_code }}</th>
+                    <th class="text-left py-3 px-4 text-sm font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.admin_page_template }}</th>
+                    <th class="text-left py-3 px-4 text-sm font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.admin_page_status }}</th>
+                    <th class="text-right py-3 px-4 text-sm font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.table_actions }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -32,17 +32,17 @@
                     </td>
                     <td class="py-3 px-4">
                         {% if page.is_published %}
-                        <span class="badge-success px-2 py-1 text-xs rounded-full">Опубликована</span>
+                        <span class="badge-success px-2 py-1 text-xs rounded-full">{{ request.state.t.admin_page_published }}</span>
                         {% elif page.status == "active" %}
-                        <span class="badge-success px-2 py-1 text-xs rounded-full">Активна</span>
+                        <span class="badge-success px-2 py-1 text-xs rounded-full">{{ request.state.t.admin_page_active }}</span>
                         {% elif page.status == "deleted" %}
-                        <span class="px-2 py-1 text-xs rounded-full" style="background: color-mix(in srgb, var(--color-error) 15%, transparent); color: var(--color-error);">Удалена</span>
+                        <span class="px-2 py-1 text-xs rounded-full" style="background: color-mix(in srgb, var(--color-error) 15%, transparent); color: var(--color-error);">{{ request.state.t.admin_page_deleted }}</span>
                         {% else %}
-                        <span class="px-2 py-1 text-xs rounded-full" style="background: color-mix(in srgb, var(--color-text-secondary) 15%, transparent); color: var(--color-text-secondary);">Черновик</span>
+                        <span class="px-2 py-1 text-xs rounded-full" style="background: color-mix(in srgb, var(--color-text-secondary) 15%, transparent); color: var(--color-text-secondary);">{{ request.state.t.admin_page_draft }}</span>
                         {% endif %}
                     </td>
                     <td class="py-3 px-4 text-right">
-                        <form action="/admin/pages/{{ page.page_id }}/delete" method="post" class="inline" onsubmit="return confirm('Удалить страницу?')">
+                        <form action="/admin/pages/{{ page.page_id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ request.state.t.admin_page_confirm_delete }}')">
                             <button type="submit" class="text-xs" style="color: var(--color-error);">{{ request.state.t.btn_delete }}</button>
                         </form>
                     </td>
@@ -50,7 +50,7 @@
                 {% endfor %}
                 {% if not pages %}
                 <tr>
-                    <td colspan="5" class="py-8 text-center text-sm" style="color: var(--color-text-secondary);">Нет страниц</td>
+                    <td colspan="5" class="py-8 text-center text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.admin_no_pages }}</td>
                 </tr>
                 {% endif %}
             </tbody>

@@ -48,9 +48,9 @@ CREATE TABLE entity_kind (
 CREATE TABLE ontology_model (
     model_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     model_code TEXT NOT NULL UNIQUE,
-    model_name TEXT NOT NULL,
-    description TEXT,
     domain TEXT,
+    description TEXT,
+    version_id BIGINT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -58,9 +58,14 @@ CREATE TABLE ontology_template (
     template_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     model_id UUID REFERENCES ontology_model(model_id),
     kind_id UUID REFERENCES entity_kind(kind_id),
-    field_schema JSONB NOT NULL DEFAULT '[]'::jsonb,
-    version INTEGER DEFAULT 1,
+    template_code TEXT NOT NULL UNIQUE,
+    template_name TEXT NOT NULL,
+    description TEXT,
+    schema_definition JSONB NOT NULL DEFAULT '[]'::jsonb,
+    layout_definition JSONB,
     is_active BOOLEAN DEFAULT true,
+    constraints_definition JSONB,
+    version_id BIGINT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -69,6 +74,7 @@ CREATE TABLE field_registry (
     field_code TEXT NOT NULL UNIQUE,
     field_name TEXT NOT NULL,
     field_type TEXT NOT NULL,
+    domain TEXT,
     validation JSONB,
     created_at TIMESTAMPTZ DEFAULT now()
 );

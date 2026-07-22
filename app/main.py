@@ -94,6 +94,45 @@ async def set_language(request: Request, lang: str = "ru", next: str = "/"):
     return response
 
 
+# ─── Media proxy (before routers to avoid /media/{asset_id} conflict) ──
+@app.get("/media/proxy")
+async def media_proxy(url: str = Query(...)):
+    """Proxy media files to avoid CORS issues."""
+    import httpx
+    import re
+    try:
+        # Check if it's a MinIO URL (contains /entities/)
+        match = re.search(r'/entities/([^/]+)/([^?]+)', url)
+        if match:
+            # MinIO file — use boto3 directly
+            from app.services.storage import storage_service
+            storage_key = f"entities/{match.group(1)}/{match.group(2)}"
+            data = storage_service.get_file(storage_key)
+            if not data:
+                return JSONResponse({"error": "File not found"}, status_code=404)
+            ext = match.group(2).split('.')[-1].lower()
+            mime_map = {"png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "gif": "image/gif", "webp": "image/webp", "svg": "image/svg+xml", "mp4": "video/mp4", "mp3": "audio/mpeg"}
+            content_type = mime_map.get(ext, "application/octet-stream")
+            return StreamingResponse(
+                iter([data]),
+                media_type=content_type,
+                headers={"Content-Disposition": f"inline; filename={match.group(2)}"},
+            )
+        else:
+            # External URL — proxy with httpx
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.get(url, follow_redirects=True)
+                content_type = resp.headers.get("content-type", "application/octet-stream")
+                return StreamingResponse(
+                    iter([resp.content]),
+                    media_type=content_type,
+                    headers={"Content-Disposition": f"inline; filename={url.split('/')[-1].split('?')[0]}"},
+                )
+    except Exception as e:
+        logger.error(f"Media proxy error: {e}")
+        return JSONResponse({"error": str(e)}, status_code=502)
+
+
 # ─── Core routers (always loaded) ─────────────────────────────
 from app.routes import auth, entities, search, admin, editor_api, profile, comments, export, feeds, page_management, stats
 app.include_router(auth.router)
@@ -107,25 +146,6 @@ app.include_router(export.router)
 app.include_router(feeds.router)
 app.include_router(page_management.router)
 app.include_router(stats.router)
-
-
-# ─── Media proxy ──────────────────────────────────────────────
-@app.get("/media/proxy")
-async def media_proxy(url: str = Query(...)):
-    """Proxy media files to avoid CORS issues."""
-    import httpx
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(url, follow_redirects=True)
-            content_type = resp.headers.get("content-type", "application/octet-stream")
-            return StreamingResponse(
-                iter([resp.content]),
-                media_type=content_type,
-                headers={"Content-Disposition": f"inline; filename={url.split('/')[-1]}"},
-            )
-    except Exception as e:
-        logger.error(f"Media proxy error: {e}")
-        return JSONResponse({"error": str(e)}, status_code=502)
 
 
 # ─── Health check ─────────────────────────────────────────────

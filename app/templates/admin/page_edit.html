@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Редактирование страницы - Админ{% endblock %}
+{% block title %}{{ request.state.t.admin_edit_page_title }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-3xl">
     <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">
-        {% if page %}Редактирование страницы{% else %}Новая страница{% endif %}
+        {% if page %}{{ request.state.t.admin_edit_page_title }}{% else %}{{ request.state.t.admin_new_page }}{% endif %}
     </h1>
 
     <form action="{% if page %}/admin/pages/{{ page.page_id }}/update{% else %}/admin/pages/create{% endif %}" method="post" class="space-y-4">
         <!-- Basic Info -->
         <div class="card rounded-xl p-6 shadow-sm space-y-4" style="border: 1px solid var(--color-border);">
-            <h2 class="text-lg font-semibold" style="color: var(--color-text);">Основная информация</h2>
+            <h2 class="text-lg font-semibold" style="color: var(--color-text);">{{ request.state.t.admin_basic_info }}</h2>
 
             <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
-                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Код</div>
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.admin_page_code }}</div>
                 <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
                 <div class="flex-1">
                     <input type="text" name="page_code" value="{{ page.page_code if page else '' }}" required pattern="[a-z0-9\-]+"
@@ -25,7 +25,7 @@
             </div>
 
             <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
-                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Название</div>
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.admin_page_title }}</div>
                 <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
                 <div class="flex-1">
                     <input type="text" name="title" value="{{ page.title if page else '' }}" required
@@ -35,12 +35,12 @@
             </div>
 
             <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
-                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Статус</div>
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.admin_page_status }}</div>
                 <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
                 <div class="flex-1">
                     <label class="flex items-center gap-2">
                         <input type="checkbox" name="is_published" value="true" {% if page and page.is_published %}checked{% endif %} class="rounded" style="border-color: var(--color-border);">
-                        <span class="text-sm" style="color: var(--color-text-secondary);">Опубликована</span>
+                        <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.admin_page_published }}</span>
                     </label>
                 </div>
             </div>
@@ -51,23 +51,23 @@
             <h2 class="text-lg font-semibold" style="color: var(--color-text);">SEO</h2>
 
             <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
-                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">META заголовок</div>
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.admin_page_meta_title }}</div>
                 <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
                 <div class="flex-1">
                     <input type="text" name="meta_title" value="{{ page.meta_title if page else '' }}"
                         class="form-input w-full px-3 py-2 rounded-lg outline-none text-sm"
-                        placeholder="Заголовок для поисковых систем"
+                        placeholder="Meta title for search engines"
                         style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 </div>
             </div>
 
             <div class="flex items-center py-3">
-                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">META описание</div>
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.admin_page_meta_desc }}</div>
                 <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
                 <div class="flex-1">
                     <textarea name="meta_description" rows="2"
                         class="form-textarea w-full px-3 py-2 rounded-lg outline-none text-sm"
-                        placeholder="Описание для поисковых систем"
+                        placeholder="Meta description for search engines"
                         style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">{{ page.meta_description if page else '' }}</textarea>
                 </div>
             </div>
@@ -75,11 +75,11 @@
 
         <!-- Content -->
         <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
-            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Содержимое (JSON)</h2>
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.admin_page_content }}</h2>
             <textarea name="content" rows="20"
                 class="form-textarea w-full px-3 py-2 rounded-lg font-mono text-sm outline-none"
                 style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">{% if page.content %}{{ page.content }}{% else %}{}{% endif %}</textarea>
-            <p class="text-xs mt-2" style="color: var(--color-text-secondary);">JSON формат с блоками контента</p>
+            <p class="text-xs mt-2" style="color: var(--color-text-secondary);">{{ request.state.t.admin_page_json_hint }}</p>
         </div>
 
         <div class="flex justify-end gap-3">

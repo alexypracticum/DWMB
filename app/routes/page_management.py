@@ -181,26 +181,64 @@ async def list_pages(
 ):
     """List all page entities."""
     kind = await _get_page_kind(db)
+    lang = getattr(request.state, "lang", "ru")
+
+    # Get language_id for current lang
+    lang_result = await db.execute(select(Language).where(Language.code == lang))
+    lang_obj = lang_result.scalar_one_or_none()
+    lang_id = lang_obj.language_id if lang_obj else None
+
+    # Get Russian language_id as fallback
+    ru_result = await db.execute(select(Language).where(Language.code == "ru"))
+    ru_lang = ru_result.scalar_one_or_none()
+    ru_lang_id = ru_lang.language_id if ru_lang else None
+
+    # Build COALESCE-like priority: current lang first, then ru, then any
+    from sqlalchemy import case
+    label_priority = case(
+        (EntityLabel.language_id == lang_id, 0),
+        (EntityLabel.language_id == ru_lang_id, 1),
+        else_=2,
+    )
+
+    # Subquery: for each entity, get the best label per priority
+    best_label_sq = (
+        select(
+            EntityLabel.entity_id,
+            EntityLabel.label,
+            EntityLabel.language_id,
+        )
+        .where(
+            EntityLabel.entity_id.in_(
+                select(Entity.entity_id).where(Entity.kind_id == kind.kind_id)
+            )
+        )
+        .order_by(
+            EntityLabel.entity_id,
+            label_priority,
+        )
+        .distinct(EntityLabel.entity_id)
+        .subquery()
+    )
 
     result = await db.execute(
-        select(Entity, EntityLabel)
-        .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
+        select(Entity, best_label_sq.c.label, best_label_sq.c.language_id)
+        .join(best_label_sq, best_label_sq.c.entity_id == Entity.entity_id)
         .where(
             Entity.kind_id == kind.kind_id,
             Entity.status.in_(["active", "deprecated"]),
-            EntityLabel.is_primary == True,
         )
         .order_by(Entity.created_at.desc())
     )
     rows = result.unique().all()
 
     pages = []
-    for entity, label in rows:
+    for entity, label_text, label_lang_id in rows:
         data = await _load_page_data(db, entity)
         pages.append({
             "page_id": entity.entity_id,
             "page_code": entity.entity_code,
-            "title": label.label or entity.entity_code,
+            "title": label_text or entity.entity_code,
             "template_name": data.get("template_name", "default"),
             "is_published": data.get("is_published", False),
             "status": entity.status,

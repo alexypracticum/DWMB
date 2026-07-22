@@ -26,6 +26,7 @@ status: stable
 | [[architecture/overview]] | Обзор архитектуры DWMB |
 | [[architecture/layers]] | 10 архитектурных слоёв БД |
 | [[architecture/data-model]] | Полная схема данных (28+ таблиц) |
+| [[architecture/entity-migration]] | План миграции таблиц в сущности |
 | [[architecture/plugin-system]] | Система плагинов (PluginBase) |
 
 ## База данных
@@ -108,6 +109,6 @@ status: stable
 
 ---
 
-**Всего страниц:** 41  
+**Всего страниц:** 42  
 **Обновлено:** 2026-07-22  
-**Проект:** DWMB v0.9.0
+**Проект:** DWMB v0.10.0
