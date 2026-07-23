@@ -178,7 +178,7 @@ class ThemeMiddleware(BaseHTTPMiddleware):
             try:
                 async with async_session() as session:
                     from app.services.ui_strings import get_all_ui_strings_dict
-                    request.state.t = await get_translation_dict(session, "ru")
+                    request.state.t = await get_all_ui_strings_dict(session, "ru")
             except Exception:
                 request.state.t = {}
 
