@@ -173,5 +173,14 @@ class ThemeMiddleware(BaseHTTPMiddleware):
                     except Exception:
                         request.state.t = {}
 
+        # Load translations for unauthenticated users without lang cookie
+        if not request.state.t:
+            try:
+                async with async_session() as session:
+                    from app.services.ui_translations import get_translation_dict
+                    request.state.t = await get_translation_dict(session, "ru")
+            except Exception:
+                request.state.t = {}
+
         response = await call_next(request)
         return response

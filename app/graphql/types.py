@@ -138,6 +138,7 @@ class GeoLocation:
     description: Optional[str]
     kind: Optional[EntityKind]
     label: Optional[str]
+    distance: Optional[float] = None
 
 
 @strawberry.type

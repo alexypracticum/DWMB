@@ -77,6 +77,7 @@ class GeoQuery:
                                 sort_order=kind.sort_order,
                             ) if kind else None,
                             label=label or entity.entity_code,
+                            distance=distance,
                         ))
             
             return nearby[:limit]
