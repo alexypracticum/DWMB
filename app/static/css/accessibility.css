@@ -3,17 +3,27 @@
 /* Skip navigation link */
 .skip-link {
     position: absolute;
-    top: -40px;
+    top: 0;
     left: 0;
     background: var(--color-primary);
     color: #fff;
     padding: 8px 16px;
-    z-index: 100;
-    transition: top 0.3s;
+    z-index: 9999;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .skip-link:focus {
-    top: 0;
+    clip: auto;
+    clip-path: none;
+    height: auto;
+    width: auto;
+    overflow: visible;
+    white-space: normal;
 }
 
 /* Focus styles */
