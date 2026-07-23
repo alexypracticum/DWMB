@@ -168,8 +168,10 @@ app.include_router(entities.router)
 app.include_router(search.router)
 from app.routes.admin import router as admin_router
 from app.routes.api_language import router as api_language_router
+from app.routes.websocket import router as websocket_router
 app.include_router(admin_router)
 app.include_router(api_language_router)
+app.include_router(websocket_router)
 app.include_router(editor_api.router)
 app.include_router(profile.router)
 app.include_router(comments.router)

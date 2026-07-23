@@ -482,6 +482,12 @@ async def entity_create(
     await log_entity_created(db, entity_id, version_id, caused_by=user.username)
 
     await db.commit()
+    # Notify WebSocket clients
+    await manager.notify_entity_updated({
+        "entity_id": entity_id,
+        "entity_code": entity.entity_code if hasattr(entity, 'entity_code') else None,
+    })
+    
     return RedirectResponse(url=f"/entity/{entity_id}", status_code=303)
 
 
@@ -763,6 +769,12 @@ async def entity_workflow(
     await log_state_transition(db, eid, None, version_id=entity.version_id, caused_by=user.username, old_state={"workflow_state": old_state}, new_state={"workflow_state": state})
 
     await db.commit()
+    # Notify WebSocket clients
+    await manager.notify_entity_updated({
+        "entity_id": entity_id,
+        "entity_code": entity.entity_code if hasattr(entity, 'entity_code') else None,
+    })
+    
     return RedirectResponse(url=f"/entity/{entity_id}", status_code=303)
 
 
@@ -1074,6 +1086,12 @@ async def entity_edit(
     if ent:
         ent.updated_at = datetime.now(timezone.utc)
 
+    # Notify WebSocket clients
+    await manager.notify_entity_updated({
+        "entity_id": entity_id,
+        "entity_code": entity.entity_code if hasattr(entity, 'entity_code') else None,
+    })
+    
     return RedirectResponse(url=f"/entity/{entity_id}", status_code=303)
 
 
@@ -1147,6 +1165,9 @@ async def entity_delete(
         # Log entity deletion
         from app.services.event_log import log_entity_deleted
         await log_entity_deleted(db, eid, version_id=entity.version_id, caused_by=user.username)
+    # Notify WebSocket clients
+    await manager.notify_entity_deleted(entity_id)
+    
     return RedirectResponse(url="/entities", status_code=303)
 
 

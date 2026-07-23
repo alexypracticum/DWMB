@@ -19,6 +19,49 @@
     <link rel="stylesheet" href="https://unpkg.com/@tiptap/extension-text-style@2.6.6/dist/styles.css">
     <script src="/static/js/upload.js"></script>
     <script src="/static/js/csrf.js"></script>
+    <script src="/static/js/websocket.js"></script>
+    <script>
+        // Initialize WebSocket connection
+        const ws = new DWMBWebSocket();
+        ws.connect();
+        
+        // Handle real-time notifications
+        ws.on('entity_created', (data) => {
+            console.log('Entity created:', data.data);
+            // Show notification
+            showToast('Сущность создана: ' + (data.data.entity_code || ''), 'success');
+        });
+        
+        ws.on('entity_updated', (data) => {
+            console.log('Entity updated:', data.data);
+            showToast('Сущность обновлена', 'info');
+        });
+        
+        ws.on('entity_deleted', (data) => {
+            console.log('Entity deleted:', data.data);
+            showToast('Сущность удалена', 'info');
+        });
+        
+        ws.on('comment_added', (data) => {
+            console.log('Comment added:', data.data);
+            showToast('Новый комментарий', 'info');
+        });
+        
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg text-sm z-50 transition-opacity';
+            toast.style.background = type === 'success' ? '#10b981' : '#3b82f6';
+            toast.style.color = '#fff';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
     <script>
         function toggleLangDropdown() {
             const menu = document.getElementById('langDropdownMenu');
