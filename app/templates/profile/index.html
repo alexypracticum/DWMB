@@ -103,6 +103,21 @@
     <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
         <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.label_themes }}</h2>
 
+        <!-- Dark mode toggle -->
+        <div class="flex items-center gap-3 mb-4 pb-4" style="border-bottom: 1px solid var(--color-border);">
+            <label class="relative inline-flex items-center cursor-pointer">
+                <form action="/profile/toggle-dark" method="post" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+                    <input type="checkbox" name="is_dark" value="true"
+                           {% if active_theme and active_theme.is_dark %}checked{% endif %}
+                           class="sr-only peer" onchange="this.closest('form').submit()">
+                    <div class="w-11 h-6 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"
+                         style="background: var(--color-border);"></div>
+                </form>
+            </label>
+            <span class="text-sm font-medium" style="color: var(--color-text);">{{ request.state.t.theme_dark_mode }}</span>
+        </div>
+
         <!-- Create new theme -->
         <form action="/profile/theme/create" method="post" class="flex gap-3 mb-4">
             <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
@@ -134,10 +149,12 @@
                         <button type="submit" class="text-xs hover-primary" style="color: var(--color-primary);">{{ request.state.t.admin_activate }}</button>
                     </form>
                     {% endif %}
+                    {% if not theme_item.is_system %}
                     <form action="/profile/theme/{{ theme_item.theme_id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ request.state.t.label_confirm_delete_theme }}')">
             <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                         <button type="submit" class="text-xs" style="color: var(--color-error);">{{ request.state.t.btn_delete }}</button>
                     </form>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}

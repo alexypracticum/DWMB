@@ -11,6 +11,14 @@
     <form action="/profile/theme-editor/{{ theme.theme_id }}/save" method="post" class="space-y-6">
             <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
 
+        <!-- Theme Name -->
+        <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.label_name }}</h2>
+            <input type="text" name="theme_name" value="{{ theme.theme_name }}" required
+                   class="form-input w-full px-3 py-2 rounded-lg text-sm"
+                   style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+        </div>
+
         <!-- Presets -->
         <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
             <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.theme_presets }}</h2>

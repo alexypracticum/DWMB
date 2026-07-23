@@ -138,6 +138,7 @@ async def theme_editor(
 async def save_theme(
     theme_id: str,
     request: Request,
+    theme_name: str = Form(None),
     primary: str = Form(...),
     secondary: str = Form(...),
     accent: str = Form(...),
@@ -166,6 +167,8 @@ async def save_theme(
         raise HTTPException(status_code=404)
 
     theme.is_dark = is_dark
+    if theme_name:
+        theme.theme_name = theme_name
     theme.colors = {
         "primary": primary, "secondary": secondary, "accent": accent,
         "background": background, "surface": surface, "text": text,

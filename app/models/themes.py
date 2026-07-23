@@ -15,6 +15,7 @@ class UserTheme(Base):
     theme_name = Column(String, nullable=False)
     is_dark = Column(Boolean, default=False)
     is_active = Column(Boolean, default=False)
+    is_system = Column(Boolean, default=False)
     colors = Column(JSONB, nullable=False, default={
         "primary": "#3b82f6",
         "secondary": "#6366f1",
