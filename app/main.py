@@ -159,6 +159,54 @@ async def media_proxy(url: str = Query(...)):
         return JSONResponse({"error": "Proxy error"}, status_code=502)
 
 
+# ─── Dark mode toggle (public — works for all users) ──────────
+@app.post("/toggle-dark")
+async def toggle_dark(request: Request):
+    """Toggle dark/light mode. Authenticated: saves to DB. Unauthenticated: saves to cookie."""
+    from sqlalchemy import select
+    from app.database import async_session
+    from app.models.themes import UserTheme
+    from app.services.auth import get_current_user
+    from jose import JWTError, jwt
+
+    token = request.cookies.get("access_token")
+    user = None
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            username = payload.get("sub")
+            if username:
+                async with async_session() as session:
+                    from app.models.users import UserAccount
+                    result = await session.execute(
+                        select(UserAccount).where(UserAccount.username == username)
+                    )
+                    user = result.scalar_one_or_none()
+        except JWTError:
+            pass
+
+    referer = request.headers.get("referer", "/")
+
+    if user and user.theme_id:
+        # Authenticated: toggle is_dark on active theme
+        async with async_session() as session:
+            result = await session.execute(
+                select(UserTheme).where(UserTheme.theme_id == user.theme_id)
+            )
+            theme = result.scalar_one_or_none()
+            if theme:
+                theme.is_dark = not theme.is_dark
+                await session.commit()
+        return RedirectResponse(url=referer, status_code=303)
+    else:
+        # Unauthenticated: toggle cookie
+        current = request.cookies.get("dark_mode", "0")
+        new_value = "0" if current == "1" else "1"
+        response = RedirectResponse(url=referer, status_code=303)
+        response.set_cookie("dark_mode", new_value, max_age=365 * 24 * 3600, httponly=False)
+        return response
+
+
 # ─── Core routers (always loaded) ─────────────────────────────
 from app.routes import auth, entities, search, editor_api, profile, comments, export, feeds
 from plugins import load_plugins

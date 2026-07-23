@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ request.state.lang or 'ru' }}" class="{% if request.state.theme and request.state.theme.is_dark %}dark{% endif %}">
+<html lang="{{ request.state.lang or 'ru' }}" class="{% if (request.state.theme and request.state.theme.is_dark) or (not request.state.theme and request.cookies.get('dark_mode') == '1') %}dark{% endif %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -234,16 +234,14 @@
             </div>
             <div class="flex items-center gap-3">
                 <!-- Dark mode toggle -->
-                {% if user %}
-                <form action="/profile/toggle-dark" method="post" class="inline">
+                <form action="/toggle-dark" method="post" class="inline">
                     <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                     <input type="checkbox" name="is_dark" value="true"
-                           {% if request.state.theme and request.state.theme.is_dark %}checked{% endif %}
+                           {% if (request.state.theme and request.state.theme.is_dark) or (not request.state.theme and request.cookies.get('dark_mode') == '1') %}checked{% endif %}
                            class="sr-only peer" onchange="this.closest('form').submit()">
                     <div class="w-9 h-5 rounded-full cursor-pointer peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"
                          style="background: var(--color-border);"></div>
                 </form>
-                {% endif %}
                 <!-- Language Switcher -->
                 <div class="relative" id="langDropdown">
                     <button onclick="toggleLangDropdown()" aria-label="Выбор языка" aria-expanded="false" class="px-2 py-1 text-sm rounded-md transition flex items-center gap-1" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">
