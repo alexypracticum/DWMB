@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Карта сущностей - DWMB{% endblock %}
+{% block title %}{{ request.state.t.map_title }} - DWMB{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -26,19 +26,19 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-6">
-    <h1 class="text-2xl font-bold mb-4" style="color: var(--color-text);">Карта сущностей</h1>
+    <h1 class="text-2xl font-bold mb-4" style="color: var(--color-text);">{{ request.state.t.map_title }}</h1>
     
     <div class="controls">
-        <input type="number" id="lat" placeholder="Широта" value="55.7558" step="0.01">
-        <input type="number" id="lng" placeholder="Долгота" value="37.6173" step="0.01">
-        <input type="number" id="radius" placeholder="Радиус (км)" value="100" min="1" max="10000">
+        <input type="number" id="lat" placeholder="{{ request.state.t.map_lat }}" value="55.7558" step="0.01">
+        <input type="number" id="lng" placeholder="{{ request.state.t.map_lng }}" value="37.6173" step="0.01">
+        <input type="number" id="radius" placeholder="{{ request.state.t.map_radius }}" value="100" min="1" max="10000">
         <button onclick="searchNearby()" class="px-4 py-2 rounded-lg text-sm" 
                 style="background: var(--color-primary); color: #fff;">
-            Найти поблизости
+            {{ request.state.t.map_search_nearby }}
         </button>
         <button onclick="showAll()" class="px-4 py-2 rounded-lg text-sm"
                 style="background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text);">
-            Показать все
+            {{ request.state.t.map_show_all }}
         </button>
         <span id="count" class="text-sm" style="color: var(--color-text-secondary);"></span>
     </div>
@@ -46,12 +46,14 @@
     <div id="map"></div>
     
     <div class="mt-4 text-sm" style="color: var(--color-text-secondary);">
-        <p>Используйте поиск по координатам или кнопку "Показать все" для отображения сущностей на карте.</p>
-        <p>Нажмите на маркер для просмотра информации о сущности.</p>
+        <p>{{ request.state.t.map_help_1 }}</p>
+        <p>{{ request.state.t.map_help_2 }}</p>
     </div>
 </div>
 
 <script>
+    const t = {{ request.state.t | tojson }};
+    
     // Initialize map
     const map = L.map('map').setView([55.7558, 37.6173], 10);
     
@@ -116,7 +118,7 @@
         markersLayer.clearLayers();
         markers = [];
         
-        document.getElementById('count').textContent = `Найдено: ${entities.length}`;
+        document.getElementById('count').textContent = `${t.map_found} ${entities.length}`;
         
         entities.forEach(entity => {
             const marker = L.marker([entity.latitude, entity.longitude])
@@ -127,8 +129,8 @@
                         <p style="margin-top: 8px; font-size: 12px;">
                             ${entity.label || entity.entityCode}
                         </p>
-                        ${entity.distance ? `<p style="font-size: 11px; color: #666;">Расстояние: ${(entity.distance/1000).toFixed(1)} км</p>` : ''}
-                        <a href="/entity/${entity.entityId}" style="color: var(--color-primary); font-size: 12px;">Открыть →</a>
+                        ${entity.distance ? `<p style="font-size: 11px; color: #666;">${t.map_distance} ${(entity.distance/1000).toFixed(1)} ${t.map_km}</p>` : ''}
+                        <a href="/entity/${entity.entityId}" style="color: var(--color-primary); font-size: 12px;">${t.map_open}</a>
                     </div>
                 `);
             
