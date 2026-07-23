@@ -1,3 +1,25 @@
+## [0.17.0] — 2026-07-23
+
+### Полная локализация и i18n
+
+- **Версия**: обновлена до 0.17.0
+- **RU_LABELS/EN_LABELS удалены**: ~50 хардкоженных строк each убраны из `helpers.py`, `get_label()` теперь использует translation cache
+- **field_schema i18n**: русские titles в `entity_kind.field_schema.properties` и `ontology_template.schema_definition.properties` заменены на `field_{key}` ключи (13 типов сущностей, 27 шаблонов)
+- **Шаблоны переведены**: edit.html + layout_fields.html (109 ключей × 7 языков)
+- **/map страница переведена**: 12 ключей × 7 языков
+- **Редактор тем переведён**: 28 ключей × 7 языков
+- **Темы пресетов мультиязычные**: route резолвит имена из `request.state.t`
+- **Dark mode**: toggle доступен для всех (auth + anon через cookie)
+- **0 hardcoded Russian** строк в шаблонах (кроме entity data и language names)
+
+### Коммиты
+
+- `ad83ecd` — RU_LABELS/EN_LABELS удалены, версия 0.17.0
+- `a1c9098` — field_schema titles заменены на i18n keys
+- `172c22c` — edit.html + layout_fields.html переведены
+
+---
+
 ## [0.16.0] — 2026-07-23
 
 ### Рефакторинг архитектуры

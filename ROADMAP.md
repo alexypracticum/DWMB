@@ -1,39 +1,20 @@
 # Roadmap
 
-## v0.17.0 — Язык исправлен, план на следующий этап (текущий)
+## v0.17.0 — Полная локализация и i18n (выполнено)
 
-### Выполнено в v0.16.0 — Рефакторинг архитектуры
+### Выполнено
 
-- [x] UI strings: миграция из сущностей в dedicated таблицы `meta.ui_string` + `meta.ui_string_translation` (663 ключа x 7 языков = 4639 переводов)
-- [x] Service Layer: `entity_service.py`, `kind_service.py`, `relation_service.py`
-- [x] API Versioning: префикс `/api/v1/` (entities, kinds, relations, search)
-- [x] Type hints: для services + API v1
-- [x] Accessibility: WCAG AA (skip link, ARIA labels, alt texts, focus styles, reduced motion)
-- [x] Language switching: исправлен `_translations_cache_ttl` (1 строка, критический баг)
-- [x] 169 тестов
-
-### Что осталось (v0.17.0)
-
-**Приоритет A — Доделать существующее:**
-- [ ] Версия в main.py: обновить "0.8.0" → "0.17.0"
-- [ ] RU_LABELS в `app/services/layout/helpers.py` — ~50 хардкоженных русских строк для info_table/image_data_row блоков
-- [ ] wiki/development/roadmap.md — обновить статус (сейчас v0.9.0)
-- [ ] wiki/development/improvements.md — обновить (Приоритет 1 уже выполнен)
-- [ ] Тесты: убедиться что 169 тестов проходят в Docker
-
-**Приоритет B — Визуализация:**
-- [ ] D3.js/Cytoscape.js граф связей на странице сущности
-- [ ] Фильтрация по типам связей
-
-**Приоритет C — Внешние API:**
-- [ ] IMDB через OMDb API (заготовки созданы)
-- [ ] Wikipedia REST API (заготовки созданы)
-- [ ] MusicBrainz API (заготовки созданы)
-
-**Приоритет D — Промышленная:**
-- [ ] CI/CD (GitHub Actions)
-- [ ] Мониторинг (Prometheus/Grafana)
-- [ ] GraphQL subscriptions
+- [x] Версия в main.py: обновлена до "0.17.0"
+- [x] RU_LABELS/EN_LABELS удалены из helpers.py (~50 строк each)
+- [x] `get_label()` теперь использует translation cache вместо hardcoded dicts
+- [x] field_schema titles заменены на i18n keys (13 типов сущностей, 27 шаблонов)
+- [x] edit.html + layout_fields.html переведены (109 ключей × 7 языков)
+- [x] /map страница переведена (12 ключей × 7 языков)
+- [x] Редактор тем переведён (28 ключей × 7 языков)
+- [x] Темы пресетов мультиязычные (route резолвит имена из request.state.t)
+- [x] Dark mode toggle доступен для всех (auth + anon)
+- [x] 0 hardcoded Russian строк в шаблонах (кроме entity data и language names)
+- [x] 3 коммита за сессию: `ad83ecd`, `a1c9098`, `172c22c`
 
 ---
 
@@ -125,10 +106,19 @@
 
 ---
 
-## v1.0.0 — Промышленная версия (план)
+## Следующий этап — Приоритет B: Визуализация
 
-- [ ] D3.js/Cytoscape.js граф связей
-- [ ] GraphQL subscriptions
+- [ ] D3.js/Cytoscape.js граф связей на странице сущности
+- [ ] Интерактивное исследование графа с фильтрацией по типам связей
+
+## Приоритет C: Внешние API
+
+- [ ] IMDB через OMDb API (заготовки созданы)
+- [ ] Wikipedia REST API (заготовки созданы)
+- [ ] MusicBrainz API (заготовки созданы)
+
+## Приоритет D: Промышленная
+
 - [ ] CI/CD (GitHub Actions)
 - [ ] Мониторинг (Prometheus/Grafana)
-- [ ] Внешние API (IMDB, Wikipedia, MusicBrainz)
+- [ ] GraphQL subscriptions
