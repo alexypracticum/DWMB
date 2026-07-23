@@ -688,7 +688,7 @@
                 <div class="p-3 border border-gray-200 rounded-lg mb-2 hover:border-blue-300 hover:bg-blue-50 transition cursor-pointer"
                      onclick="selectTmdbItem(${JSON.stringify(item).replace(/"/g, '&quot;')})">
                     <div class="flex gap-3">
-                        ${item.poster ? `<img src="${item.poster}" class="w-12 h-18 object-cover rounded" onerror="this.style.display='none'">` : ''}
+                        ${item.poster ? `<img src="${item.poster}" class="w-12 h-18 object-cover rounded" alt="" onerror="this.style.display='none'">` : ''}
                         <div class="flex-1 min-w-0">
                             <div class="font-medium text-gray-800 text-sm">${item.title || item.name}</div>
                             <div class="text-xs text-gray-500 mt-0.5">

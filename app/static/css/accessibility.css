@@ -1,0 +1,127 @@
+/* Accessibility improvements for DWMB */
+
+/* Skip navigation link */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--color-primary);
+    color: #fff;
+    padding: 8px 16px;
+    z-index: 100;
+    transition: top 0.3s;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Focus styles */
+*:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Remove default outline for mouse users */
+*:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --color-text: #000;
+        --color-text-secondary: #333;
+        --color-border: #000;
+    }
+    
+    a, button {
+        text-decoration: underline;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Screen reader only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus indicator for interactive elements */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Ensure sufficient contrast for text */
+.text-primary {
+    color: var(--color-text);
+}
+
+.text-secondary {
+    color: var(--color-text-secondary);
+    opacity: 0.8; /* Ensure minimum contrast ratio */
+}
+
+/* Keyboard navigation for dropdown menus */
+.dropdown-menu {
+    position: absolute;
+    z-index: 50;
+}
+
+.dropdown-menu:focus-within {
+    display: block;
+}
+
+/* Ensure buttons are large enough for touch targets */
+button, a {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Proper heading hierarchy */
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.125rem; }
+
+/* Form labels */
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+/* Error messages */
+.error-message {
+    color: #dc2626;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Success messages */
+.success-message {
+    color: #16a34a;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
