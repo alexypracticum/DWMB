@@ -16,6 +16,7 @@ from app.services.auth import require_admin
 from app.services.auth import get_password_hash
 from app.services.rbac import require_permission
 from app.services.language_service import get_language_id, get_kind_label, get_lang
+from app.services.layout import get_label
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -56,7 +57,7 @@ def _sync_layout_fields_from_schema(layout_blocks, schema_json):
                 if key in props and key not in SKIP_KEYS:
                     prop = props[key]
                     if isinstance(prop, dict):
-                        new_fields.append({"key": key, "label": prop.get("title", key), "type": prop.get("type", "string")})
+                        new_fields.append({"key": key, "label": get_label(key), "type": prop.get("type", "string")})
                     elif isinstance(prop, str):
                         new_fields.append({"key": key, "label": key.replace("_", " ").title(), "type": prop})
             block["config"]["fields"] = new_fields

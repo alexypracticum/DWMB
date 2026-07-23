@@ -12,7 +12,7 @@ from app.models.projections import EntityProjection, ProjectionState, OntologyMo
 from app.models.relations import SemanticRelation, RelationType
 from app.models.users import UserAccount
 from app.services.auth import get_current_user, require_auth
-from app.services.layout import render_layout, get_state_field, get_localized_value
+from app.services.layout import render_layout, get_state_field, get_localized_value, get_label
 from app.services.language_service import get_language_id, get_kind_label, get_kind_labels_batch, get_entity_label, entity_label_filter, lang_priority_case, get_lang_ids, get_lang
 
 templates = Jinja2Templates(directory="app/templates")
@@ -248,13 +248,14 @@ async def entity_create_page(
                         if tmpl.schema_definition and isinstance(tmpl.schema_definition, dict):
                             props = tmpl.schema_definition.get("properties", {})
                             required = tmpl.schema_definition.get("required", [])
+                            t = getattr(request.state, "t", {})
                             for key, prop in props.items():
                                 if key not in seen_keys:
                                     seen_keys.add(key)
                                     if isinstance(prop, dict):
                                         all_schema_fields.append({
                                             "key": key,
-                                            "label": prop.get("title", key),
+                                            "label": get_label(key, lang, t),
                                             "type": prop.get("type", "string"),
                                             "description": prop.get("description", ""),
                                             "required": key in required,
@@ -594,8 +595,8 @@ async def entity_detail(request: Request, entity_id: str, db: AsyncSession = Dep
                         continue
                     if isinstance(prop, dict):
                         t = getattr(request.state, "t", {})
-                        trans_key = f"field_{key}"
-                        label = t.get(trans_key, prop.get("title", key))
+                        lang = getattr(request.state, "lang", "ru")
+                        label = get_label(key, lang, t)
                         schema_fields.append({
                             "key": key,
                             "label": label,
@@ -829,13 +830,15 @@ async def entity_edit_page(request: Request, entity_id: str, db: AsyncSession = 
             if tmpl and tmpl.schema_definition and isinstance(tmpl.schema_definition, dict):
                 props = tmpl.schema_definition.get("properties", {})
                 required = tmpl.schema_definition.get("required", [])
+                t = getattr(request.state, "t", {})
+                lang = getattr(request.state, "lang", "ru")
                 for key, prop in props.items():
                     if key not in seen_keys:
                         seen_keys.add(key)
                         if isinstance(prop, dict):
                             all_schema_fields.append({
                                 "key": key,
-                                "label": prop.get("title", key),
+                                "label": get_label(key, lang, t),
                                 "type": prop.get("type", "string"),
                                 "description": prop.get("description", ""),
                                 "required": key in required,
