@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Редактор темы - DWMB{% endblock %}
+{% block title %}{{ request.state.t.theme_editor_title }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-4xl">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold" style="color: var(--color-text);">Редактор темы: {{ theme.theme_name }}</h1>
-        <a href="/profile/" class="btn btn-outline px-4 py-2 rounded-lg transition text-sm">Назад</a>
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">{{ request.state.t.theme_editor_title }}: {{ theme.theme_name }}</h1>
+        <a href="/profile/" class="btn btn-outline px-4 py-2 rounded-lg transition text-sm">{{ request.state.t.theme_back }}</a>
     </div>
 
     <form action="/profile/theme-editor/{{ theme.theme_id }}/save" method="post" class="space-y-6">
@@ -13,7 +13,7 @@
 
         <!-- Presets -->
         <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
-            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Готовые схемы</h2>
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.theme_presets }}</h2>
             <div class="flex flex-wrap gap-3">
                 {% for key, preset in presets.items() %}
                 <form action="/profile/theme-editor/{{ theme.theme_id }}/apply-preset" method="post" class="inline">
@@ -39,25 +39,25 @@
                     <div class="w-11 h-6 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"
                          style="background: var(--color-border);"></div>
                 </label>
-                <span class="text-sm font-medium" style="color: var(--color-text);">Тёмная тема</span>
+                <span class="text-sm font-medium" style="color: var(--color-text);">{{ request.state.t.theme_dark_mode }}</span>
             </div>
         </div>
 
         <!-- Color Pickers -->
         <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
-            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Цвета</h2>
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.theme_colors }}</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {% set color_fields = [
-                    ("primary", "Основной", "primary"),
-                    ("secondary", "Вторичный", "secondary"),
-                    ("accent", "Акцент", "accent"),
-                    ("background", "Фон", "background"),
-                    ("surface", "Поверхность", "surface"),
-                    ("text", "Текст", "text"),
-                    ("text_secondary", "Вторичный текст", "text_secondary"),
-                    ("border", "Граница", "border"),
-                    ("error", "Ошибка", "error"),
-                    ("success", "Успех", "success"),
+                    ("primary", request.state.t.theme_color_primary, "primary"),
+                    ("secondary", request.state.t.theme_color_secondary, "secondary"),
+                    ("accent", request.state.t.theme_color_accent, "accent"),
+                    ("background", request.state.t.theme_color_background, "background"),
+                    ("surface", request.state.t.theme_color_surface, "surface"),
+                    ("text", request.state.t.theme_color_text, "text"),
+                    ("text_secondary", request.state.t.theme_color_text_secondary, "text_secondary"),
+                    ("border", request.state.t.theme_color_border, "border"),
+                    ("error", request.state.t.theme_color_error, "error"),
+                    ("success", request.state.t.theme_color_success, "success"),
                 ] %}
                 {% for key, label, var_name in color_fields %}
                 <div class="flex items-center gap-3">
@@ -78,34 +78,34 @@
 
         <!-- Fonts -->
         <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
-            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Шрифты</h2>
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.theme_fonts }}</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="flex items-center gap-3">
-                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">Заголовки</label>
+                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.theme_font_heading }}</label>
                     <input type="text" name="font_heading" value="{{ theme.fonts['heading'] if theme.fonts else 'Inter, sans-serif' }}"
                            class="form-input flex-1 px-3 py-2 rounded-lg text-sm"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 </div>
                 <div class="flex items-center gap-3">
-                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">Основной</label>
+                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.theme_font_body }}</label>
                     <input type="text" name="font_body" value="{{ theme.fonts['body'] if theme.fonts else 'Inter, sans-serif' }}"
                            class="form-input flex-1 px-3 py-2 rounded-lg text-sm"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 </div>
                 <div class="flex items-center gap-3">
-                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">Моноширинный</label>
+                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.theme_font_mono }}</label>
                     <input type="text" name="font_mono" value="{{ theme.fonts['mono'] if theme.fonts else 'JetBrains Mono, monospace' }}"
                            class="form-input flex-1 px-3 py-2 rounded-lg text-sm"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 </div>
                 <div class="flex items-center gap-3">
-                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">Размер заголовков</label>
+                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.theme_font_heading_size }}</label>
                     <input type="text" name="heading_size" value="{{ theme.fonts['heading_size'] if theme.fonts else '1.5rem' }}"
                            class="form-input flex-1 px-3 py-2 rounded-lg text-sm"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
                 </div>
                 <div class="flex items-center gap-3">
-                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">Размер текста</label>
+                    <label class="w-40 text-sm font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.theme_font_body_size }}</label>
                     <input type="text" name="body_size" value="{{ theme.fonts['body_size'] if theme.fonts else '0.875rem' }}"
                            class="form-input flex-1 px-3 py-2 rounded-lg text-sm"
                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
@@ -115,15 +115,15 @@
 
         <!-- Preview -->
         <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
-            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">Предпросмотр</h2>
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.theme_preview }}</h2>
             <div id="preview-box" class="rounded-lg p-6 space-y-4" style="border: 1px solid var(--color-border);">
-                <h3 class="text-xl font-bold" id="preview-heading">Заголовок</h3>
-                <p id="preview-text">Это пример текста с основным шрифтом. Здесь показаны основные элементы интерфейса.</p>
+                <h3 class="text-xl font-bold" id="preview-heading">{{ request.state.t.theme_preview_heading }}</h3>
+                <p id="preview-text">{{ request.state.t.theme_preview_text }}</p>
                 <div class="flex gap-2">
-                    <button type="button" class="btn btn-primary px-4 py-2 rounded-lg text-sm">Основная кнопка</button>
-                    <button type="button" class="btn btn-outline px-4 py-2 rounded-lg text-sm">Контурная</button>
-                    <button type="button" class="badge-success px-3 py-1 rounded-full text-xs">Успех</button>
-                    <button type="button" class="badge-error px-3 py-1 rounded-full text-xs">Ошибка</button>
+                    <button type="button" class="btn btn-primary px-4 py-2 rounded-lg text-sm">{{ request.state.t.theme_preview_btn_primary }}</button>
+                    <button type="button" class="btn btn-outline px-4 py-2 rounded-lg text-sm">{{ request.state.t.theme_preview_btn_outline }}</button>
+                    <button type="button" class="badge-success px-3 py-1 rounded-full text-xs">{{ request.state.t.theme_preview_success }}</button>
+                    <button type="button" class="badge-error px-3 py-1 rounded-full text-xs">{{ request.state.t.theme_preview_error }}</button>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="badge-primary px-2 py-1 rounded-full text-xs">Primary</span>
@@ -133,8 +133,8 @@
         </div>
 
         <div class="flex justify-end gap-3">
-            <a href="/profile/" class="btn btn-outline px-6 py-2 rounded-lg transition">Отмена</a>
-            <button type="submit" class="btn btn-primary px-6 py-2 rounded-lg transition">Сохранить</button>
+            <a href="/profile/" class="btn btn-outline px-6 py-2 rounded-lg transition">{{ request.state.t.btn_cancel }}</a>
+            <button type="submit" class="btn btn-primary px-6 py-2 rounded-lg transition">{{ request.state.t.btn_save }}</button>
         </div>
     </form>
 </div>
