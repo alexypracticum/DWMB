@@ -239,7 +239,7 @@
                     <input type="checkbox" name="is_dark" value="true"
                            {% if (request.state.theme and request.state.theme.is_dark) or (not request.state.theme and request.cookies.get('dark_mode') == '1') %}checked{% endif %}
                            class="sr-only peer" onchange="this.closest('form').submit()">
-                    <div class="w-9 h-5 rounded-full cursor-pointer peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"
+                    <div class="relative inline-flex shrink-0 w-9 h-5 rounded-full cursor-pointer peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"
                          style="background: var(--color-border);"></div>
                 </form>
                 <!-- Language Switcher -->
