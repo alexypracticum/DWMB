@@ -29,7 +29,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     """
     
     SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
-    EXEMPT_PATHS = {"/health", "/api/ai/search", "/api/ai/similar", "/api/editor/search", "/graphql", "/graphql/", "/api/set-language"}
+    EXEMPT_PATHS = {"/health", "/api/ai/search", "/api/ai/similar", "/api/editor/search", "/graphql", "/graphql/", "/api/set-language", "/auth/login", "/auth/register"}
     
     async def dispatch(self, request: Request, call_next):
         # Get or create CSRF token

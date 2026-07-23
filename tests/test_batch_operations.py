@@ -1,6 +1,11 @@
 """Tests for batch operations (get_kind_labels_batch)."""
+import os
 import pytest
 from uuid import uuid4
+
+# Set test database URL before any imports
+os.environ["TEST_DATABASE_URL"] = "postgresql+asyncpg://dwmb:dwmb_secret_2026@localhost:5432/dwmb"
+
 from app.services.language_service import get_kind_labels_batch
 
 

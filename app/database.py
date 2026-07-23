@@ -3,7 +3,11 @@ from sqlalchemy.orm import DeclarativeBase
 from app.config import get_settings
 
 settings = get_settings()
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
+import os
+# Allow override for testing
+test_db_url = os.getenv("TEST_DATABASE_URL")
+db_url = test_db_url if test_db_url else settings.DATABASE_URL
+engine = create_async_engine(db_url, echo=False)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 

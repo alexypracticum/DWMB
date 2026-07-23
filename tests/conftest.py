@@ -2,20 +2,32 @@
 Shared test fixtures for DWMB project.
 Uses the app's own async engine against the real PostgreSQL in Docker.
 """
+import os
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
-from app.database import get_db, async_session
+# Set test database URL BEFORE any app imports
+os.environ["TEST_DATABASE_URL"] = "postgresql+asyncpg://dwmb:dwmb_secret_2026@localhost:5432/dwmb"
+
+from app.config import get_settings
+from app.database import get_db
 from app.main import app
 from app.services.auth import create_access_token
+
+settings = get_settings()
+
+# Create test engine
+test_db_url = os.getenv("TEST_DATABASE_URL", settings.DATABASE_URL)
+test_engine = create_async_engine(test_db_url, echo=False)
+TestSessionLocal = async_sessionmaker(bind=test_engine, class_=AsyncSession, expire_on_commit=False)
 
 
 @pytest_asyncio.fixture
 async def db_session():
-    """Real DB session from the app's engine, rolled back after each test."""
-    async with async_session() as session:
+    """Real DB session from test engine, rolled back after each test."""
+    async with TestSessionLocal() as session:
         yield session
         await session.rollback()
 
