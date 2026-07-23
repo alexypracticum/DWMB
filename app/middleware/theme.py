@@ -31,6 +31,7 @@ _lang_cache: dict[str, str] = {}
 
 # Cache for translations (lang -> dict)
 _translations_cache: dict[str, dict] = {}
+_translations_cache_ttl = 300  # 5 minutes
 
 
 def invalidate_translations_cache(lang: str = None):
