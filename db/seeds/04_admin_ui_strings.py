@@ -46,6 +46,7 @@ TRANSLATIONS = {
     "section_labels": {"ru": "Метки", "en": "Labels"},
     "label_primary_badge": {"ru": "основной", "en": "primary"},
     "section_relations": {"ru": "Связи", "en": "Relations"},
+    "section_graph": {"ru": "Граф связей", "en": "Relation Graph"},
     "section_outgoing": {"ru": "Исходящие связи", "en": "Outgoing Relations"},
     "section_incoming": {"ru": "Входящие связи", "en": "Incoming Relations"},
     "section_meta": {"ru": "Мета-информация", "en": "Meta Information"},

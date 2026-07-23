@@ -30,3 +30,20 @@ def test_api_v1_search_exists():
     """Test that API v1 search module exists."""
     from app.api.v1.search import router
     assert router is not None
+
+
+def test_api_v1_relations_graph_exists():
+    """Test that graph endpoint function exists."""
+    from app.api.v1.relations import get_entity_graph
+    assert get_entity_graph is not None
+
+
+def test_api_v1_relations_graph_signature():
+    """Test that graph endpoint has correct parameters."""
+    import inspect
+    from app.api.v1.relations import get_entity_graph
+    sig = inspect.signature(get_entity_graph)
+    params = list(sig.parameters.keys())
+    assert 'entity_id' in params
+    assert 'depth' in params
+    assert 'limit' in params

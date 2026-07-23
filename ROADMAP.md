@@ -1,8 +1,8 @@
 # Roadmap
 
-## v0.17.0 — Полная локализация и i18n (выполнено)
+## v0.17.0 — Локализация, граф связей, OMDb (выполнено)
 
-### Выполнено
+### Локализация и i18n
 
 - [x] Версия в main.py: обновлена до "0.17.0"
 - [x] RU_LABELS/EN_LABELS удалены из helpers.py (~50 строк each)
@@ -14,7 +14,27 @@
 - [x] Темы пресетов мультиязычные (route резолвит имена из request.state.t)
 - [x] Dark mode toggle доступен для всех (auth + anon)
 - [x] 0 hardcoded Russian строк в шаблонах (кроме entity data и language names)
-- [x] 3 коммита за сессию: `ad83ecd`, `a1c9098`, `172c22c`
+
+### Граф связей (Приоритет B)
+
+- [x] D3.js force-directed граф на странице сущности
+- [x] API endpoint `GET /api/v1/relations/graph/{entity_id}`
+- [x] Интерактивность: zoom/pan, drag, hover подсветка, клик → переход
+- [x] Фильтрация по типам связей с цветовой привязкой к kind
+- [x] AJAX загрузка графа (асинхронно)
+
+### OMDb / IMDB (Приоритет C)
+
+- [x] `OMDB_API_KEY` добавлен в config.py и .env.example
+- [x] `search_imdb()` и `get_imdb_details()` — исправлены на OMDB_API_KEY
+- [x] `import_imdb_movie()` — импорт фильма как сущность с данными
+- [x] REST эндпоинты: status, search, movie, import
+- [x] UI модалка поиска/импорта на странице создания сущности
+
+### Исправления
+
+- [x] CSRF middleware: проверка form body (url-encoded + multipart)
+- [x] Импорт `manager` в crud.py (WebSocket notifications)
 
 ---
 
@@ -106,18 +126,7 @@
 
 ---
 
-## Следующий этап — Приоритет B: Визуализация
-
-- [ ] D3.js/Cytoscape.js граф связей на странице сущности
-- [ ] Интерактивное исследование графа с фильтрацией по типам связей
-
-## Приоритет C: Внешние API
-
-- [ ] IMDB через OMDb API (заготовки созданы)
-- [ ] Wikipedia REST API (заготовки созданы)
-- [ ] MusicBrainz API (заготовки созданы)
-
-## Приоритет D: Промышленная
+## Следующий этап — Приоритет D: Промышленная
 
 - [ ] CI/CD (GitHub Actions)
 - [ ] Мониторинг (Prometheus/Grafana)

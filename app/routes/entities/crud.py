@@ -14,6 +14,7 @@ from app.models.users import UserAccount
 from app.services.auth import get_current_user, require_auth
 from app.services.layout import render_layout, get_state_field, get_localized_value, get_label
 from app.services.language_service import get_language_id, get_kind_label, get_kind_labels_batch, get_entity_label, entity_label_filter, lang_priority_case, get_lang_ids, get_lang
+from app.services.websocket import manager
 
 templates = Jinja2Templates(directory="app/templates")
 

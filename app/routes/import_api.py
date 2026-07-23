@@ -491,3 +491,62 @@ async def tmdb_import_credits(
 
     logger.info("TMDB import completed for entity %s: %s", entity_id, msg)
     return {"imported": result, "message": msg}
+
+
+# ─── OMDb (IMDB) ─────────────────────────────────────────────
+
+@router.get("/omdb/status", summary="Проверка настройки OMDb API")
+async def omdb_status(user: UserAccount = Depends(require_auth)):
+    """Check if OMDb API is configured."""
+    from app.config import get_settings
+    configured = bool(get_settings().OMDB_API_KEY)
+    return {
+        "configured": configured,
+        "message": "OMDb API настроен" if configured else "OMDb API ключ не задан (OMDB_API_KEY в .env)"
+    }
+
+
+@router.get("/omdb/search", summary="Поиск фильмов в OMDb (IMDB)")
+async def omdb_search(
+    q: str = Query(..., min_length=1),
+    user: UserAccount = Depends(require_auth),
+):
+    """Search movies via OMDb API (IMDB data)."""
+    from app.services.external_apis import search_imdb
+    results = await search_imdb(q)
+    return {"results": results, "query": q}
+
+
+@router.get("/omdb/movie/{imdb_id}", summary="Детали фильма из OMDb")
+async def omdb_get_movie(
+    imdb_id: str,
+    user: UserAccount = Depends(require_auth),
+):
+    """Get detailed movie info from OMDb by IMDB ID (e.g. tt1375666)."""
+    from app.services.external_apis import get_imdb_details
+    movie = await get_imdb_details(imdb_id)
+    if not movie:
+        raise HTTPException(404, "Фильм не найден в OMDb или API ключ не настроен")
+    return movie
+
+
+@router.post("/omdb/import/{imdb_id}", summary="Импорт фильма из OMDb")
+async def omdb_import_movie(
+    imdb_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_auth),
+):
+    """Import a movie from OMDb as an entity."""
+    from app.services.external_apis import get_imdb_details, import_imdb_movie
+
+    movie = await get_imdb_details(imdb_id)
+    if not movie:
+        raise HTTPException(404, "Фильм не найден в OMDb или API ключ не настроен")
+
+    result = await import_imdb_movie(db, movie, user.user_id)
+    await db.commit()
+
+    if result["status"] == "exists":
+        return {"status": "exists", "message": result["message"], "entity_code": result["entity_code"]}
+
+    return {"status": "created", "message": f"Фильм '{movie['title']}' импортирован", "entity_id": result["entity_id"], "entity_code": result["entity_code"]}

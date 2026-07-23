@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # TMDB (The Movie Database)
     TMDB_API_KEY: str = ""
 
+    # OMDb (Open Movie Database) — https://www.omdbapi.com/apikey.aspx
+    OMDB_API_KEY: str = ""
+
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:8000", "http://127.0.0.1:8000"]
 

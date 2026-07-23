@@ -1,3 +1,27 @@
+## [0.17.0] — 2026-07-23 (обновление)
+
+### Граф связей (D3.js)
+
+- **API**: `GET /api/v1/relations/graph/{entity_id}` — возвращает nodes + edges + relation_types
+- **UI**: D3.js force-directed граф на странице сущности (AJAX загрузка)
+- **Интерактивность**: zoom/pan, drag, hover подсветка связей, клик → переход на связанную сущность
+- **Фильтры**: по типам связи с цветовой привязкой к kind узла
+
+### OMDb / IMDB интеграция
+
+- **Config**: добавлен `OMDB_API_KEY` в settings и .env.example
+- **Service**: исправлены `search_imdb()` и `get_imdb_details()` (OMDB_API_KEY вместо TMDB_API_KEY)
+- **Import**: `import_imdb_movie()` — импорт фильма как сущность с полными данными
+- **API**: 4 эндпоинта: status, search, movie, import (`/api/import/omdb/*`)
+- **UI**: модалка поиска/импорта на странице создания сущности (жёлтая кнопка OMDb)
+
+### Исправления
+
+- **CSRF middleware**: проверка form body (url-encoded + multipart) вместо только заголовка
+- **crud.py**: добавлен импорт `manager` из websocket service (NameError при создании сущности)
+
+---
+
 ## [0.17.0] — 2026-07-23
 
 ### Полная локализация и i18n

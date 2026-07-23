@@ -240,6 +240,16 @@
     </div>
     {% endif %}
 
+    <!-- Graph -->
+    <div id="graph-section" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6" style="display:none;">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">
+            {{ request.state.t.section_graph }}
+            <span id="graph-count" class="text-sm font-normal text-gray-400 ml-2"></span>
+        </h2>
+        <div id="graph-filters" class="flex flex-wrap gap-2 mb-4"></div>
+        <div id="entity-graph" style="width:100%; height:500px; border:1px solid var(--color-border, #e5e7eb); border-radius:0.5rem; overflow:hidden;"></div>
+    </div>
+
     <!-- Meta -->
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.section_meta }}</h2>
@@ -345,4 +355,56 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/graph.js"></script>
+<script>
+    fetch('/api/v1/relations/graph/{{ entity.entity_id }}')
+        .then(r => r.json())
+        .then(data => {
+            if (data.nodes && data.nodes.length > 1) {
+                // Show graph section
+                document.getElementById('graph-section').style.display = 'block';
+                document.getElementById('graph-count').textContent = '(' + data.nodes.length + ')';
+
+                // Init graph first to get kind colors
+                initGraph('entity-graph', data);
+
+                // Build kind lookup
+                var kindMap = {};
+                data.nodes.forEach(function(n) { kindMap[n.id] = n.kind; });
+                var kindColors = window._graphKindColors || {};
+
+                // For each relation_type, find the most common target kind and use its color
+                var rtKindColor = {};
+                data.relation_types.forEach(function(rt) {
+                    var kindCounts = {};
+                    data.edges.forEach(function(e) {
+                        if (e.relation_type === rt.code) {
+                            var targetId = (typeof e.target === 'object') ? e.target.id : e.target;
+                            var k = kindMap[targetId];
+                            if (k) kindCounts[k] = (kindCounts[k] || 0) + 1;
+                        }
+                    });
+                    // Pick the most common kind
+                    var bestKind = Object.keys(kindCounts).sort(function(a,b){ return kindCounts[b] - kindCounts[a]; })[0];
+                    rtKindColor[rt.code] = kindColors[bestKind] || '#6b7280';
+                });
+
+                // Populate filters colored by node kind
+                var filtersHtml = '';
+                data.relation_types.forEach(function(rt) {
+                    var color = rtKindColor[rt.code];
+                    filtersHtml += '<label class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full cursor-pointer transition" style="background:' + color + '20; border: 1px solid ' + color + '50; color: ' + color + ';">';
+                    filtersHtml += '<input type="checkbox" checked data-relation-type="' + rt.code + '" onchange="filterGraph()" class="hidden">';
+                    filtersHtml += '<span>' + rt.name + '</span>';
+                    filtersHtml += '<span style="opacity:0.6">(' + rt.count + ')</span>';
+                    filtersHtml += '</label>';
+                });
+                document.getElementById('graph-filters').innerHTML = filtersHtml;
+            }
+        })
+        .catch(err => console.error('Graph load error:', err));
+</script>
 {% endblock %}

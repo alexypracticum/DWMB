@@ -42,6 +42,15 @@ XMLHttpRequest.prototype.send = function(data) {
 // Add CSRF token to form submissions via JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('form[method="post"], form[method="POST"]').forEach(function(form) {
+        // Update existing csrf_token input with cookie value
+        const token = getCsrfToken();
+        if (token) {
+            const existingInput = form.querySelector('input[name="csrf_token"]');
+            if (existingInput) {
+                existingInput.value = token;
+            }
+        }
+
         form.addEventListener('submit', function(e) {
             const token = getCsrfToken();
             if (token) {

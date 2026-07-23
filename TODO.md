@@ -1,8 +1,10 @@
 # TODO
 
-## Текущий статус: v0.17.0 (полная локализация)
+## Текущий статус: v0.17.0
 
-### Выполнено (v0.17.0) — Полная локализация и i18n
+### Выполнено (v0.17.0) — Локализация, граф, OMDb
+
+**Локализация:**
 - [x] Версия в main.py: обновлена до "0.17.0"
 - [x] RU_LABELS/EN_LABELS удалены из helpers.py (~50 строк each)
 - [x] `get_label()` теперь использует translation cache вместо hardcoded dicts
@@ -13,6 +15,24 @@
 - [x] Темы пресетов мультиязычные
 - [x] Dark mode toggle доступен для всех (auth + anon)
 - [x] 0 hardcoded Russian строк в шаблонах
+
+**Граф связей (Приоритет B):**
+- [x] D3.js force-directed граф на странице сущности
+- [x] API endpoint `GET /api/v1/relations/graph/{entity_id}`
+- [x] Интерактивность: zoom/pan, drag, hover подсветка, клик → переход
+- [x] Фильтрация по типам связей с цветовой привязкой к kind
+- [x] AJAX загрузка графа
+
+**OMDb / IMDB (Приоритет C):**
+- [x] OMDB_API_KEY добавлен в config.py
+- [x] search_imdb() и get_imdb_details() — исправлены
+- [x] import_imdb_movie() — импорт фильма как сущность
+- [x] REST эндпоинты: status, search, movie, import
+- [x] UI модалка поиска/импорта на странице создания
+
+**Исправления:**
+- [x] CSRF middleware: проверка form body (url-encoded + multipart)
+- [x] Импорт manager в crud.py (WebSocket notifications)
 
 ### Выполнено (v0.16.0) — Рефакторинг архитектуры
 - [x] UI strings: миграция в dedicated таблицы (663 ключа x 7 языков)
@@ -55,19 +75,6 @@
 
 ---
 
-## Осталось — Приоритет B: Визуализация
-
-- [ ] D3.js/Cytoscape.js граф связей на странице сущности
-- [ ] Интерактивное исследование графа
-- [ ] Фильтрация по типам связей
-
-## Осталось — Приоритет C: Внешние API
-
-- [ ] IMDB через OMDb API (заготовки в external_apis.py)
-- [ ] Wikipedia REST API (заготовки в external_apis.py)
-- [ ] MusicBrainz API (заготовки в external_apis.py)
-- [ ] GraphQL резолверы для внешних API (external.py)
-
 ## Осталось — Приоритет D: Промышленная
 
 - [ ] CI/CD (GitHub Actions)
@@ -76,6 +83,7 @@
 
 ## Заметки
 
-- Тесты: 169 тестов, запуск через Docker (`docker exec dwmb_app python -m pytest tests/`)
+- Тесты: 169+ тестов, запуск через Docker (`docker exec dwmb_app python -m pytest tests/`)
 - Микросервисы созданы, но не подключены к основному приложению (проксирование не реализовано)
 - CLI утилита (cli.py) существует, но не тестировалась
+- OMDb API ключ: бесплатный, получить на https://www.omdbapi.com/apikey.aspx

@@ -112,25 +112,42 @@
 
     <!-- STEP 3: Fill Data -->
     {% if step == 3 %}
-    <form action="/entity/create" method="post" enctype="multipart/form-data" class="space-y-6" id="entityForm">
+    <form action="/entity/create" method="post" class="space-y-6" id="entityForm">
             <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
         <input type="hidden" name="kind_code" value="{{ selected_kind_obj.kind_code }}">
         {% for tmpl in selected_templates %}
         <input type="hidden" name="template_ids" value="{{ tmpl.template_id }}">
         {% endfor %}
 
-        <!-- TMDB Import Button -->
-        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white text-lg font-bold">TM</div>
-                <div>
-                    <div class="text-sm font-semibold text-gray-800">Импорт из TMDB</div>
-                    <div class="text-xs text-gray-500">Автозаполнение полей из The Movie Database</div>
+        <!-- Import Buttons -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <!-- TMDB Import Button -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white text-lg font-bold">TM</div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-800">Импорт из TMDB</div>
+                        <div class="text-xs text-gray-500">The Movie Database</div>
+                    </div>
                 </div>
+                <button type="button" onclick="openTmdbImport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
+                    Импортировать
+                </button>
             </div>
-            <button type="button" onclick="openTmdbImport()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
-                Импортировать
-            </button>
+
+            <!-- OMDb Import Button -->
+            <div class="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl p-4 border border-yellow-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center text-white text-lg font-bold">IM</div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-800">Импорт из OMDb</div>
+                        <div class="text-xs text-gray-500">IMDB данные</div>
+                    </div>
+                </div>
+                <button type="button" onclick="openOmdbImport()" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm">
+                    Импортировать
+                </button>
+            </div>
         </div>
 
         <!-- Always show label_ru and description_ru -->
@@ -395,6 +412,130 @@
         if (field && value) {
             field.value = value;
             field.dispatchEvent(new Event('change'));
+        }
+    }
+    </script>
+
+    <!-- OMDb Import Modal -->
+    <div id="omdbModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">IM</div>
+                    <h3 class="text-lg font-semibold text-gray-800">Импорт из OMDb (IMDB)</h3>
+                </div>
+                <button onclick="closeOmdbModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+
+            <div class="p-4">
+                <!-- Search input -->
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="omdbSearchInput" placeholder="Поиск фильма в IMDB..."
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 outline-none"
+                           oninput="debounceOmdbSearch()" onkeydown="if(event.key==='Enter'){event.preventDefault();omdbSearch();}">
+                    <button onclick="omdbSearch()" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm">Найти</button>
+                </div>
+
+                <!-- Results -->
+                <div id="omdbResults" class="max-h-[50vh] overflow-y-auto">
+                    <div class="text-center py-8 text-gray-400 text-sm">
+                        Введите запрос для поиска
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let omdbSearchTimeout = null;
+
+    function openOmdbImport() {
+        document.getElementById('omdbModal').classList.remove('hidden');
+        document.getElementById('omdbSearchInput').focus();
+    }
+
+    function closeOmdbModal() {
+        document.getElementById('omdbModal').classList.add('hidden');
+        document.getElementById('omdbResults').innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>';
+    }
+
+    function debounceOmdbSearch() {
+        clearTimeout(omdbSearchTimeout);
+        omdbSearchTimeout = setTimeout(omdbSearch, 400);
+    }
+
+    async function omdbSearch() {
+        const query = document.getElementById('omdbSearchInput').value.trim();
+        if (!query) return;
+
+        const resultsDiv = document.getElementById('omdbResults');
+        resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Загрузка...</div>';
+
+        try {
+            const resp = await fetch(`/api/import/omdb/search?q=${encodeURIComponent(query)}`);
+            const data = await resp.json();
+
+            if (data.detail) {
+                resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">${data.detail}</div>`;
+                return;
+            }
+
+            if (!data.results || data.results.length === 0) {
+                resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Ничего не найдено</div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = data.results.map(item => `
+                <div class="p-3 border border-gray-200 rounded-lg mb-2 hover:border-yellow-300 hover:bg-yellow-50 transition cursor-pointer"
+                     onclick="selectOmdbItem('${item.imdb_id}')">
+                    <div class="flex gap-3">
+                        ${item.poster && item.poster !== 'N/A' ? `<img src="${item.poster}" class="w-12 h-18 object-cover rounded" alt="" onerror="this.style.display='none'">` : ''}
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-gray-800 text-sm">${item.title}</div>
+                            <div class="text-xs text-gray-500 mt-0.5">${item.year || ''} • ${item.type || ''}</div>
+                            <div class="text-xs text-gray-400 mt-0.5 font-mono">${item.imdb_id}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">Ошибка: ${e.message}</div>`;
+        }
+    }
+
+    async function selectOmdbItem(imdbId) {
+        const resultsDiv = document.getElementById('omdbResults');
+        resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Загрузка деталей...</div>';
+
+        try {
+            const resp = await fetch(`/api/import/omdb/movie/${imdbId}`);
+            const data = await resp.json();
+
+            if (data.detail) {
+                resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">${data.detail}</div>`;
+                return;
+            }
+
+            // Fill form fields
+            setFieldValue('label_ru', data.title || '');
+            setFieldValue('label_en', data.title || '');
+            setFieldValue('description_ru', data.plot || '');
+            setFieldValue('title', data.title || '');
+            setFieldValue('year', data.year || '');
+            setFieldValue('genre', data.genre || '');
+            setFieldValue('rating', data.rating || '');
+            setFieldValue('description', data.plot || '');
+            setFieldValue('director', data.director || '');
+            setFieldValue('actors', data.actors || '');
+            setFieldValue('duration', data.runtime || '');
+            setFieldValue('country', data.country || '');
+            setFieldValue('language', data.language || '');
+            setFieldValue('poster', data.poster || '');
+            setFieldValue('imdb_id', imdbId);
+
+            closeOmdbModal();
+        } catch (e) {
+            resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">Ошибка: ${e.message}</div>`;
         }
     }
     </script>
