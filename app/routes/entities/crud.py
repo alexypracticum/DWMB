@@ -1159,3 +1159,12 @@ BLOCKED_EXTENSIONS = {
 }
 
 
+
+
+@router.get("/map", response_class=HTMLResponse)
+async def entity_map(request: Request, user: UserAccount = Depends(get_current_user)):
+    """Map view of entities."""
+    return templates.TemplateResponse("entities/map.html", {
+        "request": request,
+        "user": user,
+    })

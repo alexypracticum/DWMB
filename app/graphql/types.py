@@ -124,3 +124,25 @@ class Stats:
     kind_count: int
     relation_count: int
     model_count: int
+
+
+@strawberry.type
+class GeoLocation:
+    entity_id: str
+    entity_code: str
+    latitude: float
+    longitude: float
+    altitude: Optional[float]
+    accuracy: Optional[float]
+    geo_type: Optional[str]
+    description: Optional[str]
+    kind: Optional[EntityKind]
+    label: Optional[str]
+
+
+@strawberry.type
+class GeoBounds:
+    north: float
+    south: float
+    east: float
+    west: float
