@@ -4,11 +4,12 @@ from strawberry.fastapi import GraphQLRouter
 
 from .queries import Query
 from .geo import GeoQuery
+from .external import ExternalQuery
 from .mutations import Mutation
 
 
 @strawberry.type
-class QueryRoot(Query, GeoQuery):
+class QueryRoot(Query, GeoQuery, ExternalQuery):
     pass
 
 

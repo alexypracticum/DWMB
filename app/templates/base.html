@@ -196,6 +196,7 @@
                     <a href="/search" class="px-3 py-1.5 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.btn_search }}</a>
                     <a href="/entity/create" class="px-3 py-1.5 text-sm rounded-md transition font-medium" style="background: var(--color-primary); color: #fff;">{{ request.state.t.sidebar_new_entity }}</a>
                     <a href="/stats" class="px-3 py-1.5 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.nav_stats }}</a>
+                    <a href="/map" class="px-3 py-1.5 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.nav_map }}</a>
                     {% if user and user.is_admin %}
                     <a href="/admin" class="px-3 py-1.5 text-sm hover-bg-error rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.nav_admin }}</a>
                     {% endif %}
@@ -266,6 +267,7 @@
                     <a href="/entity/create" class="block px-3 py-2 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.sidebar_new_entity }}</a>
                     <a href="/search" class="block px-3 py-2 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.btn_search }}</a>
                     <a href="/stats" class="block px-3 py-2 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.nav_stats }}</a>
+                    <a href="/map" class="block px-3 py-2 text-sm hover-bg-primary rounded-md transition" style="color: var(--color-text-secondary);">{{ request.state.t.nav_map }}</a>
                 </div>
 
                 {% if user and user.is_admin %}
