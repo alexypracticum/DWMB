@@ -101,6 +101,7 @@ status: stable
 | [[development/testing]] | Тестирование |
 | [[development/contributing]] | Руководство по вкладу |
 | [[development/improvements]] | План улучшений |
+| [[development/architecture-analysis]] | Анализ архитектуры и рефакторинг |
 
 ## Навигация
 

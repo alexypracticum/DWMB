@@ -1,6 +1,6 @@
 # TODO
 
-## Текущий статус: v0.12.0
+## Текущий статус: v0.15.0
 
 ### Выполнено (v0.11.0) — Безопасность и архитектура
 - [x] CORS: ограничение доменов
@@ -91,7 +91,30 @@
 - [ ] Автосохранение при переключении языков
 - [ ] GraphQL mutations (create, update, delete)
 
-### Приоритет 3: Промышленная версия
+### Выполнено (v0.15.0) — RLS, Микросервисы, WebSocket
+- [x] RBAC интеграция (require_permission)
+- [x] Email service (регистрация, сброс пароля)
+- [x] Redis кэширование (init_cache при старте)
+- [x] GraphQL mutations (createKind, createEntity, updateEntity, deleteEntity, createRelation)
+- [x] Геосвязи (entity_geo, /map, Leaflet.js)
+- [ ] Внешние API (Wikipedia, MusicBrainz, IMDB) — отложено после рефакторинга
+- [x] Автосохранение языка (/api/set-language)
+- [x] RLS (5 политик на entity)
+- [x] Микросервисы (AI, Search, Media)
+- [x] WebSocket (/ws endpoint)
+
+### Приоритет 3: Рефакторинг архитектуры (v0.16.0)
+- [ ] Разделение данных: ui_string таблицы вместо сущностей
+- [ ] Service Layer: вынести бизнес-логику из роутов
+- [ ] API Versioning: префикс /api/v1/
+- [ ] Типизация: type hints для всех функций
+- [ ] Accessibility: WCAG AA compliance
+
+### Приоритет 4: Промышленная версия
+- [ ] D3.js/Cytoscape.js граф связей
+- [ ] GraphQL subscriptions
+- [ ] CI/CD (GitHub Actions)
+- [ ] Мониторинг (Prometheus/Grafana)
 - [ ] Микросервисы (AI, поиск, медиа)
 - [ ] Row-Level Security (RLS)
 - [ ] WebSocket real-time обновления

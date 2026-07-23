@@ -1,3 +1,30 @@
+## [0.15.0] — 2026-07-23
+
+### Добавлено
+- **RBAC интеграция**: require_permission("admin.access") во всех admin роутах
+- **Email service**: отправка email при регистрации, forgot-password/reset-password endpoints
+- **Redis кэширование**: init_cache() при старте приложения
+- **GraphQL mutations**: createKind, createEntity, updateEntity, deleteEntity, createRelation
+- **Геосвязи**: entity_geo таблица, lat/lng координаты, /map страница с Leaflet.js
+- **Внешние API**: Wikipedia, MusicBrainz, IMDB (OMDb) — заготовки созданы, требуют доработки
+- **Автосохранение языка**: /api/set-language endpoint для AJAX
+- **RLS (Row-Level Security)**: 5 политик на таблице entity
+- **Микросервисы**: AI Service (порт 8001), Search Service (порт 8002), Media Service (порт 8003)
+- **WebSocket**: /ws endpoint для real-time уведомлений
+
+### Исправлено
+- **GraphQL**: исправлены entity/search запросы с sync engine
+- **Навигация**: добавлена кнопка "Карта" с переводами на 7 языков
+- **Карта**: исправлена загрузка Leaflet.js (добавлен block head в base.html)
+- **Тема middleware**: загрузка переводов для неаутентифицированных пользователей
+
+### Улучшения
+- **Архитектура**: разделение приложения и пользовательских данных
+- **Безопасность**: RLS для multi-user доступа
+- **Производительность**: микросервисы для масштабирования
+
+---
+
 ## [0.12.0] — 2026-07-22
 
 ### Добавлено
