@@ -28,7 +28,7 @@ logger = logging.getLogger("dwmb")
 app = FastAPI(
     title="DWMB — Dynamic World Meta-Base",
     description="Семантическая база знаний с онтологической моделью данных",
-    version="0.8.0",
+    version="0.17.0",
 )
 
 # ─── Middleware (order matters: last added = first executed) ───
@@ -196,7 +196,7 @@ app.include_router(graphql_router, prefix="/graphql")
 # ─── Health check ─────────────────────────────────────────────
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.8.0"}
+    return {"status": "ok", "version": "0.17.0"}
 
 
 # ─── Startup/Shutdown events ──────────────────────────────────

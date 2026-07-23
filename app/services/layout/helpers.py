@@ -1,82 +1,25 @@
 """Helper functions for layout rendering."""
 import re
 import json
-RU_LABELS = {
-    "year": "Год", "genre": "Жанр", "title": "Название", "rating": "Рейтинг",
-    "country": "Страна", "language": "Язык", "budget_mln": "Бюджет (млн)",
-    "duration_min": "Длительность (мин)", "artist": "Исполнитель", "album": "Альбом",
-    "bpm": "BPM", "author": "Автор", "pages": "Страниц", "isbn": "ISBN",
-    "first_name": "Имя", "last_name": "Фамилия", "birth_date": "Дата рождения",
-    "birth_place": "Место рождения", "nationality": "Национальность",
-    "occupation": "Профессия", "name": "Название", "species": "Вид",
-    "habitat": "Среда обитания", "diet": "Питание", "lifespan_years": "Продолжительность жизни",
-    "symbol": "Символ", "atomic_number": "Атомный номер", "atomic_mass": "Атомная масса",
-    "group": "Группа", "period": "Период", "category": "Категория",
-    "definition": "Определение", "domain": "Домен", "start_year": "Начало",
-    "end_year": "Конец", "region": "Регион", "significance": "Значение",
-    "format": "Формат", "size_kb": "Размер (КБ)", "photographer": "Фотограф",
-    "subject": "Тема", "published": "Опубликовано", "source": "Источник",
-    "description": "Описание", "content": "Контент",     "poster_url": "Постер",
-    "file_url": "Файл", "file_title": "Название файла", "images": "Изображения",
-    "video_url": "Видео", "audio_url": "Аудио", "audio_title": "Название аудио",
-    "release_date": "Дата выхода", "start_date": "Дата начала", "end_date": "Дата окончания",
-    "price": "Цена", "website": "Сайт", "email": "Email", "score": "Рейтинг",
-    "director": "Режиссёр", "duration": "Длительность", "starring": "В главных ролях",
-    "screenwriter": "Сценарист", "operator": "Оператор", "composer": "Композитор",
-    "producer": "Продюсер", "narrator": "Рассказчик", "studio": "Студия",
-    "country_origin": "Страна производства", "world_premiere": "Мировая премьера",
-    "tagline": "Слоган", "mpaa_rating": "Рейтинг MPAA", "budget": "Бюджет",
-    "revenue": "Сборы", "currency": "Валюта",
-}
-
-EN_LABELS = {
-    "year": "Year", "genre": "Genre", "title": "Title", "rating": "Rating",
-    "country": "Country", "language": "Language", "budget_mln": "Budget (mln)",
-    "duration_min": "Duration (min)", "artist": "Artist", "album": "Album",
-    "bpm": "BPM", "author": "Author", "pages": "Pages", "isbn": "ISBN",
-    "first_name": "First Name", "last_name": "Last Name", "birth_date": "Birth Date",
-    "birth_place": "Birth Place", "nationality": "Nationality",
-    "occupation": "Occupation", "name": "Name", "species": "Species",
-    "habitat": "Habitat", "diet": "Diet", "lifespan_years": "Lifespan",
-    "symbol": "Symbol", "atomic_number": "Atomic Number", "atomic_mass": "Atomic Mass",
-    "group": "Group", "period": "Period", "category": "Category",
-    "definition": "Definition", "domain": "Domain", "start_year": "Start Year",
-    "end_year": "End Year", "region": "Region", "significance": "Significance",
-    "format": "Format", "size_kb": "Size (KB)", "photographer": "Photographer",
-    "subject": "Subject", "published": "Published", "source": "Source",
-    "description": "Description", "content": "Content", "poster_url": "Poster",
-    "file_url": "File", "file_title": "File Title", "images": "Images",
-    "video_url": "Video", "audio_url": "Audio", "audio_title": "Audio Title",
-    "release_date": "Release Date", "start_date": "Start Date", "end_date": "End Date",
-    "price": "Price", "website": "Website", "email": "Email", "score": "Score",
-    "director": "Director", "duration": "Duration", "starring": "Starring",
-    "screenwriter": "Screenwriter", "operator": "Cinematographer", "composer": "Composer",
-    "producer": "Producer", "narrator": "Narrator", "studio": "Studio",
-    "country_origin": "Country of Origin", "world_premiere": "World Premiere",
-    "tagline": "Tagline", "mpaa_rating": "MPAA Rating", "budget": "Budget",
-    "revenue": "Revenue", "currency": "Currency",
-}
 
 def get_label(key, lang="ru", t: dict = None):
     """Get label for a field based on language.
-    Uses translation dict (t) if provided, falls back to hardcoded dicts.
-    Field labels are stored as field_key in translation system.
+    Uses translation dict (t) first, then query DB, then fallback to key.
     """
-    if t:
-        trans_key = f"field_{key}"
-        if trans_key in t:
-            return t[trans_key]
-    if not t or len(t) < 10:
-        try:
-            from app.services.ui_translations import _translations_cache
-            cached = _translations_cache.get(lang, {})
-            trans_key = f"field_{key}"
+    trans_key = f"field_{key}"
+    if t and trans_key in t:
+        return t[trans_key]
+    # Fallback: try to load from DB cache
+    try:
+        from app.middleware.theme import _translations_cache
+        cache_key = f"trans:{lang}"
+        if cache_key in _translations_cache:
+            cached = _translations_cache[cache_key].get("data", {})
             if trans_key in cached:
                 return cached[trans_key]
-        except Exception:
-            pass
-    labels = EN_LABELS if lang == "en" else RU_LABELS
-    return labels.get(key, key.replace("_", " ").title())
+    except Exception:
+        pass
+    return key.replace("_", " ").title()
 
 
 def get_state_field(state_data: dict, field_path: str):
