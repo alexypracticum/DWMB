@@ -38,12 +38,21 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-dwmb}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-dwmb}
+      AI_SERVICE_URL: http://ai-service:8001
+      SEARCH_SERVICE_URL: http://search-service:8002
+      MEDIA_SERVICE_URL: http://media-service:8003
     volumes:
       - ./app:/app/app
       - ./tests:/app/tests
       - media_data:/app/media
     depends_on:
       db:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+      search-service:
+        condition: service_healthy
+      media-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -59,6 +68,81 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
+
+  ai-service:
+    build:
+      context: ./services/ai-service
+      dockerfile: Dockerfile
+    container_name: dwmb_ai_service
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      AI_API_KEY: ${AI_API_KEY}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_MODEL_EMBEDDING: ${AI_MODEL_EMBEDDING:-text-embedding-3-small}
+      AI_MODEL_CHAT: ${AI_MODEL_CHAT:-gpt-4o-mini}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  search-service:
+    build:
+      context: ./services/search-service
+      dockerfile: Dockerfile
+    container_name: dwmb_search_service
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dwmb}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-dwmb}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+
+  media-service:
+    build:
+      context: ./services/media-service
+      dockerfile: Dockerfile
+    container_name: dwmb_media_service
+    restart: unless-stopped
+    ports:
+      - "8003:8003"
+    environment:
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-dwmb_minio}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET:-dwmb-media}
+    depends_on:
+      minio:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
 
   minio:
     image: minio/minio:latest
