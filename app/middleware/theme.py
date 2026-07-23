@@ -31,7 +31,19 @@ _lang_cache: dict[str, str] = {}
 
 # Cache for translations (lang -> dict)
 _translations_cache: dict[str, dict] = {}
-_translations_cache_ttl = 300
+
+
+def invalidate_translations_cache(lang: str = None):
+    """Invalidate translations cache for a specific language or all languages."""
+    global _translations_cache
+    if lang:
+        # Remove specific language from cache
+        keys_to_remove = [k for k in _translations_cache.keys() if k.endswith(f":{lang}")]
+        for key in keys_to_remove:
+            del _translations_cache[key]
+    else:
+        # Clear all translations cache
+        _translations_cache.clear()
 
 # Cache for themes (theme_id -> theme_data)
 _theme_cache: dict[str, dict] = {}
@@ -152,26 +164,29 @@ class ThemeMiddleware(BaseHTTPMiddleware):
             except JWTError:
                 pass
 
-        if request.state.lang == "ru" and not token:
-            cookie_lang = request.cookies.get("lang")
-            if cookie_lang and cookie_lang in ("ru", "en", "de", "fr", "es", "zh", "ja"):
-                request.state.lang = cookie_lang
-                # Load translations for cookie language (with cache)
-                trans_cache_key = f"trans:{cookie_lang}"
-                if trans_cache_key in _translations_cache and _translations_cache[trans_cache_key].get("expires", 0) > time.time():
-                    request.state.t = _translations_cache[trans_cache_key]["data"]
-                else:
-                    try:
-                        async with async_session() as session:
-                            from app.services.ui_strings import get_all_ui_strings_dict
-                            translations = await get_all_ui_strings_dict(session, cookie_lang)
-                            request.state.t = translations
-                            _translations_cache[trans_cache_key] = {
-                                "data": translations,
-                                "expires": time.time() + _translations_cache_ttl
-                            }
-                    except Exception:
-                        request.state.t = {}
+        # Always check cookie for language preference
+        cookie_lang = request.cookies.get("lang")
+        if cookie_lang and cookie_lang in ("ru", "en", "de", "fr", "es", "zh", "ja"):
+            request.state.lang = cookie_lang
+            # Load translations for cookie language (with cache)
+            trans_cache_key = f"trans:{cookie_lang}"
+            if trans_cache_key in _translations_cache and _translations_cache[trans_cache_key].get("expires", 0) > time.time():
+                request.state.t = _translations_cache[trans_cache_key]["data"]
+            else:
+                try:
+                    async with async_session() as session:
+                        from app.services.ui_strings import get_all_ui_strings_dict
+                        translations = await get_all_ui_strings_dict(session, cookie_lang)
+                        request.state.t = translations
+                        logger.info(f"Loaded {len(translations)} translations for {cookie_lang}")
+                        logger.info(f"nav_map in translations: {'nav_map' in translations}")
+                        logger.info(f"nav_map value: {translations.get('nav_map')}")
+                        _translations_cache[trans_cache_key] = {
+                            "data": translations,
+                            "expires": time.time() + _translations_cache_ttl
+                        }
+                except Exception:
+                    request.state.t = {}
 
         # Load translations for unauthenticated users without lang cookie
         if not request.state.t:

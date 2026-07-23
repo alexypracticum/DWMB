@@ -51,6 +51,10 @@ async def set_language_api(request: Request):
         except JWTError:
             pass
     
+    # Invalidate translations cache for this language
+    from app.middleware.theme import invalidate_translations_cache
+    invalidate_translations_cache(lang)
+    
     response = JSONResponse({"success": True, "lang": lang})
     response.set_cookie("lang", lang, max_age=365 * 24 * 3600, httponly=False)
     
