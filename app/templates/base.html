@@ -236,11 +236,11 @@
                 <!-- Dark mode toggle -->
                 <form action="/toggle-dark" method="post" class="inline">
                     <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
-                    <input type="checkbox" name="is_dark" value="true"
+                    <input type="checkbox" name="is_dark" value="true" id="darkModeToggle"
                            {% if (request.state.theme and request.state.theme.is_dark) or (not request.state.theme and request.cookies.get('dark_mode') == '1') %}checked{% endif %}
                            class="sr-only peer" onchange="this.closest('form').submit()">
-                    <div class="relative inline-flex shrink-0 w-9 h-5 rounded-full cursor-pointer peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"
-                         style="background: var(--color-border);"></div>
+                    <label for="darkModeToggle" class="relative inline-flex shrink-0 w-9 h-5 rounded-full cursor-pointer peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"
+                         style="background: var(--color-border);"></label>
                 </form>
                 <!-- Language Switcher -->
                 <div class="relative" id="langDropdown">
