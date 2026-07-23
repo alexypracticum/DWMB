@@ -16,6 +16,7 @@ from app.middleware.theme import ThemeMiddleware
 from app.middleware.kinds import KindsMiddleware
 from app.middleware.rate_limit import limiter, rate_limit_exceeded_handler
 from app.middleware.csrf import CSRFMiddleware, csrf_token_context
+from app.middleware.rls import RLSMiddleware
 
 settings = get_settings()
 
@@ -33,6 +34,8 @@ app = FastAPI(
 # ─── Middleware (order matters: last added = first executed) ───
 # CSRFMiddleware must be outermost for form validation
 app.add_middleware(CSRFMiddleware)
+# RLSMiddleware sets PostgreSQL session variable for RLS
+app.add_middleware(RLSMiddleware)
 # ThemeMiddleware MUST run before KindsMiddleware to set request.state.lang
 app.add_middleware(KindsMiddleware)
 app.add_middleware(ThemeMiddleware)
@@ -164,7 +167,9 @@ app.include_router(auth.router)
 app.include_router(entities.router)
 app.include_router(search.router)
 from app.routes.admin import router as admin_router
+from app.routes.api_language import router as api_language_router
 app.include_router(admin_router)
+app.include_router(api_language_router)
 app.include_router(editor_api.router)
 app.include_router(profile.router)
 app.include_router(comments.router)

@@ -163,13 +163,13 @@
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
                     <div id="langDropdownMenu" class="hidden absolute left-0 mt-1 w-40 rounded-lg shadow-lg border z-50 max-h-80 overflow-y-auto" style="background: var(--color-surface); border-color: var(--color-border);">
-                        <a href="/set-lang?lang=ru&next={{ request.url.path }}" class="block px-3 py-2 text-sm rounded-t-lg transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇷🇺 Русский</a>
-                        <a href="/set-lang?lang=en&next={{ request.url.path }}" class="block px-3 py-2 text-sm transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇬🇧 English</a>
-                        <a href="/set-lang?lang=de&next={{ request.url.path }}" class="block px-3 py-2 text-sm transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇩🇪 Deutsch</a>
-                        <a href="/set-lang?lang=fr&next={{ request.url.path }}" class="block px-3 py-2 text-sm transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇫🇷 Français</a>
-                        <a href="/set-lang?lang=es&next={{ request.url.path }}" class="block px-3 py-2 text-sm transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇪🇸 Español</a>
-                        <a href="/set-lang?lang=zh&next={{ request.url.path }}" class="block px-3 py-2 text-sm transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇨🇳 中文</a>
-                        <a href="/set-lang?lang=ja&next={{ request.url.path }}" class="block px-3 py-2 text-sm rounded-b-lg transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇯🇵 日本語</a>
+                        <a href="#" onclick="switchLang('ru'); return false;" class="block px-3 py-2 text-sm rounded-t-lg transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇷🇺 Русский</a>
+                        <a href="#" onclick="switchLang('en'); return false;" class="block px-3 py-2 text-sm transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇬🇧 English</a>
+                        <a href="#" onclick="switchLang('de'); return false;" class="block px-3 py-2 text-sm transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇩🇪 Deutsch</a>
+                        <a href="#" onclick="switchLang('fr'); return false;" class="block px-3 py-2 text-sm transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇫🇷 Français</a>
+                        <a href="#" onclick="switchLang('es'); return false;" class="block px-3 py-2 text-sm transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇪🇸 Español</a>
+                        <a href="#" onclick="switchLang('zh'); return false;" class="block px-3 py-2 text-sm transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇨🇳 中文</a>
+                        <a href="#" onclick="switchLang('ja'); return false;" class="block px-3 py-2 text-sm rounded-b-lg transition hover:bg-blue-50" style="color: var(--color-text-secondary);">🇯🇵 日本語</a>
                     </div>
                 </div>
                 <div class="hidden md:flex items-center gap-1">
@@ -291,5 +291,23 @@
             <p>{{ request.state.t.footer_text }} &copy; 2026</p>
         </div>
     </footer>
+<script>
+async function switchLang(lang) {
+    try {
+        const response = await fetch('/api/set-language', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lang: lang })
+        });
+        const data = await response.json();
+        if (data.success) {
+            // Reload page to apply new language
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error('Language switch failed:', error);
+    }
+}
+</script>
 </body>
 </html>

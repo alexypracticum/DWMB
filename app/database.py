@@ -14,6 +14,12 @@ class Base(DeclarativeBase):
 async def get_db():
     async with async_session() as session:
         try:
+            # Set RLS session variable
+            from app.middleware.rls import get_current_user_id
+            user_id = get_current_user_id()
+            if user_id:
+                from sqlalchemy import text
+                await session.execute(text(f"SET LOCAL app.current_user_id = '{user_id}'"))
             yield session
             await session.commit()
         except Exception:
