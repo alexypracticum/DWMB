@@ -1,3 +1,20 @@
+## [0.16.0] — 2026-07-23
+
+### Рефакторинг архитектуры
+- **UI strings**: миграция из entity-хранилища в dedicated таблицы `meta.ui_string` + `meta.ui_string_translation` (663 ключа × 7 языков = 4639 переводов)
+- **Service Layer**: `entity_service.py`, `kind_service.py`, `relation_service.py` — бизнес-логика вынесена из роутов
+- **API Versioning**: `/api/v1/` префикс (entities, kinds, relations, search)
+- **Type hints**: добавлены в services и API v1 модули
+- **Accessibility**: WCAG AA (skip link, ARIA labels, alt texts, focus styles, reduced motion)
+
+### Исправлено
+- **Language switching**: исправлен критический баг — переменная `_translations_cache_ttl` использовалась но не была объявлена в `theme.py`. `NameError` ловился `except Exception`, сбрасывал `request.state.t = {}`, fallback загружал русский для ВСЕХ языков. Исправление: добавлена 1 строка `_translations_cache_ttl = 300` (commit 4bd0ed7)
+
+### Тесты
+- 169 тестов (Service Layer, API v1, WebSocket, RLS, UI strings, geo, CSRF, security)
+
+---
+
 ## [0.15.0] — 2026-07-23
 
 ### Добавлено

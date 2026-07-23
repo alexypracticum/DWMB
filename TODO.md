@@ -1,138 +1,78 @@
 # TODO
 
-## Текущий статус: v0.15.0
+## Текущий статус: v0.16.0 (рефакторинг завершён)
 
-### Выполнено (v0.11.0) — Безопасность и архитектура
-- [x] CORS: ограничение доменов
-- [x] SSRF: валидация URL в media_proxy
-- [x] XSS: html.escape в export
-- [x] Валидация паролей при регистрации
-- [x] language_service.py: общие утилиты
-- [x] Разбиение admin.py на 11 подмодулей
-- [x] Разбиение entities.py на 4 подмодуля
-- [x] Разбиение layout.py на 4 подмодуля
-- [x] Кэширование в theme.py
-- [x] Интеграция плагин-системы
-- [x] Batch get_kind_labels_batch() для N+1
-- [x] Lazy init для StorageService/AIService
-- [x] Удалён мёртвый код (i18n.py, pages.py)
-
-### Выполнено (v0.6.1) — Перевод admin panel
-- [x] Перевод кнопки "Языки" в admin dashboard
-- [x] Перевод блока "Пользователи" (таблица, статусы, действия)
-- [x] Новые ключи перевода для admin panel (13 ключей x 7 языков)
-
-### Выполнено (v0.6.0) — Мультиязычность
-- [x] Замена ENUM language_code на таблицу meta.language
-- [x] Миграция ORM моделей на FK language_id
-- [x] Переводы интерфейса на 7 языков (ru, en, de, fr, es, zh, ja)
-- [x] Переключатель языков в навигации
-- [x] CRUD для языков в админ-панели
-- [x] Тесты мультиязычности (26 тестов)
-
-### Выполнено (v0.5.2)
-- [x] Изображение как базовая часть сущности: image_url в таблице entity
-- [x] AI Конфигурация: несколько профилей с переключением (AiConfigProfile)
-- [x] Страница управления плагинами (/admin/plugins)
-- [x] Блок "Галерея актёров-персонажей" со спойлером и фото
-- [x] Мультиязычность: добавление меток на разных языках (RU, EN, DE, FR, ES, ZH, JA)
-- [x] Язык как сущность: EntityKind "language" + 7 языков
-- [x] Классификаторы: ISO 639-1, ISO 639-2, ГОСТ 7.75-97
-- [x] Исправлена ошибка сохранения сущности (UnboundLocalError)
-- [x] Добавлены ссылки на профили и плагины в админке
-
-### Выполнено (v0.5.1)
-- [x] AI Конфигурация: выравнивание по центру
-- [x] List view: исправлен overflow за правое меню
-- [x] Левое меню: показывает названия вместо кодов (FIX: порядок middleware + шаблон)
-
-### Выполнено (v0.5.0)
-- [x] Архитектура плагинов: PluginBase, load_plugins(), 7 плагинов
-- [x] RBAC: модели Role/Permission, require_permission() dependency, 3 роли, 13 разрешений
-- [x] EventLog: аудит create/update/delete/relation_change
-- [x] Вид "Превью" с постерами (3:4 aspect ratio)
-- [x] Убран entity_code из grid/list видов
-- [x] SEO-поля: meta_title, meta_description, og_image
-- [x] Redis кэширование с in-memory fallback (5 мин TTL для kinds)
-- [x] Rate limiting: 200/min default, 10/min auth (brute-force защита)
-- [x] Email service: send_verification_email, send_password_reset_email
-- [x] Версионирование: страница /entity/{id}/history с событиями
-- [x] Workflow: draft/published/archived состояния с кнопками переходов
-- [x] Комментарии: модель Comment, CRUD, вложенность, ответы
-- [x] WYSIWYG: TipTap редактор с тулбаром (bold, italic, headings, lists, links)
-- [x] Экспорт: Markdown и HTML файлы для скачивания
-- [x] API документация: Swagger annotations для TMDB, comments, export
-- [x] CLI утилита: status, seed, stats, backup, restore, migrate
-- [x] RSS/Atom фиды: /feed/entities, /feed/pages
-- [x] Backup: pg_dump через CLI (timestamped SQL files)
-
-### Выполнено (v0.12.0) — GraphQL, Docker, Tests
-- [x] CSRF защита на формах
-- [x] GraphQL API (strawberry-graphql)
-- [x] Docker optimization (multi-stage, non-root, healthcheck)
-- [x] 165 тестов (было 125)
-- [x] Исправлены устаревшие импорты
-
-### Нереализованное (требует внимания)
-- [ ] RBAC: require_permission() не используется в роутах
-- [ ] Email: send_verification_email/send_password_reset не вызываются
-- [ ] Redis: init_cache() не вызывается при старте
-- [ ] GraphQL: greenlet ошибки в некоторых запросах
-
-### Приоритет 1: Активация существующего функционала
-- [ ] Подключить RBAC require_permission к роутам
-- [ ] Подключить Email service к регистрации/сбросу пароля
-- [ ] Инициализировать Redis кэш при старте
-- [ ] Исправить greenlet ошибки в GraphQL
-
-### Приоритет 2: Новая функциональность
-- [ ] D3.js/Cytoscape.js граф связей
-- [ ] Внешние API (IMDB, Wikipedia, MusicBrainz)
-- [ ] Автосохранение при переключении языков
-- [ ] GraphQL mutations (create, update, delete)
+### Выполнено (v0.16.0) — Рефакторинг архитектуры
+- [x] UI strings: миграция в dedicated таблицы (663 ключа x 7 языков)
+- [x] Service Layer: entity_service, kind_service, relation_service
+- [x] API Versioning: /api/v1/ (entities, kinds, relations, search)
+- [x] Type hints для services и API v1
+- [x] Accessibility WCAG AA (skip link, ARIA, alt texts, focus styles)
+- [x] Исправлен language switching bug (_translations_cache_ttl)
+- [x] 169 тестов
 
 ### Выполнено (v0.15.0) — RLS, Микросервисы, WebSocket
-- [x] RBAC интеграция (require_permission)
-- [x] Email service (регистрация, сброс пароля)
-- [x] Redis кэширование (init_cache при старте)
-- [x] GraphQL mutations (createKind, createEntity, updateEntity, deleteEntity, createRelation)
-- [x] Геосвязи (entity_geo, /map, Leaflet.js)
-- [ ] Внешние API (Wikipedia, MusicBrainz, IMDB) — отложено после рефакторинга
-- [x] Автосохранение языка (/api/set-language)
-- [x] RLS (5 политик на entity)
-- [x] Микросервисы (AI, Search, Media)
-- [x] WebSocket (/ws endpoint)
+- [x] RBAC: require_permission("admin.access") во всех admin роутах
+- [x] Email: send_verification_email, forgot-password, reset-password
+- [x] Redis: init_cache() при старте
+- [x] GraphQL mutations: createKind, createEntity, updateEntity, deleteEntity, createRelation
+- [x] Геосвязи: entity_geo, /map, Leaflet.js
+- [x] Автосохранение языка: /api/set-language
+- [x] RLS: 5 политик на entity
+- [x] Микросервисы: AI (8001), Search (8002), Media (8003)
+- [x] WebSocket: /ws endpoint
 
-### Приоритет 3: Рефакторинг архитектуры (v0.16.0)
-- [ ] Разделение данных: ui_string таблицы вместо сущностей
-- [ ] Service Layer: вынести бизнес-логику из роутов
-- [ ] API Versioning: префикс /api/v1/
-- [ ] Типизация: type hints для всех функций
-- [ ] Accessibility: WCAG AA compliance
+### Выполнено (v0.12.0) — GraphQL, Docker, Tests
+- [x] GraphQL API (strawberry-graphql, sync engine, psycopg2)
+- [x] Docker: multi-stage, non-root, healthcheck, .dockerignore, prod override
+- [x] CSRF: cookie + header validation, 27 шаблонов
+- [x] 165 тестов
 
-### Приоритет 4: Промышленная версия
-- [ ] D3.js/Cytoscape.js граф связей
-- [ ] GraphQL subscriptions
-- [ ] CI/CD (GitHub Actions)
-- [ ] Мониторинг (Prometheus/Grafana)
-- [ ] Микросервисы (AI, поиск, медиа)
-- [ ] Row-Level Security (RLS)
-- [ ] WebSocket real-time обновления
-- [ ] Вынести UI-строки в сущности с мультиязычными проекциями
-- [ ] Мигрировать переводы из i18n.py в сущности
-- [ ] Обновить шаблоны для чтения переводов из сущностей
-- [ ] Создать UI для управления переводами
+### Выполнено (v0.11.0) — Безопасность и архитектура
+- [x] CORS, SSRF, XSS, password validation
+- [x] admin.py → 11 модулей, entities.py → 4, layout.py → 4
+- [x] theme.py кэширование, kinds.py оптимизация
+- [x] Плагины: lifecycle hooks, 7 плагинов
+- [x] N+1 batch queries, lazy init
 
-### Приоритет 2: Дополнительно
-- [ ] Автосохранение при переключении языков
-- [ ] Отображение данных сущностей на языке пользователя
+### Выполнено (ранее)
+- [x] v0.9.0: Полный перевод всех страниц на 7 языков
+- [x] v0.8.0: Переход с i18n.py на БД
+- [x] v0.6.0: Мультиязычность (meta.language, 7 языков)
+- [x] v0.5.0: Плагины, RBAC, Redis, Rate limiting, Email, Версионирование, Комментарии, WYSIWYG, CLI
 
-### Приоритет 2: Визуализация
-- [ ] D3.js/Cytoscape.js граф связей
+---
+
+## Осталось — Приоритет A: Доделать существующее
+
+- [ ] Версия в main.py: "0.8.0" → "0.17.0"
+- [ ] RU_LABELS в helpers.py: ~50 хардкоженных русских строк (info_table, image_data_row блоки)
+- [ ] wiki/development/roadmap.md: обновить статус v0.9.0 → актуальный
+- [ ] wiki/development/improvements.md: Приоритет 1 (RBAC, Email, Redis, GraphQL) — все выполнены
+
+## Осталось — Приоритет B: Визуализация
+
+- [ ] D3.js/Cytoscape.js граф связей на странице сущности
 - [ ] Интерактивное исследование графа
 - [ ] Фильтрация по типам связей
 
-### Приоритет 3: Дополнительные источники
-- [ ] IMDB через OMDb API
-- [ ] Wikipedia API
-- [ ] MusicBrainz API
+## Осталось — Приоритет C: Внешние API
+
+- [ ] IMDB через OMDb API (заготовки в external_apis.py)
+- [ ] Wikipedia REST API (заготовки в external_apis.py)
+- [ ] MusicBrainz API (заготовки в external_apis.py)
+- [ ] GraphQL резолверы для внешних API (external.py)
+
+## Осталось — Приоритет D: Промышленная
+
+- [ ] CI/CD (GitHub Actions)
+- [ ] Мониторинг (Prometheus/Grafana)
+- [ ] GraphQL subscriptions
+
+## Заметки
+
+- Тесты: 169 тестов, запуск через Docker (`docker exec dwmb_app python -m pytest tests/`)
+- Баг с языком исправлен: `_translations_cache_ttl` не была объявлена → NameError → except → пустой dict → fallback на русский
+- RU_LABELS в helpers.py — вторичная проблема (info_table/image_data_row блоки), основной UI теперь работает
+- Микросервисы созданы, но не подключены к основному приложению (проксирование не реализовано)
+- CLI утилита (cli.py) существует, но не тестировалась
