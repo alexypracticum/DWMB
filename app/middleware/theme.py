@@ -202,7 +202,7 @@ class ThemeMiddleware(BaseHTTPMiddleware):
         if not request.state.theme and request.cookies.get("dark_mode") == "1":
             request.state.theme_css = (
                 "--color-primary: #818cf8; --color-secondary: #a78bfa; --color-accent: #fbbf24; "
-                "--color-background: #0f172a; --color-surface: #1e293b; --color-text: #f1f5f9; "
+                "--color-bg: #0f172a; --color-surface: #1e293b; --color-text: #f1f5f9; "
                 "--color-text-secondary: #94a3b8; --color-border: #334155; --color-error: #f87171; --color-success: #34d399;"
             )
 
