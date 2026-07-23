@@ -19,7 +19,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 PRESETS = {
     "midnight": {
-        "name": "Midnight",
+        "name_key": "preset_midnight",
         "is_dark": True,
         "colors": {
             "primary": "#818cf8", "secondary": "#a78bfa", "accent": "#fbbf24",
@@ -28,7 +28,7 @@ PRESETS = {
         },
     },
     "tokyo-night": {
-        "name": "Tokyo Night",
+        "name_key": "preset_tokyo_night",
         "is_dark": True,
         "colors": {
             "primary": "#7c3aed", "secondary": "#a78bfa", "accent": "#fbbf24",
@@ -37,7 +37,7 @@ PRESETS = {
         },
     },
     "dracula": {
-        "name": "Dracula",
+        "name_key": "preset_dracula",
         "is_dark": True,
         "colors": {
             "primary": "#bd93f9", "secondary": "#ff79c6", "accent": "#f1fa8c",
@@ -46,7 +46,7 @@ PRESETS = {
         },
     },
     "nord": {
-        "name": "Nord",
+        "name_key": "preset_nord",
         "is_dark": True,
         "colors": {
             "primary": "#88c0d0", "secondary": "#81a1c1", "accent": "#ebcb8b",
@@ -55,7 +55,7 @@ PRESETS = {
         },
     },
     "light-clean": {
-        "name": "Светлая",
+        "name_key": "preset_light",
         "is_dark": False,
         "colors": {
             "primary": "#3b82f6", "secondary": "#6366f1", "accent": "#f59e0b",
@@ -64,7 +64,7 @@ PRESETS = {
         },
     },
     "cinema": {
-        "name": "Кино",
+        "name_key": "preset_cinema",
         "is_dark": True,
         "colors": {
             "primary": "#e50914", "secondary": "#b20710", "accent": "#f5c518",
@@ -73,7 +73,7 @@ PRESETS = {
         },
     },
     "literature": {
-        "name": "Литература",
+        "name_key": "preset_literature",
         "is_dark": True,
         "colors": {
             "primary": "#c9a96e", "secondary": "#8b6f47", "accent": "#d4a574",
@@ -82,7 +82,7 @@ PRESETS = {
         },
     },
     "music": {
-        "name": "Музыка",
+        "name_key": "preset_music",
         "is_dark": True,
         "colors": {
             "primary": "#9b59b6", "secondary": "#8e44ad", "accent": "#e74c3c",
@@ -91,7 +91,7 @@ PRESETS = {
         },
     },
     "people": {
-        "name": "Люди",
+        "name_key": "preset_people",
         "is_dark": True,
         "colors": {
             "primary": "#17a2b8", "secondary": "#138496", "accent": "#fd7e14",
@@ -117,11 +117,20 @@ async def theme_editor(
     if not theme:
         raise HTTPException(status_code=404)
 
+    t = getattr(request.state, "t", {})
+    localized_presets = {}
+    for key, preset in PRESETS.items():
+        name_key = preset.get("name_key", key)
+        localized_presets[key] = {
+            **preset,
+            "name": t.get(name_key, key),
+        }
+
     return templates.TemplateResponse("profile/theme_editor.html", {
         "request": request,
         "user": user,
         "theme": theme,
-        "presets": PRESETS,
+        "presets": localized_presets,
     })
 
 
