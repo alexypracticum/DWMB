@@ -103,8 +103,8 @@ class ThemeMiddleware(BaseHTTPMiddleware):
                                     translations = _translations_cache[trans_cache_key]["data"]
                                 else:
                                     try:
-                                        from app.services.ui_translations import get_translation_dict
-                                        translations = await get_translation_dict(session, lang)
+                                        from app.services.ui_strings import get_all_ui_strings_dict
+                                        translations = await get_all_ui_strings_dict(session, lang)
                                         _translations_cache[trans_cache_key] = {
                                             "data": translations,
                                             "expires": time.time() + _translations_cache_ttl
@@ -163,8 +163,8 @@ class ThemeMiddleware(BaseHTTPMiddleware):
                 else:
                     try:
                         async with async_session() as session:
-                            from app.services.ui_translations import get_translation_dict
-                            translations = await get_translation_dict(session, cookie_lang)
+                            from app.services.ui_strings import get_all_ui_strings_dict
+                            translations = await get_all_ui_strings_dict(session, cookie_lang)
                             request.state.t = translations
                             _translations_cache[trans_cache_key] = {
                                 "data": translations,
@@ -177,7 +177,7 @@ class ThemeMiddleware(BaseHTTPMiddleware):
         if not request.state.t:
             try:
                 async with async_session() as session:
-                    from app.services.ui_translations import get_translation_dict
+                    from app.services.ui_strings import get_all_ui_strings_dict
                     request.state.t = await get_translation_dict(session, "ru")
             except Exception:
                 request.state.t = {}
