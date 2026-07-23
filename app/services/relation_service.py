@@ -2,7 +2,7 @@
 Relation Service — business logic for semantic relation operations.
 """
 import logging
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from uuid import UUID
 from datetime import datetime
 
@@ -24,8 +24,18 @@ class RelationService:
         db: AsyncSession,
         entity_id: UUID,
         relation_type_code: Optional[str] = None,
-    ) -> Dict:
-        """Get all relations for an entity (outgoing and incoming)."""
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Get all relations for an entity (outgoing and incoming).
+        
+        Args:
+            db: Database session
+            entity_id: UUID of the entity
+            relation_type_code: Optional filter by relation type
+            
+        Returns:
+            Dict with 'outgoing' and 'incoming' lists
+        """
         # Get all projections for this entity
         proj_result = await db.execute(
             select(EntityProjection.projection_id).where(
@@ -102,8 +112,22 @@ class RelationService:
         source_entity_id: UUID,
         target_entity_id: UUID,
         relation_code: str,
-    ) -> Dict:
-        """Create a semantic relation between two entities."""
+    ) -> Dict[str, Any]:
+        """
+        Create a semantic relation between two entities.
+        
+        Args:
+            db: Database session
+            source_entity_id: UUID of source entity
+            target_entity_id: UUID of target entity
+            relation_code: Relation type code
+            
+        Returns:
+            Dict with relation and type
+            
+        Raises:
+            ValueError: If relation type or entities not found
+        """
         # Get relation type
         rel_type_result = await db.execute(
             select(RelationType).where(RelationType.relation_code == relation_code)
@@ -141,7 +165,16 @@ class RelationService:
     
     @staticmethod
     async def delete_relation(db: AsyncSession, relation_id: UUID) -> bool:
-        """Delete a semantic relation."""
+        """
+        Delete a semantic relation.
+        
+        Args:
+            db: Database session
+            relation_id: UUID of the relation to delete
+            
+        Returns:
+            True if deleted, False if not found
+        """
         result = await db.execute(
             select(SemanticRelation).where(SemanticRelation.relation_id == relation_id)
         )
@@ -155,8 +188,16 @@ class RelationService:
         return True
     
     @staticmethod
-    async def list_relation_types(db: AsyncSession) -> List[Dict]:
-        """List all relation types."""
+    async def list_relation_types(db: AsyncSession) -> List[Dict[str, Any]]:
+        """
+        List all relation types.
+        
+        Args:
+            db: Database session
+            
+        Returns:
+            List of relation type dicts
+        """
         result = await db.execute(
             select(RelationType).order_by(RelationType.relation_name)
         )

@@ -2,7 +2,7 @@
 Kind Service — business logic for entity kind operations.
 """
 import logging
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from uuid import UUID
 from datetime import datetime
 
@@ -10,7 +10,8 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.kinds import EntityKind, EntityKindLabel
-from app.services.language_service import get_language_id, get_lang_ids, kind_label_filter
+from app.models.entities import Entity
+from app.services.language_service import get_language_id, get_kind_label
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +20,17 @@ class KindService:
     """Service for entity kind operations."""
     
     @staticmethod
-    async def get_kind(db: AsyncSession, kind_id: UUID) -> Optional[Dict]:
-        """Get kind with label."""
+    async def get_kind(db: AsyncSession, kind_id: UUID) -> Optional[Dict[str, Any]]:
+        """
+        Get kind with label.
+        
+        Args:
+            db: Database session
+            kind_id: UUID of the kind
+            
+        Returns:
+            Dict with kind and label, or None if not found
+        """
         result = await db.execute(
             select(EntityKind).where(EntityKind.kind_id == kind_id)
         )
@@ -46,8 +56,18 @@ class KindService:
         db: AsyncSession,
         include_abstract: bool = False,
         lang: str = "ru"
-    ) -> List[Dict]:
-        """List all entity kinds."""
+    ) -> List[Dict[str, Any]]:
+        """
+        List all entity kinds.
+        
+        Args:
+            db: Database session
+            include_abstract: Include abstract kinds
+            lang: Language for labels
+            
+        Returns:
+            List of kind dicts
+        """
         query = select(EntityKind).order_by(EntityKind.sort_order)
         
         if not include_abstract:
@@ -55,10 +75,8 @@ class KindService:
         
         result = await db.execute(query)
         
-        kinds = []
+        kinds: List[Dict[str, Any]] = []
         for kind in result.scalars().all():
-            # Get label
-            from app.services.language_service import get_kind_label
             label = await get_kind_label(db, kind.kind_id, lang) or kind.kind_code
             
             kinds.append({
@@ -78,8 +96,26 @@ class KindService:
         parent_kind_code: Optional[str] = None,
         label_ru: Optional[str] = None,
         label_en: Optional[str] = None,
-    ) -> Dict:
-        """Create a new entity kind."""
+    ) -> Dict[str, Any]:
+        """
+        Create a new entity kind.
+        
+        Args:
+            db: Database session
+            kind_code: Unique code for the kind
+            description: Optional description
+            is_abstract: Whether kind is abstract
+            sort_order: Sort order
+            parent_kind_code: Optional parent kind code
+            label_ru: Optional Russian label
+            label_en: Optional English label
+            
+        Returns:
+            Dict with kind
+            
+        Raises:
+            ValueError: If parent kind not found
+        """
         # Get parent kind if specified
         parent_kind_id = None
         if parent_kind_code:
@@ -142,8 +178,23 @@ class KindService:
         sort_order: Optional[int] = None,
         label_ru: Optional[str] = None,
         label_en: Optional[str] = None,
-    ) -> Optional[Dict]:
-        """Update an entity kind."""
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Update an entity kind.
+        
+        Args:
+            db: Database session
+            kind_id: UUID of the kind to update
+            kind_code: New code (optional)
+            description: New description (optional)
+            is_abstract: New abstract flag (optional)
+            sort_order: New sort order (optional)
+            label_ru: New Russian label (optional)
+            label_en: New English label (optional)
+            
+        Returns:
+            Dict with kind, or None if not found
+        """
         result = await db.execute(
             select(EntityKind).where(EntityKind.kind_id == kind_id)
         )
@@ -166,7 +217,19 @@ class KindService:
     
     @staticmethod
     async def delete_kind(db: AsyncSession, kind_id: UUID) -> bool:
-        """Delete an entity kind (only if no entities use it)."""
+        """
+        Delete an entity kind (only if no entities use it).
+        
+        Args:
+            db: Database session
+            kind_id: UUID of the kind to delete
+            
+        Returns:
+            True if deleted, False if not found
+            
+        Raises:
+            ValueError: If kind is in use
+        """
         # Check if any entities use this kind
         count_result = await db.execute(
             select(func.count(Entity.entity_id)).where(Entity.kind_id == kind_id)

@@ -5,7 +5,7 @@ Extracts logic from routes for better separation of concerns.
 import logging
 import json
 import hashlib
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple, Any
 from uuid import UUID
 from datetime import datetime
 
@@ -25,8 +25,17 @@ class EntityService:
     """Service for entity CRUD operations."""
     
     @staticmethod
-    async def get_entity(db: AsyncSession, entity_id: UUID) -> Optional[Dict]:
-        """Get entity with all related data."""
+    async def get_entity(db: AsyncSession, entity_id: UUID) -> Optional[Dict[str, Any]]:
+        """
+        Get entity with all related data.
+        
+        Args:
+            db: Database session
+            entity_id: UUID of the entity
+            
+        Returns:
+            Dict with entity, label, kind, and labels, or None if not found
+        """
         result = await db.execute(
             select(Entity, EntityLabel, EntityKind)
             .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
@@ -44,7 +53,7 @@ class EntityService:
         labels_result = await db.execute(
             select(EntityLabel).where(EntityLabel.entity_id == entity_id)
         )
-        labels = labels_result.scalars().all()
+        labels = list(labels_result.scalars().all())
         
         return {
             "entity": entity,
@@ -61,8 +70,21 @@ class EntityService:
         page: int = 1,
         per_page: int = 20,
         lang: str = "ru"
-    ) -> Dict:
-        """List entities with filtering and pagination."""
+    ) -> Dict[str, Any]:
+        """
+        List entities with filtering and pagination.
+        
+        Args:
+            db: Database session
+            kind: Filter by entity kind code
+            search: Search query for entity labels
+            page: Page number (1-indexed)
+            per_page: Items per page
+            lang: Language code for labels
+            
+        Returns:
+            Dict with items, total, page, per_page, total_pages
+        """
         offset = (page - 1) * per_page
         
         lang_id, ru_lang_id = await get_lang_ids(db, lang)
@@ -100,7 +122,7 @@ class EntityService:
             .limit(per_page)
         )
         
-        items = []
+        items: List[Dict[str, Any]] = []
         for entity, label, ek in result.unique():
             # Get kind label
             from app.services.language_service import get_kind_label
@@ -130,8 +152,25 @@ class EntityService:
         label_en: Optional[str] = None,
         description: Optional[str] = None,
         owner_id: Optional[UUID] = None
-    ) -> Dict:
-        """Create a new entity."""
+    ) -> Dict[str, Any]:
+        """
+        Create a new entity.
+        
+        Args:
+            db: Database session
+            entity_code: Unique code for the entity
+            kind_code: Kind code (e.g., 'movie', 'book')
+            label_ru: Russian label
+            label_en: Optional English label
+            description: Optional description
+            owner_id: Optional owner UUID
+            
+        Returns:
+            Dict with entity and kind
+            
+        Raises:
+            ValueError: If kind_code not found
+        """
         # Get kind
         kind_result = await db.execute(
             select(EntityKind).where(EntityKind.kind_code == kind_code)
@@ -195,8 +234,23 @@ class EntityService:
         label_en: Optional[str] = None,
         description: Optional[str] = None,
         status: Optional[str] = None,
-    ) -> Optional[Dict]:
-        """Update an existing entity."""
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Update an existing entity.
+        
+        Args:
+            db: Database session
+            entity_id: UUID of the entity to update
+            entity_code: New entity code (optional)
+            kind_code: New kind code (optional)
+            label_ru: New Russian label (optional)
+            label_en: New English label (optional)
+            description: New description (optional)
+            status: New status (optional)
+            
+        Returns:
+            Dict with entity, kind, and labels, or None if not found
+        """
         # Get entity
         entity_result = await db.execute(
             select(Entity).where(Entity.entity_id == entity_id)
@@ -277,7 +331,7 @@ class EntityService:
         labels_result = await db.execute(
             select(EntityLabel).where(EntityLabel.entity_id == entity.entity_id)
         )
-        labels = labels_result.scalars().all()
+        labels = list(labels_result.scalars().all())
         
         return {
             "entity": entity,
@@ -287,7 +341,16 @@ class EntityService:
     
     @staticmethod
     async def delete_entity(db: AsyncSession, entity_id: UUID) -> bool:
-        """Soft delete an entity."""
+        """
+        Soft delete an entity.
+        
+        Args:
+            db: Database session
+            entity_id: UUID of the entity to delete
+            
+        Returns:
+            True if deleted, False if not found
+        """
         entity_result = await db.execute(
             select(Entity).where(Entity.entity_id == entity_id)
         )
@@ -308,8 +371,20 @@ class EntityService:
         kind: Optional[str] = None,
         limit: int = 20,
         lang: str = "ru"
-    ) -> List[Dict]:
-        """Search entities by name."""
+    ) -> List[Dict[str, Any]]:
+        """
+        Search entities by name.
+        
+        Args:
+            db: Database session
+            query: Search query
+            kind: Optional kind filter
+            limit: Max results
+            lang: Language for labels
+            
+        Returns:
+            List of entity dicts
+        """
         search_pattern = f"%{query}%"
         
         q = (
@@ -329,7 +404,7 @@ class EntityService:
         
         result = await db.execute(q)
         
-        items = []
+        items: List[Dict[str, Any]] = []
         for entity, label, ek in result.unique():
             from app.services.language_service import get_kind_label
             kind_label = await get_kind_label(db, ek.kind_id, lang) or ek.kind_code
