@@ -12,7 +12,9 @@ from app.models.users import UserAccount
 from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
 from app.models.fields import FieldRegistry
 from app.models.relations import RelationType
-from app.services.auth import require_admin, get_password_hash
+from app.services.auth import require_admin
+from app.services.auth import get_password_hash
+from app.services.rbac import require_permission
 from app.services.language_service import get_language_id, get_kind_label, get_lang
 
 templates = Jinja2Templates(directory="app/templates")
@@ -60,7 +62,7 @@ def _sync_layout_fields_from_schema(layout_blocks, schema_json):
             block["config"]["fields"] = new_fields
     return layout_blocks
 @router.get("/ai", response_class=HTMLResponse)
-async def admin_ai_page(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_ai_page(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     from app.models.ai import AiConfig as AiConfigModel, AiTaskLog as AiTaskLogModel
 
     result = await db.execute(select(AiConfigModel).where(AiConfigModel.is_active == True).limit(1))
@@ -80,7 +82,7 @@ async def admin_ai_page(request: Request, db: AsyncSession = Depends(get_db), us
 async def admin_ai_save(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     from app.models.ai import AiConfig as AiConfigModel
     from app.services.ai import ai_service
@@ -113,7 +115,7 @@ async def admin_ai_save(
 
 
 @router.get("/ai/profiles", response_class=HTMLResponse)
-async def admin_ai_profiles(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_ai_profiles(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     from app.models.ai import AiConfigProfile
     result = await db.execute(select(AiConfigProfile).order_by(AiConfigProfile.created_at.desc()))
     profiles = result.scalars().all()
@@ -126,7 +128,7 @@ async def admin_ai_profiles(request: Request, db: AsyncSession = Depends(get_db)
 async def admin_ai_profile_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     from app.models.ai import AiConfigProfile
     form = await request.form()
@@ -144,7 +146,7 @@ async def admin_ai_profile_create(
 
 
 @router.get("/plugins", response_class=HTMLResponse)
-async def admin_plugins_page(request: Request, user: UserAccount = Depends(require_admin)):
+async def admin_plugins_page(request: Request, user: UserAccount = Depends(require_permission("admin.access"))):
     from plugins import get_plugins
     plugins_list = []
     for p in get_plugins():
@@ -163,7 +165,7 @@ async def admin_plugins_page(request: Request, user: UserAccount = Depends(requi
 async def admin_ai_profile_activate(
     profile_id: str,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     from app.models.ai import AiConfigProfile, AiConfig
     # Deactivate all profiles
@@ -193,7 +195,7 @@ async def admin_ai_profile_activate(
 async def admin_ai_profile_delete(
     profile_id: str,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     from app.models.ai import AiConfigProfile
     profile = await db.get(AiConfigProfile, UUID(profile_id))
@@ -204,7 +206,7 @@ async def admin_ai_profile_delete(
 
 
 @router.get("/plugins", response_class=HTMLResponse)
-async def admin_plugins_page(request: Request, user: UserAccount = Depends(require_admin)):
+async def admin_plugins_page(request: Request, user: UserAccount = Depends(require_permission("admin.access"))):
     from plugins import get_plugins
     plugins_list = []
     for p in get_plugins():

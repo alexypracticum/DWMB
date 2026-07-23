@@ -12,7 +12,9 @@ from app.models.users import UserAccount
 from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
 from app.models.fields import FieldRegistry
 from app.models.relations import RelationType
-from app.services.auth import require_admin, get_password_hash
+from app.services.auth import require_admin
+from app.services.auth import get_password_hash
+from app.services.rbac import require_permission
 from app.services.language_service import get_language_id, get_kind_label, get_lang
 
 templates = Jinja2Templates(directory="app/templates")
@@ -60,7 +62,7 @@ def _sync_layout_fields_from_schema(layout_blocks, schema_json):
             block["config"]["fields"] = new_fields
     return layout_blocks
 @router.get("/users", response_class=HTMLResponse)
-async def admin_users(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_users(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     result = await db.execute(select(UserAccount).order_by(UserAccount.created_at.desc()))
     users = result.scalars().all()
     return templates.TemplateResponse("admin/users.html", {
@@ -71,7 +73,7 @@ async def admin_users(request: Request, db: AsyncSession = Depends(get_db), user
 
 
 @router.post("/users/{user_id}/toggle-admin")
-async def toggle_admin(user_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def toggle_admin(user_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     from uuid import UUID
     result = await db.execute(select(UserAccount).where(UserAccount.user_id == UUID(user_id)))
     target = result.scalar_one_or_none()
@@ -81,7 +83,7 @@ async def toggle_admin(user_id: str, db: AsyncSession = Depends(get_db), user: U
 
 
 @router.post("/users/{user_id}/toggle-active")
-async def toggle_active(user_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def toggle_active(user_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     from uuid import UUID
     result = await db.execute(select(UserAccount).where(UserAccount.user_id == UUID(user_id)))
     target = result.scalar_one_or_none()

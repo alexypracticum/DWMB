@@ -12,7 +12,9 @@ from app.models.users import UserAccount
 from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
 from app.models.fields import FieldRegistry
 from app.models.relations import RelationType
-from app.services.auth import require_admin, get_password_hash
+from app.services.auth import require_admin
+from app.services.auth import get_password_hash
+from app.services.rbac import require_permission
 from app.services.language_service import get_language_id, get_kind_label, get_lang
 
 templates = Jinja2Templates(directory="app/templates")
@@ -60,7 +62,7 @@ def _sync_layout_fields_from_schema(layout_blocks, schema_json):
             block["config"]["fields"] = new_fields
     return layout_blocks
 @router.get("/relation-types", response_class=HTMLResponse)
-async def admin_relation_types(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_relation_types(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     from app.models.relations import RelationType, SemanticRelation
 
     result = await db.execute(select(RelationType).order_by(RelationType.relation_code))
@@ -87,7 +89,7 @@ async def admin_relation_types(request: Request, db: AsyncSession = Depends(get_
 
 
 @router.get("/relation-types/create", response_class=HTMLResponse)
-async def admin_relation_type_create_page(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_relation_type_create_page(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     from app.models.relations import RelationType
     result = await db.execute(select(RelationType).order_by(RelationType.relation_code))
     all_types = result.scalars().all()
@@ -100,7 +102,7 @@ async def admin_relation_type_create_page(request: Request, db: AsyncSession = D
 async def admin_relation_type_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
     relation_code: str = Form(""),
     relation_name: str = Form(""),
     description: str = Form(""),
@@ -145,7 +147,7 @@ async def admin_relation_type_create(
 
 
 @router.get("/relation-types/{rt_id}/edit", response_class=HTMLResponse)
-async def admin_relation_type_edit_page(rt_id: str, request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_relation_type_edit_page(rt_id: str, request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     from app.models.relations import RelationType
     result = await db.execute(select(RelationType).where(RelationType.relation_type_id == UUID(rt_id)))
     rt = result.scalar_one_or_none()
@@ -165,7 +167,7 @@ async def admin_relation_type_edit(
     rt_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
     relation_code: str = Form(""),
     relation_name: str = Form(""),
     description: str = Form(""),
@@ -204,7 +206,7 @@ async def admin_relation_type_edit(
 
 
 @router.post("/relation-types/{rt_id}/delete")
-async def admin_relation_type_delete(rt_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_relation_type_delete(rt_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     from app.models.relations import RelationType, SemanticRelation
 
     result = await db.execute(select(RelationType).where(RelationType.relation_type_id == UUID(rt_id)))

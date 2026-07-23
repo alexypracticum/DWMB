@@ -195,6 +195,11 @@ from plugins import startup_plugins, shutdown_plugins
 
 @app.on_event("startup")
 async def on_startup():
+    # Initialize Redis cache
+    from app.services.cache import init_cache
+    await init_cache(settings.REDIS_URL)
+    logger.info("Redis cache initialized")
+    
     await startup_plugins()
 
 @app.on_event("shutdown")

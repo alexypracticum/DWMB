@@ -12,7 +12,9 @@ from app.models.users import UserAccount
 from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
 from app.models.fields import FieldRegistry
 from app.models.relations import RelationType
-from app.services.auth import require_admin, get_password_hash
+from app.services.auth import require_admin
+from app.services.auth import get_password_hash
+from app.services.rbac import require_permission
 from app.services.language_service import get_language_id, get_kind_label, get_lang
 
 templates = Jinja2Templates(directory="app/templates")
@@ -60,7 +62,7 @@ def _sync_layout_fields_from_schema(layout_blocks, schema_json):
             block["config"]["fields"] = new_fields
     return layout_blocks
 @router.get("/plugins", response_class=HTMLResponse)
-async def admin_plugins_page(request: Request, user: UserAccount = Depends(require_admin)):
+async def admin_plugins_page(request: Request, user: UserAccount = Depends(require_permission("admin.access"))):
     from plugins import get_plugins
     plugins_list = []
     for p in get_plugins():

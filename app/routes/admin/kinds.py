@@ -12,7 +12,9 @@ from app.models.users import UserAccount
 from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
 from app.models.fields import FieldRegistry
 from app.models.relations import RelationType
-from app.services.auth import require_admin, get_password_hash
+from app.services.auth import require_admin
+from app.services.auth import get_password_hash
+from app.services.rbac import require_permission
 from app.services.language_service import get_language_id, get_kind_label, get_lang
 
 templates = Jinja2Templates(directory="app/templates")
@@ -60,7 +62,7 @@ def _sync_layout_fields_from_schema(layout_blocks, schema_json):
             block["config"]["fields"] = new_fields
     return layout_blocks
 @router.get("/kinds", response_class=HTMLResponse)
-async def admin_kinds(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_kinds(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     result = await db.execute(
         select(EntityKind).order_by(EntityKind.sort_order)
     )
@@ -81,7 +83,7 @@ async def admin_kinds(request: Request, db: AsyncSession = Depends(get_db), user
 
 
 @router.get("/kinds/{kind_id}/edit", response_class=HTMLResponse)
-async def admin_kind_edit_page(request: Request, kind_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_kind_edit_page(request: Request, kind_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     from uuid import UUID
     from app.models.kinds import EntityKind, EntityKindLabel
     result = await db.execute(select(EntityKind).where(EntityKind.kind_id == UUID(kind_id)))
@@ -115,7 +117,7 @@ async def admin_kind_edit_save(
     kind_id: str,
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
     kind_code: str = Form(""),
     label_ru: str = Form(""),
     label_en: str = Form(""),
@@ -190,7 +192,7 @@ async def admin_kind_edit_save(
 
 
 @router.get("/kinds/create", response_class=HTMLResponse)
-async def admin_kind_create_page(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_kind_create_page(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     t = getattr(request.state, "t", {})
     import json as _json
     ui_translations_json = _json.dumps(t, ensure_ascii=False)
@@ -204,7 +206,7 @@ async def admin_kind_create_page(request: Request, db: AsyncSession = Depends(ge
 async def admin_kind_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
     kind_code: str = Form(""),
     label_ru: str = Form(""),
     label_en: str = Form(""),
@@ -264,7 +266,7 @@ async def admin_kind_create(
 async def admin_kind_delete(
     kind_id: str,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     from app.models.kinds import EntityKind, EntityKindLabel
     from app.models.projections import OntologyTemplate

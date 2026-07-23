@@ -12,7 +12,9 @@ from app.models.users import UserAccount
 from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
 from app.models.fields import FieldRegistry
 from app.models.relations import RelationType
-from app.services.auth import require_admin, get_password_hash
+from app.services.auth import require_admin
+from app.services.auth import get_password_hash
+from app.services.rbac import require_permission
 from app.services.language_service import get_language_id, get_kind_label, get_lang
 
 templates = Jinja2Templates(directory="app/templates")
@@ -60,7 +62,7 @@ def _sync_layout_fields_from_schema(layout_blocks, schema_json):
             block["config"]["fields"] = new_fields
     return layout_blocks
 @router.get("/models", response_class=HTMLResponse)
-async def admin_models(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_models(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
 
     result = await db.execute(select(OntologyModel).order_by(OntologyModel.domain, OntologyModel.model_code))
@@ -80,7 +82,7 @@ async def admin_models(request: Request, db: AsyncSession = Depends(get_db), use
 
 
 @router.get("/models/create", response_class=HTMLResponse)
-async def admin_model_create_page(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_model_create_page(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     return templates.TemplateResponse("admin/model_create.html", {
         "request": request, "user": user,
     })
@@ -90,7 +92,7 @@ async def admin_model_create_page(request: Request, db: AsyncSession = Depends(g
 async def admin_model_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
     model_code: str = Form(""),
     domain: str = Form(""),
     description: str = Form(""),
@@ -152,7 +154,7 @@ async def admin_model_create(
 
 @router.get("/models/{model_id}/edit", response_class=HTMLResponse)
 async def admin_model_edit_page(
-    request: Request, model_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)
+    request: Request, model_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))
 ):
     from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
 
@@ -175,7 +177,7 @@ async def admin_model_edit_page(
 async def admin_model_edit(
     model_id: str,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
     model_code: str = Form(""),
     domain: str = Form(""),
     description: str = Form(""),
@@ -242,7 +244,7 @@ async def admin_model_edit(
 async def admin_model_delete(
     model_id: str,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
     from app.models.entities import Entity, EntityLabel
@@ -357,7 +359,7 @@ async def api_fields(
 async def api_create_field(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     """Create a new field in field_registry."""
     from app.models.fields import FieldRegistry

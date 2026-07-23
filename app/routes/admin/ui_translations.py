@@ -12,7 +12,9 @@ from app.models.users import UserAccount
 from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
 from app.models.fields import FieldRegistry
 from app.models.relations import RelationType
-from app.services.auth import require_admin, get_password_hash
+from app.services.auth import require_admin
+from app.services.auth import get_password_hash
+from app.services.rbac import require_permission
 from app.services.language_service import get_language_id, get_kind_label, get_lang
 
 templates = Jinja2Templates(directory="app/templates")
@@ -63,7 +65,7 @@ def _sync_layout_fields_from_schema(layout_blocks, schema_json):
 async def admin_ui_translations(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
     lang: str = Query("ru"),
     search: str = Query(""),
 ):
@@ -146,7 +148,7 @@ async def admin_ui_translations(
 async def admin_ui_translation_update(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     from app.models.languages import Language
     from app.models.kinds import EntityKind
@@ -272,7 +274,7 @@ async def admin_ui_translation_update(
 async def admin_ui_translation_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     from app.models.languages import Language
     from app.models.kinds import EntityKind
@@ -380,7 +382,7 @@ async def admin_ui_translation_create(
 async def admin_ui_translation_delete(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     from app.models.languages import Language
     from app.models.kinds import EntityKind
@@ -432,7 +434,7 @@ async def admin_ui_translation_delete(
 async def admin_ui_translation_export(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
     lang: str = Query("all"),
 ):
     from fastapi.responses import JSONResponse
@@ -530,7 +532,7 @@ async def admin_ui_translation_export(
 async def admin_ui_translation_import(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     from fastapi.responses import JSONResponse
     from app.models.languages import Language

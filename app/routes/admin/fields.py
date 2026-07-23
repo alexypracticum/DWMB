@@ -12,7 +12,9 @@ from app.models.users import UserAccount
 from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
 from app.models.fields import FieldRegistry
 from app.models.relations import RelationType
-from app.services.auth import require_admin, get_password_hash
+from app.services.auth import require_admin
+from app.services.auth import get_password_hash
+from app.services.rbac import require_permission
 from app.services.language_service import get_language_id, get_kind_label, get_lang
 
 templates = Jinja2Templates(directory="app/templates")
@@ -85,7 +87,7 @@ async def _get_categories(db, t: dict = None):
 
 
 @router.get("/fields", response_class=HTMLResponse)
-async def admin_fields(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin),
+async def admin_fields(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access")),
                        category: str = Query(None)):
     t = getattr(request.state, "t", {})
     categories = await _get_categories(db, t)
@@ -104,7 +106,7 @@ async def admin_fields(request: Request, db: AsyncSession = Depends(get_db), use
 
 @router.post("/fields/create")
 async def admin_field_create(
-    request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin),
+    request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access")),
     field_key: str = Form(...), field_label: str = Form(...), field_type: str = Form("string"),
     category: str = Form("common"), default_value: str = Form(""),
 ):
@@ -125,7 +127,7 @@ async def admin_field_create(
 
 @router.post("/fields/{field_id}/edit")
 async def admin_field_edit(
-    request: Request, field_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin),
+    request: Request, field_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access")),
     field_key: str = Form(...), field_label: str = Form(...), field_type: str = Form("string"),
     category: str = Form("common"), default_value: str = Form(""),
 ):
@@ -143,7 +145,7 @@ async def admin_field_edit(
 
 
 @router.post("/fields/{field_id}/delete")
-async def admin_field_delete(field_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_field_delete(field_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     from uuid import UUID
     result = await db.execute(select(FieldRegistry).where(FieldRegistry.field_id == UUID(field_id)))
     field = result.scalar_one_or_none()
@@ -155,7 +157,7 @@ async def admin_field_delete(field_id: str, db: AsyncSession = Depends(get_db), 
 
 @router.post("/fields/categories/create")
 async def admin_category_create(
-    request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin),
+    request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access")),
     category_key: str = Form(...), category_name: str = Form(""),
 ):
     """Create a new category by adding a field with that category."""
@@ -169,7 +171,7 @@ async def admin_category_create(
 
 @router.post("/fields/categories/delete")
 async def admin_category_delete(
-    request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin),
+    request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access")),
     category_key: str = Form(...),
 ):
     """Delete a category and move its fields to 'common'."""

@@ -12,7 +12,9 @@ from app.models.users import UserAccount
 from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
 from app.models.fields import FieldRegistry
 from app.models.relations import RelationType
-from app.services.auth import require_admin, get_password_hash
+from app.services.auth import require_admin
+from app.services.auth import get_password_hash
+from app.services.rbac import require_permission
 from app.services.language_service import get_language_id, get_kind_label, get_lang
 
 templates = Jinja2Templates(directory="app/templates")
@@ -60,7 +62,7 @@ def _sync_layout_fields_from_schema(layout_blocks, schema_json):
             block["config"]["fields"] = new_fields
     return layout_blocks
 @router.get("/languages", response_class=HTMLResponse)
-async def admin_languages(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_languages(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     from app.models.languages import Language
     result = await db.execute(select(Language).order_by(Language.sort_order))
     languages = result.scalars().all()
@@ -72,7 +74,7 @@ async def admin_languages(request: Request, db: AsyncSession = Depends(get_db), 
 
 
 @router.get("/languages/create", response_class=HTMLResponse)
-async def admin_language_create_page(request: Request, user: UserAccount = Depends(require_admin)):
+async def admin_language_create_page(request: Request, user: UserAccount = Depends(require_permission("admin.access"))):
     return templates.TemplateResponse("admin/language_edit.html", {
         "request": request,
         "user": user,
@@ -84,7 +86,7 @@ async def admin_language_create_page(request: Request, user: UserAccount = Depen
 async def admin_language_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
     code: str = Form(...),
     name: str = Form(...),
     native_name: str = Form(""),
@@ -110,7 +112,7 @@ async def admin_language_edit_page(
     request: Request,
     lang_id: str,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     from app.models.languages import Language
     result = await db.execute(select(Language).where(Language.language_id == UUID(lang_id)))
@@ -129,7 +131,7 @@ async def admin_language_edit(
     request: Request,
     lang_id: str,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
     code: str = Form(...),
     name: str = Form(...),
     native_name: str = Form(""),
@@ -158,7 +160,7 @@ async def admin_language_edit(
 async def admin_language_delete(
     lang_id: str,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
 ):
     from app.models.languages import Language
     from app.services.language import clear_language_cache

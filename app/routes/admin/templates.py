@@ -12,7 +12,9 @@ from app.models.users import UserAccount
 from app.models.projections import OntologyModel, OntologyTemplate, EntityProjection, ProjectionState
 from app.models.fields import FieldRegistry
 from app.models.relations import RelationType
-from app.services.auth import require_admin, get_password_hash
+from app.services.auth import require_admin
+from app.services.auth import get_password_hash
+from app.services.rbac import require_permission
 from app.services.language_service import get_language_id, get_kind_label, get_lang
 
 templates = Jinja2Templates(directory="app/templates")
@@ -60,7 +62,7 @@ def _sync_layout_fields_from_schema(layout_blocks, schema_json):
             block["config"]["fields"] = new_fields
     return layout_blocks
 @router.get("/templates", response_class=HTMLResponse)
-async def admin_templates(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)):
+async def admin_templates(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
     result = await db.execute(
         select(OntologyTemplate, OntologyModel)
         .join(OntologyModel, OntologyModel.model_id == OntologyTemplate.model_id)
@@ -95,7 +97,7 @@ async def admin_templates(request: Request, db: AsyncSession = Depends(get_db), 
 async def admin_template_create(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
     model_id: str = Form(...),
     kind_id: str = Form(""),
     template_code: str = Form(...),
@@ -187,7 +189,7 @@ async def admin_template_create(
 
 @router.get("/templates/{template_id}/edit", response_class=HTMLResponse)
 async def admin_template_edit_page(
-    request: Request, template_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)
+    request: Request, template_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))
 ):
     from uuid import UUID
     import json
@@ -249,7 +251,7 @@ async def admin_template_edit(
     request: Request,
     template_id: str,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_admin),
+    user: UserAccount = Depends(require_permission("admin.access")),
     model_id: str = Form(...),
     kind_id: str = Form(""),
     template_code: str = Form(...),
@@ -334,7 +336,7 @@ async def admin_template_edit(
 
 @router.post("/templates/{template_id}/delete")
 async def admin_template_delete(
-    template_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)
+    template_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))
 ):
     from uuid import UUID
     from app.models.entities import Entity, EntityLabel
@@ -365,7 +367,7 @@ async def admin_template_delete(
 
 @router.post("/templates/{template_id}/toggle-active")
 async def admin_template_toggle_active(
-    template_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_admin)
+    template_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))
 ):
     from uuid import UUID
     result = await db.execute(select(OntologyTemplate).where(OntologyTemplate.template_id == UUID(template_id)))
