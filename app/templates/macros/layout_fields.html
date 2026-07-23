@@ -9,9 +9,9 @@
     <div class="mt-2 flex items-center gap-2">
         <select id="{{ input_name }}_registry" class="px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none max-w-xs"
                 onchange="pickRegistryField('{{ input_name }}', this)">
-            <option value="">-- выбрать из реестра --</option>
+            <option value="">{{ t.field_registry_select }}</option>
         </select>
-        <button type="button" onclick="addFieldEditor('{{ input_name }}')" class="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 text-xs border border-green-200">+ Вручную</button>
+        <button type="button" onclick="addFieldEditor('{{ input_name }}')" class="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 text-xs border border-green-200">{{ t.field_manual }}</button>
     </div>
 </div>
 <script>
@@ -39,7 +39,7 @@
             });
             opts += '</optgroup>';
         });
-        sel.innerHTML = '<option value="">-- выбрать из реестра --</option>' + opts;
+        sel.innerHTML = '<option value="">{{ t.field_registry_select }}</option>' + opts;
     }).catch(() => {});
 
     window.pickRegistryField = function(id, selectEl) {
@@ -63,7 +63,7 @@
                 '<input type="text" value="' + esc(f.key || '') + '" placeholder="key" ' +
                     'onchange="updateField(\'' + editorId + '\',' + i + ',\'key\',this.value)" ' +
                     'class="w-28 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none">' +
-                '<input type="text" value="' + esc(f.label || '') + '" placeholder="Метка" ' +
+                '<input type="text" value="' + esc(f.label || '') + '" placeholder="{{ t.get("field_label", "Label") }}" ' +
                     'onchange="updateField(\'' + editorId + '\',' + i + ',\'label\',this.value)" ' +
                     'class="flex-1 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none">' +
                 '<select onchange="updateField(\'' + editorId + '\',' + i + ',\'type\',this.value)" ' +
@@ -113,28 +113,28 @@
 {# Macro: render layout block as editable form.
    Each state_field input uses state_key as name so POST handler can read it directly.
    state_data dict provides pre-filled values for edit mode. #}
-{% macro render_block_form(block, index, schema_fields=[], state_data={}) %}
+{% macro render_block_form(block, index, schema_fields=[], state_data={}, t={}) %}
 {% set btype = block.type | default('text_block') %}
 {% set bid = block.id | default('block_' ~ index) %}
 {% set config = block.config | default({}) %}
 
 {% set block_meta = {
-    'hero_image': {'icon': '🖼️', 'name': 'Главное изображение'},
-    'image': {'icon': '📷', 'name': 'Изображение'},
-    'image_data_row': {'icon': '📸', 'name': 'Изображение + данные'},
-    'gallery': {'icon': '🖼️', 'name': 'Галерея'},
-    'markdown': {'icon': '📝', 'name': 'Текст (Markdown)'},
-    'video': {'icon': '🎬', 'name': 'Видео'},
-    'audio': {'icon': '🎵', 'name': 'Аудио'},
-    'info_table': {'icon': '📊', 'name': 'Таблица'},
-    'relation_list': {'icon': '🔗', 'name': 'Связи'},
-    'text_block': {'icon': '📄', 'name': 'Текстовый блок'},
-    'divider': {'icon': '➖', 'name': 'Разделитель'},
-    'spacer': {'icon': '↕️', 'name': 'Отступ'},
-    'file_link': {'icon': '📎', 'name': 'Файл-ссылка'},
-    'file_upload': {'icon': '📤', 'name': 'Загрузка файла'},
+    'hero_image': {'icon': '🖼️', 'name': t.get('block_hero_image', 'Hero Image')},
+    'image': {'icon': '📷', 'name': t.get('block_image', 'Image')},
+    'image_data_row': {'icon': '📸', 'name': t.get('block_image_data_row', 'Image + Data')},
+    'gallery': {'icon': '🖼️', 'name': t.get('block_gallery', 'Gallery')},
+    'markdown': {'icon': '📝', 'name': t.get('block_markdown', 'Text (Markdown)')},
+    'video': {'icon': '🎬', 'name': t.get('block_video', 'Video')},
+    'audio': {'icon': '🎵', 'name': t.get('block_audio', 'Audio')},
+    'info_table': {'icon': '📊', 'name': t.get('block_info_table', 'Table')},
+    'relation_list': {'icon': '🔗', 'name': t.get('block_relation_list', 'Relations')},
+    'text_block': {'icon': '📄', 'name': t.get('block_text_block', 'Text Block')},
+    'divider': {'icon': '➖', 'name': t.get('block_divider', 'Divider')},
+    'spacer': {'icon': '↕️', 'name': t.get('block_spacer', 'Spacer')},
+    'file_link': {'icon': '📎', 'name': t.get('block_file_link', 'File Link')},
+    'file_upload': {'icon': '📤', 'name': t.get('block_file_upload', 'File Upload')},
     'custom_html': {'icon': '💻', 'name': 'HTML'},
-    'horizontal_row': {'icon': '↔️', 'name': 'Горизонт. ряд'}
+    'horizontal_row': {'icon': '↔️', 'name': t.get('block_horizontal_row', 'Horizontal Row')}
 } %}
 {% set meta = block_meta.get(btype, {'icon': '?', 'name': btype}) %}
 
@@ -151,7 +151,7 @@
         {% set sk = config.get('source', 'poster_url') %}
         {% set sv = state_data.get(sk, '') %}
         <div class="flex items-center border-b border-gray-100 py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Изображение</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("block_image", "Image") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1 flex items-center gap-2">
                 <input type="text" name="{{ sk }}" value="{{ sv }}" placeholder="{{ sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -165,7 +165,7 @@
         {% set sk = config.get('source', 'image_url') %}
         {% set sv = state_data.get(sk, '') %}
         <div class="flex items-center border-b border-gray-100 py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Изображение</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("block_image", "Image") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1 flex items-center gap-2">
                 <input type="text" name="{{ sk }}" value="{{ sv }}" placeholder="{{ sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -175,13 +175,13 @@
         {% if sv %}<img src="{{ sv }}" class="mt-2 rounded-lg max-h-40 object-contain" alt="">{% endif %}
         {% set ck = config.get('caption', 'image_caption') %}
         <div class="flex items-center border-b border-gray-100 py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Подпись</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_caption", "Caption") }}</div>
             <div class="text-gray-400 pr-3">:</div>
-            <div class="flex-1"><input type="text" name="{{ ck }}" value="{{ state_data.get(ck, '') }}" placeholder="Подпись" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+            <div class="flex-1"><input type="text" name="{{ ck }}" value="{{ state_data.get(ck, '') }}" placeholder="{{ t.get("layout_caption", "Caption") }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
         </div>
         {% set hk = 'block_height_' ~ bid %}
         <div class="flex items-center py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Высота (px)</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_height_px", "Height (px)") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1"><input type="text" name="{{ hk }}" value="{{ config.get('height', '400') }}" class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
         </div>
@@ -191,7 +191,7 @@
         {% set img_sk = config.get('image_source', 'poster_url') %}
         {% set img_sv = state_data.get(img_sk, '') %}
         <div class="flex items-center border-b border-gray-100 py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Изображение</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("block_image", "Image") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1 flex items-center gap-2">
                 <input type="text" name="{{ img_sk }}" value="{{ img_sv }}" placeholder="{{ img_sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -215,24 +215,24 @@
         {% set sv = state_data.get(sk, '') %}
         {% if sv is iterable and sv is not string %}{% set sv = sv | join('\n') %}{% endif %}
         <div class="flex items-center border-b border-gray-100 py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Заголовок</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_title", "Title") }}</div>
             <div class="text-gray-400 pr-3">:</div>
-            <div class="flex-1"><input type="text" name="block_title_{{ bid }}" value="{{ config.get('title', '') }}" placeholder="Заголовок галереи (необязательно)" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+            <div class="flex-1"><input type="text" name="block_title_{{ bid }}" value="{{ config.get('title', '') }}" placeholder="{{ t.layout_title_optional }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
         </div>
         <div class="flex items-center border-b border-gray-100 py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Изображения</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_images", "Images") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1">
-                <textarea name="{{ sk }}" rows="3" placeholder="URL изображений, по одному на строку" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">{{ sv }}</textarea>
+                <textarea name="{{ sk }}" rows="3" placeholder="{{ t.layout_images_hint }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none">{{ sv }}</textarea>
                 <div class="mt-2 flex gap-2">
-                    <div class="upload-group"><button type="button" onclick="triggerGalleryUpload(this, '{{ sk }}')" class="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-xs border border-blue-200">📤 Добавить фото</button></div>
-                    <button type="button" onclick="clearGallery(this, '{{ sk }}')" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-xs border border-red-200">Очистить</button>
+                    <div class="upload-group"><button type="button" onclick="triggerGalleryUpload(this, '{{ sk }}')" class="px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 text-xs border border-blue-200">📤 {{ t.get("layout_add_photo", "Add photo") }}</button></div>
+                    <button type="button" onclick="clearGallery(this, '{{ sk }}')" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-xs border border-red-200">{{ t.layout_clear }}</button>
                 </div>
             </div>
         </div>
         {% set hk = 'block_height_' ~ bid %}
         <div class="flex items-center py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Высота (px)</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_height_px", "Height (px)") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1"><input type="text" name="{{ hk }}" value="{{ config.get('height', '300') }}" class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
         </div>
@@ -242,7 +242,7 @@
         {% set sk = config.get('source', 'content') %}
         {% set sv = state_data.get(sk, '') %}
         <div class="flex items-start py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3 pt-2">Контент</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3 pt-2">{{ t.get("layout_content", "Content") }}</div>
             <div class="text-gray-400 pr-3 pt-2">:</div>
             <div class="flex-1">
                 <input type="hidden" name="{{ sk }}" id="{{ sk }}_input" value="{{ sv }}">
@@ -255,7 +255,7 @@
         {% set sk = config.get('source', 'video_url') %}
         {% set sv = state_data.get(sk, '') %}
         <div class="flex items-center py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Видео (URL)</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_video_url", "Video (URL)") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1 flex items-center gap-2">
                 <input type="text" name="{{ sk }}" value="{{ sv }}" placeholder="{{ sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -269,7 +269,7 @@
         {% set sk = config.get('source', 'audio_url') %}
         {% set sv = state_data.get(sk, '') %}
         <div class="flex items-center border-b border-gray-100 py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Аудио (URL)</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_audio_url", "Audio (URL)") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1 flex items-center gap-2">
                 <input type="text" name="{{ sk }}" value="{{ sv }}" placeholder="{{ sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -279,7 +279,7 @@
         {% if sv %}<audio controls class="mt-2 w-full max-w-md"><source src="{{ sv }}"></audio>{% endif %}
         {% set tk = config.get('title', 'audio_title') %}
         <div class="flex items-center py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Название</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_audio_title", "Title") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1"><input type="text" name="{{ tk }}" value="{{ state_data.get(tk, '') }}" placeholder="{{ tk }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
         </div>
@@ -288,7 +288,7 @@
         {% elif btype == 'info_table' %}
         {% set fk = 'block_fields_' ~ bid %}
         <div class="flex items-center border-b border-gray-100 py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Поля</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_fields", "Fields") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1">
                 {{ render_field_editor(fk, config.get('fields', '[]')) }}
@@ -296,23 +296,23 @@
         </div>
         {% set sk = 'block_style_' ~ bid %}
         <div class="flex items-center py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Стиль</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_style", "Style") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1">
                 <select name="{{ sk }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="table" {% if config.get('style') == 'table' %}selected{% endif %}>Таблица</option>
-                    <option value="cards" {% if config.get('style') == 'cards' %}selected{% endif %}>Карточки</option>
-                    <option value="inline" {% if config.get('style') == 'inline' %}selected{% endif %}>В строку</option>
+                    <option value="table" {% if config.get('style') == 'table' %}selected{% endif %}>{{ t.layout_style_table }}</option>
+                    <option value="cards" {% if config.get('style') == 'cards' %}selected{% endif %}>{{ t.layout_style_cards }}</option>
+                    <option value="inline" {% if config.get('style') == 'inline' %}selected{% endif %}>{{ t.layout_style_inline }}</option>
                 </select>
             </div>
         </div>
 
-        {# ===== TEXT BLOCK (Описание) ===== #}
+        {# ===== TEXT BLOCK ===== #}
         {% elif btype == 'text_block' %}
         <div class="flex items-center py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Описание</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("label_description", "Description") }}</div>
             <div class="text-gray-400 pr-3">:</div>
-            <div class="flex-1 text-sm text-gray-400 italic">Автоматически из поля «Описание» в данных сущности</div>
+            <div class="flex-1 text-sm text-gray-400 italic">{{ t.layout_text_auto_desc }}</div>
         </div>
 
         {# ===== FILE LINK ===== #}
@@ -320,7 +320,7 @@
         {% set sk = config.get('source', 'file_url') %}
         {% set tk = config.get('title', 'file_title') %}
         <div class="flex items-center border-b border-gray-100 py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Файл (URL)</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_file_url", "File (URL)") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1 flex items-center gap-2">
                 <input type="text" name="{{ sk }}" value="{{ state_data.get(sk, '') }}" placeholder="{{ sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -328,9 +328,9 @@
             </div>
         </div>
         <div class="flex items-center py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Название</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_audio_title", "Title") }}</div>
             <div class="text-gray-400 pr-3">:</div>
-            <div class="flex-1"><input type="text" name="{{ tk }}" value="{{ state_data.get(tk, '') }}" placeholder="Название файла" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+            <div class="flex-1"><input type="text" name="{{ tk }}" value="{{ state_data.get(tk, '') }}" placeholder="{{ t.layout_file_title }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
         </div>
 
         {# ===== FILE UPLOAD ===== #}
@@ -338,7 +338,7 @@
         {% set sk = config.get('source', 'uploaded_file_url') %}
         {% set tk = config.get('title', 'uploaded_file_title') %}
         <div class="flex items-center border-b border-gray-100 py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Файл (URL)</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_file_url", "File (URL)") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1 flex items-center gap-2">
                 <input type="text" name="{{ sk }}" value="{{ state_data.get(sk, '') }}" placeholder="{{ sk }}" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -346,9 +346,9 @@
             </div>
         </div>
         <div class="flex items-center py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Название</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_audio_title", "Title") }}</div>
             <div class="text-gray-400 pr-3">:</div>
-            <div class="flex-1"><input type="text" name="{{ tk }}" value="{{ state_data.get(tk, '') }}" placeholder="Название файла" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
+            <div class="flex-1"><input type="text" name="{{ tk }}" value="{{ state_data.get(tk, '') }}" placeholder="{{ t.layout_file_title }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
         </div>
 
         {# ===== DIVIDER ===== #}
@@ -358,7 +358,7 @@
         {# ===== SPACER ===== #}
         {% elif btype == 'spacer' %}
         <div class="flex items-center py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Высота (px)</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_height_px", "Height (px)") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1"><input type="text" name="block_height_{{ bid }}" value="{{ config.get('height', '40') }}" class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
         </div>
@@ -375,28 +375,28 @@
         {% elif btype == 'relation_list' %}
         {% set rk = 'block_reltype_' ~ bid %}
         <div class="flex items-center border-b border-gray-100 py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Тип связи</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_relation_type", "Relation type") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1"><input type="text" name="{{ rk }}" value="{{ config.get('relation_type', '') }}" placeholder="acted_in, directed_by..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"></div>
         </div>
         {% set dk = 'block_display_' ~ bid %}
         <div class="flex items-center py-2">
-            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">Отображение</div>
+            <div class="w-40 text-sm text-gray-500 font-medium text-right pr-3">{{ t.get("layout_display", "Display") }}</div>
             <div class="text-gray-400 pr-3">:</div>
             <div class="flex-1">
                 <select name="{{ dk }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                    <option value="list" {% if config.get('display') == 'list' %}selected{% endif %}>Список</option>
-                    <option value="cards" {% if config.get('display') == 'cards' %}selected{% endif %}>Карточки</option>
+                    <option value="list" {% if config.get('display') == 'list' %}selected{% endif %}>{{ t.layout_display_list }}</option>
+                    <option value="cards" {% if config.get('display') == 'cards' %}selected{% endif %}>{{ t.layout_style_cards }}</option>
                 </select>
             </div>
         </div>
 
         {# ===== HORIZONTAL ROW ===== #}
         {% elif btype == 'horizontal_row' %}
-        <p class="text-sm text-gray-500 text-center">Горизонтальный ряд: {{ config.get('columns', '2') }} колонки</p>
+        <p class="text-sm text-gray-500 text-center">{{ t.get("block_horizontal_row", "Horizontal Row") }}: {{ config.get('columns', '2') }} {{ t.layout_horizontal_cols }}</p>
 
         {% else %}
-        <p class="text-sm text-gray-400 text-center">Блок: {{ btype }}</p>
+        <p class="text-sm text-gray-400 text-center">{{ t.section_data }}: {{ btype }}</p>
         {% endif %}
     </div>
 </div>

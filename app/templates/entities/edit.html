@@ -1,21 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Редактирование - DWMB{% endblock %}
+{% block title %}{{ request.state.t.entity_edit_title }} - DWMB{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
-    <a href="/" class="hover:underline" style="color: var(--color-primary);">Главная</a>
+    <a href="/" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.breadcrumb_home }}</a>
     <span class="mx-2">/</span>
-    <a href="/entities" class="hover:underline" style="color: var(--color-primary);">Сущности</a>
+    <a href="/entities" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.nav_entities }}</a>
     <span class="mx-2">/</span>
     <a href="/entity/{{ entity.entity_id }}" class="hover:underline" style="color: var(--color-primary);">{{ entity.entity_code }}</a>
     <span class="mx-2">/</span>
-    <span style="color: var(--color-text);">Редактирование</span>
+    <span style="color: var(--color-text);">{{ request.state.t.entity_edit_title }}</span>
 </nav>
 {% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-4xl">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Редактирование сущности</h1>
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ request.state.t.entity_edit_heading }}</h1>
 
     <!-- TMDB Import Button -->
     <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 flex items-center justify-between mb-6">
@@ -23,7 +23,7 @@
             <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white text-lg font-bold">TM</div>
             <div>
                 <div class="text-sm font-semibold text-gray-800">{{ request.state.t.entity_tmdb_import }}</div>
-                <div class="text-xs text-gray-500">Обновить данные из The Movie Database</div>
+                <div class="text-xs text-gray-500">{{ request.state.t.tmdb_update_from }}</div>
             </div>
         </div>
         <div class="flex gap-2">
@@ -45,7 +45,7 @@
         {% if layout_blocks %}
         {% from "macros/layout_fields.html" import render_block_form %}
         {% for block in layout_blocks %}
-        {{ render_block_form(block, loop.index, schema_fields, state_data) }}
+        {{ render_block_form(block, loop.index, schema_fields, state_data, request.state.t) }}
         {% endfor %}
         {% endif %}
 
@@ -54,12 +54,12 @@
         <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-gray-800">
-                    Данные
+                    {{ request.state.t.section_data }}
                     {% if template_obj %}
                     <span class="text-sm font-normal text-gray-400 ml-2">({{ template_obj.template_name }})</span>
                     {% endif %}
                 </h2>
-                <a href="/entity/{{ entity.entity_id }}/edit" class="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded border border-emerald-200 hover:bg-emerald-100 transition">🔄 Обновить из схемы</a>
+                <a href="/entity/{{ entity.entity_id }}/edit" class="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 rounded border border-emerald-200 hover:bg-emerald-100 transition">🔄 {{ request.state.t.btn_update_schema }}</a>
             </div>
             <div class="w-full">
                 {% for field in schema_fields %}
@@ -73,7 +73,7 @@
                         <div class="flex-1">
                             <select name="{{ field.key }}" {% if field.required %}required{% endif %}
                                 class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
-                                <option value="">— выбрать —</option>
+                                <option value="">{{ request.state.t.placeholder_select_type }}</option>
                                 {% for opt in field.enum %}
                                 <option value="{{ opt }}" {% if state_data.get(field.key) == opt %}selected{% endif %}>{{ opt }}</option>
                                 {% endfor %}
@@ -162,8 +162,8 @@
         <!-- Multilingual Labels -->
         <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-gray-800">Метки</h2>
-                <button type="button" onclick="addLanguage()" class="px-3 py-1.5 text-xs rounded-lg transition" style="background: var(--color-primary); color: #fff;">+ Добавить язык</button>
+                <h2 class="text-lg font-semibold text-gray-800">{{ request.state.t.section_labels }}</h2>
+                <button type="button" onclick="addLanguage()" class="px-3 py-1.5 text-xs rounded-lg transition" style="background: var(--color-primary); color: #fff;">{{ request.state.t.btn_add_language }}</button>
             </div>
             
             <div id="labels-container" class="space-y-4">
@@ -180,17 +180,17 @@
                             <option value="ja" {% if label.language.code == 'ja' %}selected{% endif %}>🇯🇵 日本語</option>
                         </select>
                         <label class="flex items-center gap-1 text-xs" style="color: var(--color-text-secondary);">
-                            <input type="checkbox" name="is_primary_{{ loop.index }}" {% if label.is_primary %}checked{% endif %} class="rounded"> Основной
+                            <input type="checkbox" name="is_primary_{{ loop.index }}" {% if label.is_primary %}checked{% endif %} class="rounded"> {{ request.state.t.label_primary }}
                         </label>
-                        <button type="button" onclick="removeLabel(this)" class="ml-auto text-xs px-2 py-1 rounded" style="background: #fef2f2; color: #dc2626;">Удалить</button>
+                        <button type="button" onclick="removeLabel(this)" class="ml-auto text-xs px-2 py-1 rounded" style="background: #fef2f2; color: #dc2626;">{{ request.state.t.btn_delete }}</button>
                     </div>
                     <div class="flex items-center border-b py-2" style="border-color: var(--color-border);">
-                        <div class="w-32 flex-shrink-0 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Название</div>
-                        <div class="flex-1"><input type="text" name="label_{{ loop.index }}" value="{{ label.label }}" placeholder="Название" class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);"></div>
+                        <div class="w-32 flex-shrink-0 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.label_name }}</div>
+                        <div class="flex-1"><input type="text" name="label_{{ loop.index }}" value="{{ label.label }}" placeholder="{{ request.state.t.label_name }}" class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);"></div>
                     </div>
                     <div class="flex items-center py-2">
-                        <div class="w-32 flex-shrink-0 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Описание</div>
-                        <div class="flex-1"><textarea name="description_{{ loop.index }}" rows="2" placeholder="Описание" class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">{{ label.description or '' }}</textarea></div>
+                        <div class="w-32 flex-shrink-0 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.label_description }}</div>
+                        <div class="flex-1"><textarea name="description_{{ loop.index }}" rows="2" placeholder="{{ request.state.t.label_description }}" class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">{{ label.description or '' }}</textarea></div>
                     </div>
                 </div>
                 {% endfor %}
@@ -199,14 +199,14 @@
 
         <!-- SEO Section -->
         <details class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <summary class="text-lg font-semibold text-gray-800 cursor-pointer select-none">SEO / Meta-теги</summary>
+            <summary class="text-lg font-semibold text-gray-800 cursor-pointer select-none">{{ request.state.t.section_seo }}</summary>
             <div class="mt-4 space-y-4">
                 <div class="flex items-center border-b border-gray-100 py-3">
                     <div class="w-44 flex-shrink-0 text-sm text-gray-500 font-medium text-right pr-3">Meta Title</div>
                     <div class="text-gray-400 pr-3">:</div>
                     <div class="flex-1">
                         <input type="text" name="meta_title" value="{{ state_data.get('meta_title', '') }}"
-                            placeholder="Заголовок для поисковиков (60 символов)"
+                            placeholder="{{ request.state.t.placeholder_meta_title }}"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                     </div>
                 </div>
@@ -215,7 +215,7 @@
                     <div class="text-gray-400 pr-3">:</div>
                     <div class="flex-1">
                         <textarea name="meta_description" rows="2"
-                            placeholder="Описание для поисковиков (160 символов)"
+                            placeholder="{{ request.state.t.placeholder_meta_desc }}"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">{{ state_data.get('meta_description', '') }}</textarea>
                     </div>
                 </div>
@@ -224,7 +224,7 @@
                     <div class="text-gray-400 pr-3">:</div>
                     <div class="flex-1">
                         <input type="text" name="og_image" value="{{ state_data.get('og_image', '') }}"
-                            placeholder="URL изображения для соцсетей"
+                            placeholder="{{ request.state.t.placeholder_og_image }}"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
                     </div>
                 </div>
@@ -233,14 +233,14 @@
 
         <!-- Actions -->
         <div class="flex gap-3">
-            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Сохранить</button>
-            <a href="/entity/{{ entity.entity_id }}" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Отмена</a>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">{{ request.state.t.btn_save }}</button>
+            <a href="/entity/{{ entity.entity_id }}" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">{{ request.state.t.btn_cancel }}</a>
         </div>
     </form>
 
     <!-- Projections management -->
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mt-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Привязанные онтологии ({{ projections|length }})</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.section_linked_ontologies }} ({{ projections|length }})</h2>
         {% if projections %}
         <div class="space-y-2 mb-4">
             {% for p in projections %}
@@ -252,29 +252,29 @@
                 </div>
                 <div class="flex items-center gap-2">
                     {% if p.state %}
-                    <span class="text-xs text-gray-400">{{ p.state.state_data | length }} полей</span>
+                    <span class="text-xs text-gray-400">{{ p.state.state_data | length }} {{ request.state.t.label_fields_count }}</span>
                     {% endif %}
                     <form action="/entity/{{ entity.entity_id }}/remove-projection" method="post"
-                          onsubmit="return confirm('Отвязать онтологию {{ p.projection.projection_name }}?')"
+                          onsubmit="return confirm(t.confirm_unlink_ontology + ' {{ p.projection.projection_name }}?')"
                           class="inline">
             <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                         <input type="hidden" name="projection_id" value="{{ p.projection.projection_id }}">
                         <button type="submit" class="text-red-400 hover:text-red-600 ml-2 text-lg leading-none"
-                                title="Отвязать">&times;</button>
+                                title="${t.btn_unlink}">&times;</button>
                     </form>
                 </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-sm text-gray-400 mb-4">Нет привязанных онтологий</p>
+        <p class="text-sm text-gray-400 mb-4">{{ request.state.t.empty_no_ontologies }}</p>
         {% endif %}
 
         <!-- Add new projection -->
         <div class="border-t border-gray-100 pt-4">
             <button type="button" onclick="document.getElementById('addProjectionModal').classList.remove('hidden')"
                     class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
-                + Добавить онтологию
+                {{ request.state.t.btn_add_ontology }}
             </button>
         </div>
     </div>
@@ -283,7 +283,7 @@
     <div id="addProjectionModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
             <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-800">Добавить онтологию</h3>
+                <h3 class="text-lg font-semibold text-gray-800">{{ request.state.t.modal_add_ontology }}</h3>
                 <button onclick="document.getElementById('addProjectionModal').classList.add('hidden')"
                         class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
@@ -320,21 +320,22 @@
                     </div>
                 </form>
                 {% else %}
-                <p class="text-sm text-gray-400 text-center py-8">Все доступные шаблоны уже привязаны</p>
+                <p class="text-sm text-gray-400 text-center py-8">{{ request.state.t.empty_all_linked }}</p>
                 {% endif %}
             </div>
             {% if available_templates %}
             <div class="p-4 border-t border-gray-200 flex justify-end gap-3">
                 <button onclick="document.getElementById('addProjectionModal').classList.add('hidden')"
-                        class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Отмена</button>
+                        class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">{{ request.state.t.btn_cancel }}</button>
                 <button onclick="document.getElementById('addProjectionForm').submit()"
-                        class="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Привязать</button>
+                        class="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition">{{ request.state.t.btn_link }}</button>
             </div>
             {% endif %}
         </div>
     </div>
 
     <script>
+    const t = {{ request.state.t | tojson }};
     function filterTemplates(query) {
         const q = query.toLowerCase();
         document.querySelectorAll('.template-item').forEach(item => {
@@ -359,12 +360,12 @@
 
     <!-- Relationships management -->
     <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mt-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Связи ({{ outgoing_relations|length + incoming_relations|length }})</h2>
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">{{ request.state.t.section_relations }} ({{ outgoing_relations|length + incoming_relations|length }})</h2>
 
         <!-- Outgoing relations -->
         {% if outgoing_relations %}
         <div class="mb-4">
-            <h3 class="text-sm font-medium text-gray-500 mb-2">Исходящие связи</h3>
+            <h3 class="text-sm font-medium text-gray-500 mb-2">{{ request.state.t.section_outgoing }}</h3>
             <div class="space-y-2">
                 {% for r in outgoing_relations %}
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -378,9 +379,9 @@
                         <span class="text-xs text-amber-500">{{ (r.relation.confidence * 100)|round(0) }}%</span>
                         {% endif %}
                     </div>
-                    <form action="/entity/{{ entity.entity_id }}/delete-relation/{{ r.relation.relation_id }}" method="post" onsubmit="return confirm('Удалить связь?')">
+                    <form action="/entity/{{ entity.entity_id }}/delete-relation/{{ r.relation.relation_id }}" method="post" onsubmit="return confirm(t.confirm_delete_relation)">
             <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
-                        <button type="submit" class="text-red-500 hover:text-red-700 text-xs">Удалить</button>
+                        <button type="submit" class="text-red-500 hover:text-red-700 text-xs">{{ request.state.t.btn_delete }}</button>
                     </form>
                 </div>
                 {% endfor %}
@@ -391,7 +392,7 @@
         <!-- Incoming relations -->
         {% if incoming_relations %}
         <div class="mb-4">
-            <h3 class="text-sm font-medium text-gray-500 mb-2">Входящие связи</h3>
+            <h3 class="text-sm font-medium text-gray-500 mb-2">{{ request.state.t.section_incoming }}</h3>
             <div class="space-y-2">
                 {% for r in incoming_relations %}
                 <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -405,9 +406,9 @@
                         <span class="text-xs text-amber-500">{{ (r.relation.confidence * 100)|round(0) }}%</span>
                         {% endif %}
                     </div>
-                    <form action="/entity/{{ entity.entity_id }}/delete-relation/{{ r.relation.relation_id }}" method="post" onsubmit="return confirm('Удалить связь?')">
+                    <form action="/entity/{{ entity.entity_id }}/delete-relation/{{ r.relation.relation_id }}" method="post" onsubmit="return confirm(t.confirm_delete_relation)">
             <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
-                        <button type="submit" class="text-red-500 hover:text-red-700 text-xs">Удалить</button>
+                        <button type="submit" class="text-red-500 hover:text-red-700 text-xs">{{ request.state.t.btn_delete }}</button>
                     </form>
                 </div>
                 {% endfor %}
@@ -416,14 +417,14 @@
         {% endif %}
 
         {% if not outgoing_relations and not incoming_relations %}
-        <p class="text-sm text-gray-400 mb-4">Нет связей</p>
+        <p class="text-sm text-gray-400 mb-4">{{ request.state.t.empty_no_relations }}</p>
         {% endif %}
 
         <!-- Add new relation -->
         <div class="border-t border-gray-100 pt-4">
             <button type="button" onclick="document.getElementById('addRelationModal').classList.remove('hidden')"
                     class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">
-                + Добавить связь
+                {{ request.state.t.btn_add_relation }}
             </button>
         </div>
     </div>
@@ -432,7 +433,7 @@
     <div id="addRelationModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col">
             <div class="flex items-center justify-between p-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-800">Добавить связь</h3>
+                <h3 class="text-lg font-semibold text-gray-800">{{ request.state.t.modal_add_relation }}</h3>
                 <button onclick="document.getElementById('addRelationModal').classList.add('hidden')"
                         class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
@@ -441,10 +442,10 @@
             <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                     <!-- Relation type -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Тип связи</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.label_relation_type }}</label>
                         <select name="relation_type_id" required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option value="">— выбрать тип —</option>
+                            <option value="">{{ request.state.t.placeholder_select_type }}</option>
                             {% for rt in relation_types %}
                             <option value="{{ rt.relation_type_id }}">{{ rt.relation_name }} ({{ rt.relation_code }})</option>
                             {% endfor %}
@@ -453,7 +454,7 @@
 
                     <!-- Target entity search -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Связанная сущность</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ request.state.t.label_related_entity }}</label>
                         <input type="text" id="entitySearch" placeholder="{{ request.state.t.search_placeholder }}"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none mb-2"
                                oninput="searchEntities(this.value)">
@@ -467,22 +468,22 @@
                     <!-- Metadata (collapsible) -->
                     <details class="border border-gray-200 rounded-lg">
                         <summary class="px-3 py-2 text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50">
-                            Метаданные (необязательно)
+                            {{ request.state.t.label_metadata_optional }}
                         </summary>
                         <div class="p-3 space-y-3 border-t border-gray-200">
                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">Роль / комментарий</label>
-                                <input type="text" name="role" placeholder="например: главная роль, камео..."
+                                <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.label_role_comment }}</label>
+                                <input type="text" name="role" placeholder="{{ request.state.t.placeholder_role }}"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="block text-xs text-gray-500 mb-1">Уверенность (0-1)</label>
+                                    <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.label_confidence }}</label>
                                     <input type="number" name="confidence" value="1.0" min="0" max="1" step="0.01"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-500 mb-1">Вес (0-1)</label>
+                                    <label class="block text-xs text-gray-500 mb-1">{{ request.state.t.label_weight }}</label>
                                     <input type="number" name="weight" value="1.0" min="0" max="1" step="0.01"
                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                                 </div>
@@ -493,9 +494,9 @@
             </div>
             <div class="p-4 border-t border-gray-200 flex justify-end gap-3">
                 <button onclick="document.getElementById('addRelationModal').classList.add('hidden')"
-                        class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Отмена</button>
+                        class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">{{ request.state.t.btn_cancel }}</button>
                 <button onclick="document.getElementById('addRelationForm').submit()"
-                        class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Добавить</button>
+                        class="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">{{ request.state.t.btn_add }}</button>
             </div>
         </div>
     </div>
@@ -524,7 +525,7 @@
                         `).join('');
                         container.classList.remove('hidden');
                     } else {
-                        list.innerHTML = '<div class="p-2 text-sm text-gray-400">Ничего не найдено</div>';
+                        list.innerHTML = '<div class="p-2 text-sm text-gray-400">${t.tmdb_no_results}</div>';
                         container.classList.remove('hidden');
                     }
                 });
@@ -573,14 +574,14 @@
         const filteredFields = emptyFields.filter(f => tmdbFields.has(f.name));
 
         if (filteredFields.length === 0) {
-            list.innerHTML = '<div class="text-center py-4 text-green-600 text-sm">Все поля заполнены!</div>';
+            list.innerHTML = '<div class="text-center py-4 text-green-600 text-sm">${t.tmdb_fill_missing}</div>';
         } else {
             list.innerHTML = `
-                <div class="text-sm text-gray-500 mb-2">Незаполненных полей: ${filteredFields.length}</div>
+                <div class="text-sm text-gray-500 mb-2">${t.tmdb_unfilled_count} ${filteredFields.length}</div>
                 ${filteredFields.map(f => `
                     <div class="flex items-center justify-between p-2 bg-amber-50 rounded-lg border border-amber-200">
                         <span class="text-sm text-gray-700">${f.label} <span class="text-xs text-gray-400">(${f.name})</span></span>
-                        <button onclick="fillFromTmdb('${f.name}')" class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition">Заполнить</button>
+                        <button onclick="fillFromTmdb('${f.name}')" class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition">{{ request.state.t.btn_fill_missing }}</button>
                     </div>
                 `).join('')}
             `;
@@ -593,7 +594,7 @@
         // Get TMDB ID from the form
         const tmdbIdField = document.querySelector('[name="tmdb_id"]');
         if (!tmdbIdField || !tmdbIdField.value) {
-            alert('Сначала заполните TMDB ID');
+            alert(t.tmdb_fill_tmdb_first);
             return;
         }
 
@@ -625,14 +626,14 @@
             if (tmdbKey && data[tmdbKey]) {
                 let value = data[tmdbKey];
                 if (fieldName === 'budget' && value) value = (value / 1000000).toFixed(1) + 'M';
-                if (fieldName === 'duration' && value) value = value + ' мин';
+                if (fieldName === 'duration' && value) value = value + ' ' + t.tmdb_minutes;
                 setFieldValue(fieldName, value);
                 document.getElementById('fillMissingModal').classList.add('hidden');
             } else {
-                alert('Поле не найдено в данных TMDB');
+                alert(t.tmdb_field_not_found);
             }
         } catch (e) {
-            alert('Ошибка загрузки: ' + e.message);
+            alert(t.tmdb_error + ' + e.message);
         }
     }
 
@@ -647,14 +648,14 @@
 
     function closeTmdbModal() {
         document.getElementById('tmdbModal').classList.add('hidden');
-        document.getElementById('tmdbResults').innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>';
+        document.getElementById('tmdbResults').innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">${t.tmdb_search_placeholder}</div>';
     }
 
     function switchTmdbTab(tab) {
         tmdbTab = tab;
         document.getElementById('tabMovie').className = tab === 'movie' ? 'px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600' : 'px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700';
         document.getElementById('tabPerson').className = tab === 'person' ? 'px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600' : 'px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700';
-        document.getElementById('tmdbResults').innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>';
+        document.getElementById('tmdbResults').innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">${t.tmdb_search_placeholder}</div>';
     }
 
     function debounceTmdbSearch() {
@@ -667,7 +668,7 @@
         if (!query) return;
 
         const resultsDiv = document.getElementById('tmdbResults');
-        resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Загрузка...</div>';
+        resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">${t.tmdb_loading}</div>';
 
         try {
             const endpoint = tmdbTab === 'movie' ? '/api/import/tmdb/search/movie' : '/api/import/tmdb/search/person';
@@ -680,7 +681,7 @@
             }
 
             if (!data.results || data.results.length === 0) {
-                resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Ничего не найдено</div>';
+                resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">${t.tmdb_no_results}</div>';
                 return;
             }
 
@@ -701,7 +702,7 @@
                 </div>
             `).join('');
         } catch (e) {
-            resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">Ошибка: ${e.message}</div>`;
+            resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">${t.tmdb_error} ${e.message}</div>`;
         }
     }
 
@@ -729,7 +730,7 @@
             setFieldValue('rating', item.rating || '');
             setFieldValue('description', item.description || '');
             setFieldValue('tagline', item.tagline || '');
-            setFieldValue('duration', item.runtime ? item.runtime + ' мин' : '');
+            setFieldValue('duration', item.runtime ? item.runtime + ' ' + t.tmdb_minutes : '');
             setFieldValue('country', item.country || '');
             setFieldValue('language', item.language || '');
             setFieldValue('production_company', item.production_company || '');
@@ -772,7 +773,7 @@
                 <div id="emptyFieldsList" class="space-y-2"></div>
             </div>
             <div class="p-4 border-t border-gray-200 flex justify-end">
-                <button onclick="document.getElementById('fillMissingModal').classList.add('hidden')" class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Закрыть</button>
+                <button onclick="document.getElementById('fillMissingModal').classList.add('hidden')" class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">${t.btn_close}</button>
             </div>
         </div>
     </div>
@@ -789,20 +790,20 @@
             </div>
 
             <div class="flex border-b border-gray-200">
-                <button onclick="switchTmdbTab('movie')" id="tabMovie" class="px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">Фильмы</button>
-                <button onclick="switchTmdbTab('person')" id="tabPerson" class="px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700">Люди</button>
+                <button onclick="switchTmdbTab('movie')" id="tabMovie" class="px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">{{ request.state.t.tmdb_actors }}</button>
+                <button onclick="switchTmdbTab('person')" id="tabPerson" class="px-4 py-2 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-gray-700">{{ request.state.t.tmdb_directors }}</button>
             </div>
 
             <div class="p-4">
                 <div class="flex gap-2 mb-4">
-                    <input type="text" id="tmdbSearchInput" placeholder="Поиск в TMDB..."
+                    <input type="text" id="tmdbSearchInput" placeholder="{{ request.state.t.tmdb_search_placeholder }}"
                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                            oninput="debounceTmdbSearch()" onkeydown="if(event.key==='Enter'){event.preventDefault();tmdbSearch();}">
-                    <button onclick="tmdbSearch()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">Найти</button>
+                    <button onclick="tmdbSearch()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm">${t.btn_find}</button>
                 </div>
 
                 <div id="tmdbResults" class="max-h-[50vh] overflow-y-auto">
-                    <div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>
+                    <div class="text-center py-8 text-gray-400 text-sm">${t.tmdb_search_placeholder}</div>
                 </div>
             </div>
         </div>
@@ -815,9 +816,9 @@
                 <h3 class="text-lg font-semibold text-gray-800">{{ request.state.t.entity_tmdb_import_credits }}</h3>
                 <button onclick="document.getElementById('importCreditsModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
-            <div id="importCreditsContent" class="text-sm text-gray-700">Загрузка...</div>
+            <div id="importCreditsContent" class="text-sm text-gray-700">${t.tmdb_loading}</div>
             <div class="mt-4 flex justify-end">
-                <button onclick="document.getElementById('importCreditsModal').classList.add('hidden')" class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Закрыть</button>
+                <button onclick="document.getElementById('importCreditsModal').classList.add('hidden')" class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">${t.btn_close}</button>
             </div>
         </div>
     </div>
@@ -828,7 +829,7 @@ async function importTmdbCredits() {
     const modal = document.getElementById('importCreditsModal');
     const content = document.getElementById('importCreditsContent');
     modal.classList.remove('hidden');
-    content.innerHTML = 'Импорт...';
+    content.innerHTML = t.tmdb_importing;
 
     try {
         const entityId = '{{ entity.entity_id }}';
@@ -838,12 +839,12 @@ async function importTmdbCredits() {
         try {
             data = JSON.parse(text);
         } catch (e) {
-            content.innerHTML = '<div class="text-red-600">Ошибка сервера: ' + text.substring(0, 200) + '</div>';
+            content.innerHTML = '<div class="text-red-600">${t.tmdb_server_error} ' + text.substring(0, 200) + '</div>';
             return;
         }
 
         if (!resp.ok) {
-            content.innerHTML = '<div class="text-red-600">' + (data.detail || 'Ошибка импорта') + '</div>';
+            content.innerHTML = '<div class="text-red-600">' + (data.detail || t.tmdb_import_error) + '</div>';
             return;
         }
 
@@ -851,19 +852,19 @@ async function importTmdbCredits() {
         const r = data.imported || {};
         const addRow = (label, counts) => {
             if (counts.created > 0 || counts.linked > 0) {
-                html += '<div class="flex justify-between py-1 border-b border-gray-100"><span>' + label + '</span><span class="font-medium">создано: ' + counts.created + ', связано: ' + counts.linked + '</span></div>';
+                html += '<div class="flex justify-between py-1 border-b border-gray-100"><span>' + label + '</span><span class="font-medium">' + t.tmdb_created + ' ' + counts.created + ', ' + t.tmdb_linked + ' ' + counts.linked + '</span></div>';
             }
         };
-        addRow('Актёры', r.actors || {});
-        addRow('Режиссёры', r.directors || {});
-        addRow('Компании', r.companies || {});
-        addRow('Страны', r.countries || {});
-        addRow('Языки', r.languages || {});
+        addRow(t.tmdb_actors, r.actors || {});
+        addRow(t.tmdb_directors, r.directors || {});
+        addRow(t.tmdb_companies, r.companies || {});
+        addRow(t.tmdb_countries, r.countries || {});
+        addRow(t.tmdb_languages, r.languages || {});
         html += '</div>';
         html += '<div class="mt-3 p-3 bg-green-50 rounded-lg text-green-700">' + data.message + '</div>';
         content.innerHTML = html;
     } catch (e) {
-        content.innerHTML = '<div class="text-red-600">Ошибка: ' + e.message + '</div>';
+        content.innerHTML = '<div class="text-red-600">${t.tmdb_error} ' + e.message + '</div>';
     }
 }
 </script>
@@ -901,17 +902,17 @@ function addLanguage() {
                 <option value="ja">🇯🇵 日本語</option>
             </select>
             <label class="flex items-center gap-1 text-xs" style="color: var(--color-text-secondary);">
-                <input type="checkbox" name="is_primary_${labelCounter}" class="rounded"> Основной
+                <input type="checkbox" name="is_primary_${labelCounter}" class="rounded"> {{ request.state.t.label_primary }}
             </label>
-            <button type="button" onclick="removeLabel(this)" class="ml-auto text-xs px-2 py-1 rounded" style="background: #fef2f2; color: #dc2626;">Удалить</button>
+            <button type="button" onclick="removeLabel(this)" class="ml-auto text-xs px-2 py-1 rounded" style="background: #fef2f2; color: #dc2626;">{{ request.state.t.btn_delete }}</button>
         </div>
         <div class="flex items-center border-b py-2" style="border-color: var(--color-border);">
-            <div class="w-32 flex-shrink-0 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Название</div>
-            <div class="flex-1"><input type="text" name="label_${labelCounter}" value="" placeholder="Название" class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);"></div>
+            <div class="w-32 flex-shrink-0 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">${t.label_name}</div>
+            <div class="flex-1"><input type="text" name="label_${labelCounter}" value="" placeholder="{{ request.state.t.label_name }}" class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);"></div>
         </div>
         <div class="flex items-center py-2">
-            <div class="w-32 flex-shrink-0 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Описание</div>
-            <div class="flex-1"><textarea name="description_${labelCounter}" rows="2" placeholder="Описание" class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);"></textarea></div>
+            <div class="w-32 flex-shrink-0 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">${t.label_description}</div>
+            <div class="flex-1"><textarea name="description_${labelCounter}" rows="2" placeholder="{{ request.state.t.label_description }}" class="w-full px-3 py-2 rounded-lg text-sm outline-none" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);"></textarea></div>
         </div>
     `;
     container.appendChild(template);
