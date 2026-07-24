@@ -601,3 +601,54 @@ async def wikipedia_import_page(
         return {"status": "exists", "message": result["message"], "entity_code": result["entity_code"]}
 
     return {"status": "created", "message": f"Статья '{title}' импортирована", "entity_id": result["entity_id"], "entity_code": result["entity_code"]}
+
+
+# ─── MusicBrainz ──────────────────────────────────────────────
+
+@router.get("/musicbrainz/search", summary="Поиск в MusicBrainz")
+async def musicbrainz_search(
+    q: str = Query(..., min_length=1),
+    type: str = Query("recording", regex="^(recording|artist|release-group)$"),
+    user: UserAccount = Depends(require_auth),
+):
+    """Search MusicBrainz (recordings, artists, release groups)."""
+    from app.services.external_apis import search_musicbrainz
+    results = await search_musicbrainz(q, type)
+    return {"results": results, "query": q, "type": type}
+
+
+@router.get("/musicbrainz/{entity_type}/{mb_id}", summary="Детали MusicBrainz")
+async def musicbrainz_get_details(
+    entity_type: str,
+    mb_id: str,
+    user: UserAccount = Depends(require_auth),
+):
+    """Get MusicBrainz entity details."""
+    from app.services.external_apis import get_musicbrainz_details
+    details = await get_musicbrainz_details(mb_id, entity_type)
+    if not details:
+        raise HTTPException(404, "Не найдено в MusicBrainz")
+    return details
+
+
+@router.post("/musicbrainz/import/{entity_type}/{mb_id}", summary="Импорт из MusicBrainz")
+async def musicbrainz_import(
+    entity_type: str,
+    mb_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_auth),
+):
+    """Import MusicBrainz entity as database entity."""
+    from app.services.external_apis import get_musicbrainz_details, import_musicbrainz_entity
+
+    details = await get_musicbrainz_details(mb_id, entity_type)
+    if not details:
+        raise HTTPException(404, "Не найдено в MusicBrainz")
+
+    result = await import_musicbrainz_entity(db, details, user.user_id, entity_type)
+    await db.commit()
+
+    if result["status"] == "exists":
+        return {"status": "exists", "message": result["message"], "entity_code": result["entity_code"]}
+
+    return {"status": "created", "message": f"'{details['title']}' импортирован", "entity_id": result["entity_id"], "entity_code": result["entity_code"]}

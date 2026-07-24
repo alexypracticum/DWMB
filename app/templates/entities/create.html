@@ -162,6 +162,20 @@
                     Импортировать
                 </button>
             </div>
+
+            <!-- MusicBrainz Import Button -->
+            <div class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-4 border border-orange-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white text-lg font-bold">♪</div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-800">Импорт из MusicBrainz</div>
+                        <div class="text-xs text-gray-500">Музыка: песни, артисты, альбомы</div>
+                    </div>
+                </div>
+                <button type="button" onclick="openMusicBrainzImport()" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition text-sm">
+                    Импортировать
+                </button>
+            </div>
         </div>
 
         <!-- Always show label_ru and description_ru -->
@@ -661,6 +675,116 @@
             setFieldValue('title', data.title || '');
 
             closeWikipediaModal();
+        } catch (e) {
+            resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">Ошибка: ${e.message}</div>`;
+        }
+    }
+    </script>
+
+    <!-- MusicBrainz Import Modal -->
+    <div id="musicbrainzModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">♪</div>
+                    <h3 class="text-lg font-semibold text-gray-800">Импорт из MusicBrainz</h3>
+                </div>
+                <button onclick="closeMusicBrainzModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+
+            <div class="p-4">
+                <div class="flex gap-2 mb-4">
+                    <select id="mbType" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 outline-none">
+                        <option value="recording">🎵 Песни</option>
+                        <option value="artist">🎤 Артисты</option>
+                        <option value="release-group">💿 Альбомы</option>
+                    </select>
+                    <input type="text" id="mbSearchInput" placeholder="Поиск в MusicBrainz..."
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 outline-none"
+                           oninput="debounceMbSearch()" onkeydown="if(event.key==='Enter'){event.preventDefault();mbSearch();}">
+                    <button onclick="mbSearch()" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition text-sm">Найти</button>
+                </div>
+
+                <div id="mbResults" class="max-h-[50vh] overflow-y-auto">
+                    <div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let mbSearchTimeout = null;
+
+    function openMusicBrainzImport() {
+        document.getElementById('musicbrainzModal').classList.remove('hidden');
+        document.getElementById('mbSearchInput').focus();
+    }
+
+    function closeMusicBrainzModal() {
+        document.getElementById('musicbrainzModal').classList.add('hidden');
+        document.getElementById('mbResults').innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>';
+    }
+
+    function debounceMbSearch() {
+        clearTimeout(mbSearchTimeout);
+        mbSearchTimeout = setTimeout(mbSearch, 600);
+    }
+
+    async function mbSearch() {
+        const query = document.getElementById('mbSearchInput').value.trim();
+        const type = document.getElementById('mbType').value;
+        if (!query) return;
+
+        const resultsDiv = document.getElementById('mbResults');
+        resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Загрузка...</div>';
+
+        try {
+            const resp = await fetch(`/api/import/musicbrainz/search?q=${encodeURIComponent(query)}&type=${type}`);
+            const data = await resp.json();
+
+            if (data.detail) {
+                resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">${data.detail}</div>`;
+                return;
+            }
+
+            if (!data.results || data.results.length === 0) {
+                resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Ничего не найдено</div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = data.results.map(item => `
+                <div class="p-3 border border-gray-200 rounded-lg mb-2 hover:border-orange-300 hover:bg-orange-50 transition cursor-pointer"
+                     onclick="selectMbItem('${item.id}', '${type}')">
+                    <div class="flex items-center gap-2">
+                        <span class="font-medium text-gray-800 text-sm">${item.title}</span>
+                        ${item.year ? `<span class="text-xs text-gray-400">(${item.year})</span>` : ''}
+                    </div>
+                    <div class="text-xs text-gray-500 mt-0.5">${item.artist || item.type || ''}</div>
+                    ${item.disambiguation ? `<div class="text-xs text-gray-400 mt-0.5 italic">${item.disambiguation}</div>` : ''}
+                </div>
+            `).join('');
+        } catch (e) {
+            resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">Ошибка: ${e.message}</div>`;
+        }
+    }
+
+    async function selectMbItem(mbId, type) {
+        const resultsDiv = document.getElementById('mbResults');
+        resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Загрузка деталей...</div>';
+
+        try {
+            const resp = await fetch(`/api/import/musicbrainz/${type}/${mbId}`);
+            const data = await resp.json();
+
+            if (data.detail) {
+                resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">${data.detail}</div>`;
+                return;
+            }
+
+            setFieldValue('label_ru', data.title || '');
+            setFieldValue('description_ru', data.artist || data.disambiguation || '');
+
+            closeMusicBrainzModal();
         } catch (e) {
             resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">Ошибка: ${e.message}</div>`;
         }

@@ -407,36 +407,56 @@ async def import_wikipedia_page(db, wiki_data: Dict, user_id, lang: str = "ru") 
 
 
 async def search_musicbrainz(query: str, entity_type: str = "recording") -> List[Dict]:
-    """Search MusicBrainz API."""
+    """Search MusicBrainz API. Cached for 1 hour. Rate limit: 1 req/sec."""
+    # Check cache
+    from app.services.cache import cache_get, cache_set
+    cache_key = f"musicbrainz:search:{entity_type}:{query.lower().strip()}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    # Rate limit: MusicBrainz requires 1 request per second
+    if not _check_rate_limit("musicbrainz", min_interval=1.0):
+        await asyncio.sleep(1.0)
+
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"https://musicbrainz.org/ws/2/{entity_type}",
                 params={"query": query, "fmt": "json", "limit": 10},
                 timeout=10.0,
-                headers={"User-Agent": "DWMB/1.0 (contact@example.com)"}
+                headers={"User-Agent": "DWMB/1.0 (https://github.com/alexypracticum/DWMB; contact@example.com)"}
             )
-            
+
             if resp.status_code == 200:
                 data = resp.json()
                 results = []
-                
-                for item in data.get(f"{entity_type}s", []):
+                items = data.get(f"{entity_type}s", [])
+
+                for item in items:
                     result = {
                         "id": item.get("id"),
                         "title": item.get("title") or item.get("name"),
                         "type": entity_type,
                     }
-                    
+
                     if entity_type == "recording" and "artist-credit" in item:
                         artists = [a.get("name") for a in item["artist-credit"]]
                         result["artist"] = ", ".join(artists)
-                    
-                    if "first-release-date" in item:
+
+                    if entity_type == "artist":
+                        result["type"] = item.get("type", "")
+                        result["country"] = item.get("country", "")
+
+                    if "first-release-date" in item and item["first-release-date"]:
                         result["year"] = item["first-release-date"][:4]
-                    
+
+                    if "disambiguation" in item:
+                        result["disambiguation"] = item.get("disambiguation", "")
+
                     results.append(result)
-                
+
+                await cache_set(cache_key, results, ttl=3600)
                 return results
             return []
     except Exception as e:
@@ -444,28 +464,122 @@ async def search_musicbrainz(query: str, entity_type: str = "recording") -> List
         return []
 
 
-async def get_musicbrainz_artist(artist_id: str) -> Optional[Dict]:
-    """Get MusicBrainz artist details."""
+async def get_musicbrainz_details(entity_id: str, entity_type: str = "recording") -> Optional[Dict]:
+    """Get MusicBrainz entity details. Cached for 24 hours."""
+    from app.services.cache import cache_get, cache_set
+    cache_key = f"musicbrainz:details:{entity_type}:{entity_id}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    if not _check_rate_limit("musicbrainz", min_interval=1.0):
+        await asyncio.sleep(1.0)
+
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
-                f"https://musicbrainz.org/ws/2/artist/{artist_id}",
+                f"https://musicbrainz.org/ws/2/{entity_type}/{entity_id}",
                 params={"fmt": "json"},
                 timeout=10.0,
-                headers={"User-Agent": "DWMB/1.0 (contact@example.com)"}
+                headers={"User-Agent": "DWMB/1.0 (https://github.com/alexypracticum/DWMB; contact@example.com)"}
             )
-            
+
             if resp.status_code == 200:
                 data = resp.json()
-                return {
+                result = {
                     "id": data.get("id"),
-                    "name": data.get("name"),
-                    "type": data.get("type"),
-                    "country": data.get("country"),
-                    "disambiguation": data.get("disambiguation"),
-                    "life-span": data.get("life-span"),
+                    "title": data.get("title") or data.get("name"),
+                    "type": entity_type,
                 }
+
+                if entity_type == "recording":
+                    if "artist-credit" in data:
+                        result["artist"] = ", ".join(a.get("name", "") for a in data["artist-credit"])
+                    if "first-release-date" in data and data["first-release-date"]:
+                        result["year"] = data["first-release-date"][:4]
+                    if "length" in data and data["length"]:
+                        result["duration"] = f"{data['length'] // 60000}:{(data['length'] % 60000) // 1000:02d}"
+
+                elif entity_type == "artist":
+                    result["type"] = data.get("type", "")
+                    result["country"] = data.get("country", "")
+                    result["disambiguation"] = data.get("disambiguation", "")
+                    if "life-span" in data:
+                        ls = data["life-span"]
+                        result["begin"] = ls.get("begin", "")
+                        result["end"] = ls.get("end", "")
+
+                elif entity_type == "release-group":
+                    if "artist-credit" in data:
+                        result["artist"] = ", ".join(a.get("name", "") for a in data["artist-credit"])
+                    if "first-release-date" in data and data["first-release-date"]:
+                        result["year"] = data["first-release-date"][:4]
+                    if "primary-type" in data:
+                        result["primary_type"] = data.get("primary-type", "")
+
+                await cache_set(cache_key, result, ttl=86400)
+                return result
             return None
     except Exception as e:
-        logger.error("MusicBrainz artist failed: %s", e)
+        logger.error("MusicBrainz details failed: %s", e)
         return None
+
+
+async def import_musicbrainz_entity(db, mb_data: Dict, user_id, entity_type: str = "recording") -> Dict:
+    """Import a MusicBrainz entity into the database."""
+    import hashlib, json
+    from uuid import uuid4
+    from sqlalchemy import select, func
+    from app.models.entities import Entity, EntityLabel
+    from app.models.kinds import EntityKind, EntityKindLabel
+    from app.models.projections import EntityProjection, ProjectionState, OntologyTemplate
+    from app.services.language import get_language_id
+
+    mb_id = mb_data.get("id", "")
+    title = mb_data.get("title", "")
+    kind_map = {"recording": "song", "artist": "person", "release-group": "album"}
+    kind_code = kind_map.get(entity_type, entity_type)
+    entity_code = f"mb_{entity_type}_{mb_id}"
+
+    # Check if already exists
+    existing = await db.execute(select(Entity).where(Entity.entity_code == entity_code))
+    if existing.scalar_one_or_none():
+        return {"status": "exists", "entity_code": entity_code, "message": "Entity already imported"}
+
+    # Get or create kind
+    kind = (await db.execute(select(EntityKind).where(EntityKind.kind_code == kind_code))).scalars().first()
+    if not kind:
+        kind_label_map = {"song": "Песня", "person": "Персона", "album": "Альбом"}
+        kind = EntityKind(kind_code=kind_code, description=f"MusicBrainz {entity_type}", is_abstract=False, sort_order=100, version_id=1)
+        db.add(kind)
+        await db.flush()
+        ru_lang_id = await get_language_id(db, "ru")
+        db.add(EntityKindLabel(kind_id=kind.kind_id, language_id=ru_lang_id, label=kind_label_map.get(kind_code, kind_code)))
+
+    version_result = await db.execute(select(func.max(Entity.version_id)))
+    version_id = (version_result.scalar() or 0) + 1
+
+    eid = uuid4()
+    entity = Entity(entity_id=eid, entity_code=entity_code, kind_id=kind.kind_id, status="active",
+                    owner_id=user_id, version_id=version_id)
+    db.add(entity)
+    await db.flush()
+
+    ru_lang_id = await get_language_id(db, "ru")
+    label = EntityLabel(entity_id=eid, language_id=ru_lang_id, label=title,
+                        description=mb_data.get("artist", ""), is_primary=True,
+                        owner_id=user_id, version_id=version_id)
+    db.add(label)
+
+    tmpl = (await db.execute(select(OntologyTemplate).where(OntologyTemplate.kind_id == kind.kind_id, OntologyTemplate.is_active == True).limit(1))).scalars().first()
+    proj_id = uuid4()
+    db.add(EntityProjection(projection_id=proj_id, entity_id=eid, model_id=tmpl.model_id if tmpl else uuid4(),
+                            template_id=tmpl.template_id if tmpl else None, projection_code=entity_code,
+                            projection_name=title, confidence=1.0, version_id=version_id))
+    await db.flush()
+
+    state_data = {**mb_data, "source": "musicbrainz"}
+    state_hash = hashlib.sha256(json.dumps(state_data, sort_keys=True, default=str).encode()).hexdigest()
+    db.add(ProjectionState(projection_id=proj_id, state_data=state_data, state_hash=state_hash, is_current=True, version_id=version_id))
+
+    return {"status": "created", "entity_id": str(eid), "entity_code": entity_code}
