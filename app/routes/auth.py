@@ -72,11 +72,13 @@ async def register(request: Request, username: str = Form(...), email: str = For
     )
     db.add(user)
     await db.flush()
-    
+
     # Send verification email
     if email:
         import secrets
         verify_token = secrets.token_urlsafe(32)
+        user.verification_token = verify_token
+        await db.flush()
         base_url = str(request.base_url).rstrip("/")
         await send_verification_email(email, verify_token, base_url)
 
@@ -91,6 +93,33 @@ async def logout():
     response = RedirectResponse(url="/auth/login", status_code=303)
     response.delete_cookie("access_token")
     return response
+
+
+@router.get("/verify", response_class=HTMLResponse)
+async def verify_email_page(request: Request, token: str = None, db: AsyncSession = Depends(get_db)):
+    """Verify email address via token from email."""
+    if not token:
+        return templates.TemplateResponse("auth/verify.html", {
+            "request": request, "success": None, "error": "Токен верификации не указан"
+        })
+
+    result = await db.execute(
+        select(UserAccount).where(UserAccount.verification_token == token)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        return templates.TemplateResponse("auth/verify.html", {
+            "request": request, "success": None, "error": "Неверный или устаревший токен верификации"
+        })
+
+    user.email_verified = True
+    user.verification_token = None
+    await db.commit()
+
+    return templates.TemplateResponse("auth/verify.html", {
+        "request": request, "success": "Email успешно подтверждён! Теперь вы можете войти.", "error": None
+    })
 
 
 @router.get("/forgot-password", response_class=HTMLResponse)
@@ -152,3 +181,30 @@ async def reset_password(request: Request, token: str = Form(...), password: str
         "error": None,
         "success": "Пароль успешно изменён. Войдите с новым паролем"
     })
+
+
+@router.post("/resend-verification")
+@limiter.limit(get_rate_limit("auth"))
+async def resend_verification(request: Request, db: AsyncSession = Depends(get_db)):
+    """Resend verification email for logged-in user."""
+    from app.services.auth import get_current_user
+
+    user = await get_current_user(request, db)
+    if not user:
+        return RedirectResponse(url="/auth/login", status_code=303)
+
+    if user.email_verified:
+        return RedirectResponse(url="/profile/", status_code=303)
+
+    if not user.email:
+        return RedirectResponse(url="/profile/", status_code=303)
+
+    import secrets
+    verify_token = secrets.token_urlsafe(32)
+    user.verification_token = verify_token
+    await db.commit()
+
+    base_url = str(request.base_url).rstrip("/")
+    await send_verification_email(user.email, verify_token, base_url)
+
+    return RedirectResponse(url="/profile/?verify_sent=1", status_code=303)

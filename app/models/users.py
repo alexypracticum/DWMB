@@ -24,6 +24,8 @@ class UserAccount(Base):
     avatar_url = Column(String)
     language_id = Column(UUID(as_uuid=True), ForeignKey("meta.language.language_id"))
     theme_id = Column(UUID(as_uuid=True), ForeignKey("meta.user_theme.theme_id"))
+    email_verified = Column(Boolean, default=False)
+    verification_token = Column(String)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     entities = relationship("Entity", back_populates="owner")

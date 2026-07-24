@@ -100,9 +100,10 @@ status: stable
 
 Серверная часть и интеграции:
 
-- **[[api/rest-api|REST API]]** — эндпоинты, CRUD (71 эндпоинт)
+- **[[api/rest-api|REST API]]** — эндпоинты, CRUD (140+ эндпоинтов)
 - **[[api/router|Маршрутизация]]** — структура роутеров FastAPI
 - **[[api/search|Поиск]]** — PostgreSQL FTS, pg_trgm, pgvector
+- **[[api/graphql|GraphQL API]]** — 7 queries + 5 mutations + 3 subscriptions
 
 ---
 
@@ -128,10 +129,11 @@ status: stable
 
 Процессы и стандарты:
 
-- **[[development/roadmap|Дорожная карта]]** — v0.9.0 → v1.0.0
-- **[[development/testing|Тестирование]]** — pytest, 18 файлов, 100+ тестов
+- **[[development/roadmap|Дорожная карта]]** — v0.18.0 → v1.0.0
+- **[[development/testing|Тестирование]]** — pytest, 37 файлов, 207 тестов
 - **[[development/contributing|Вклад в проект]]** — код-стайл, PR, issues
 - **[[development/cli|CLI]]** — cli.py: status, seed, stats, backup, restore, migrate
+- **CI/CD** — GitHub Actions: test.yml, deploy.yml, docker-publish.yml
 
 ---
 

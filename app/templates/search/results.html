@@ -141,7 +141,7 @@
     <!-- AI parsed info -->
     {% if ai_parsed %}
     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6 text-sm" style="color: #1e40af;">
-        <strong>AI распознал:</strong>
+        <strong>{{ request.state.t.get("ai_recognized", "AI recognized") }}:</strong>
         {% if ai_parsed.kind %}{{ request.state.t.search_type }}: {{ ai_parsed.kind }}{% endif %}
         {% if ai_parsed.year %}, {{ request.state.t.field_year }}: {{ ai_parsed.year }}{% endif %}
         {% if ai_parsed.genre %}, {{ request.state.t.field_genre }}: {{ ai_parsed.genre }}{% endif %}
@@ -153,68 +153,13 @@
     {% if search_mode == 'graph' and query %}
     <div class="flex items-center justify-between mb-4">
         <div class="text-sm" style="color: var(--color-text-secondary);">
-            Найдено: {{ graph_results | length }} связанных результат(ов) по запросу "{{ query }}"
-        </div>
-    </div>
-
-    {% if graph_results %}
-    <div class="space-y-3">
-        {% for item in graph_results %}
-        <a href="/entity/{{ item.entity.entity_id }}" class="block rounded-xl p-4 shadow-sm hover:shadow-md transition-all"
-           style="border: 1px solid var(--color-border); background: var(--color-surface);"
-           onmouseover="this.style.borderColor='var(--color-primary)'" onmouseout="this.style.borderColor='var(--color-border)'">
-            <div class="flex items-center gap-3">
-                <!-- Entity Image or Icon -->
-                {% if item.entity.image_url %}
-                <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
-                    <img src="{{ item.entity.image_url }}" alt="" class="w-full h-full object-cover">
-                </div>
-                {% else %}
-                <div class="w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center text-lg" style="background: var(--color-bg-secondary, #f1f5f9);">
-                    {{ item.kind_label[:1] }}
-                </div>
-                {% endif %}
-
-                <!-- Info -->
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-1">
-                        <span class="px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
-                        <span class="font-semibold" style="color: var(--color-text);">{{ item.label.label }}</span>
-                    </div>
-                    <div class="text-sm" style="color: var(--color-text-secondary);">{{ item.label.description or '' }}</div>
-                </div>
-
-                <!-- Relation Badge -->
-                <div class="flex-shrink-0 text-right">
-                    <div class="text-xs px-2 py-1 rounded-lg mb-1" style="background: var(--color-bg-secondary, #f1f5f9); color: var(--color-text-secondary);">
-                        {% if item.direction == 'outgoing' %}→{% else %}←{% endif %}
-                        {{ item.relation_name }}
-                    </div>
-                    {% if item.source_label %}
-                    <div class="text-xs" style="color: var(--color-text-secondary);">
-                        от: {{ item.source_label.label }}
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="text-center py-12" style="color: var(--color-text-secondary);">
-        <div class="text-4xl mb-4">🔗</div>
-        <div>Не найдено связанных сущностей для "{{ query }}"</div>
-    </div>
-    {% endif %}
-
-    <!-- Text Search Results -->
-    {% elif query %}
-    <div class="flex items-center justify-between mb-4">
-        <div class="text-sm" style="color: var(--color-text-secondary);">
-            Найдено: {{ results | length }} результат(ов) по запросу "{{ query }}"
+            {{ request.state.t.get("search_found", "Found") }}: {{ graph_results | length }} {{ request.state.t.get("search_related_results", "related results") }} {{ request.state.t.get("search_by_query", "for query") }} "{{ query }}"
         </div>
         <!-- View Mode Toggle -->
         <div class="flex rounded-lg overflow-hidden" style="border: 1px solid var(--color-border);">
+            <button onclick="setViewMode('preview')" id="btn-preview" class="px-3 py-1.5 text-sm transition" title="{{ request.state.t.view_preview }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </button>
             <button onclick="setViewMode('grid')" id="btn-grid" class="px-3 py-1.5 text-sm transition" title="{{ request.state.t.view_grid }}">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
             </button>
@@ -226,7 +171,205 @@
             </button>
         </div>
     </div>
+
+    {% if graph_results %}
+    <!-- Graph Preview View (poster cards) -->
+    <div id="view-preview" class="entity-view">
+        <div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+            {% for item in graph_results %}
+            <a href="/entity/{{ item.entity.entity_id }}" class="block rounded-xl overflow-hidden shadow-sm border card-hover transition-all" style="background: var(--color-surface); border-color: var(--color-border);">
+                <div class="relative aspect-[3/4] overflow-hidden">
+                    {% if item.entity.image_url %}
+                    <img src="{{ item.entity.image_url }}" alt="{{ item.label.label }}" class="w-full h-full object-cover">
+                    {% else %}
+                    <div class="w-full h-full flex items-center justify-center" style="background: var(--color-bg);">
+                        <span class="text-4xl font-bold" style="color: var(--color-text-secondary);">{{ item.label.label[:1] }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="absolute top-2 left-2">
+                        <span class="px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
+                    </div>
+                    <div class="absolute bottom-2 right-2">
+                        <span class="px-2 py-0.5 text-xs rounded-full" style="background: rgba(0,0,0,0.7); color: #fff;">
+                            {% if item.direction == 'outgoing' %}→{% else %}←{% endif %} {{ item.relation_name }}
+                        </span>
+                    </div>
+                </div>
+                <div class="p-3">
+                    <div class="font-semibold text-sm truncate" style="color: var(--color-text);">{{ item.label.label }}</div>
+                    {% if item.source_label %}
+                    <div class="text-xs mt-1" style="color: var(--color-text-secondary);">от: {{ item.source_label.label }}</div>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Graph Grid View -->
+    <div id="view-grid" class="entity-view hidden">
+        <div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+            {% for item in graph_results %}
+            <a href="/entity/{{ item.entity.entity_id }}" class="card block rounded-xl p-4 shadow-sm hover:shadow-md transition-all"
+               style="border: 1px solid var(--color-border);" onmouseover="this.style.borderColor='var(--color-primary)'" onmouseout="this.style.borderColor='var(--color-border)'">
+                <div class="flex items-center gap-3">
+                    {% if item.entity.image_url %}
+                    <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src="{{ item.entity.image_url }}" alt="" class="w-full h-full object-cover">
+                    </div>
+                    {% else %}
+                    <div class="w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center text-lg font-bold" style="background: var(--color-primary); color: #fff;">
+                        {{ item.kind_label[:1] }}
+                    </div>
+                    {% endif %}
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
+                        </div>
+                        <div class="font-semibold truncate" style="color: var(--color-text);">{{ item.label.label }}</div>
+                        <div class="text-xs mt-1" style="color: var(--color-text-secondary);">
+                            <span class="px-1.5 py-0.5 rounded" style="background: var(--color-bg-secondary, #f1f5f9);">
+                                {% if item.direction == 'outgoing' %}→{% else %}←{% endif %} {{ item.relation_name }}
+                            </span>
+                            {% if item.source_label %}
+                            <span class="ml-1">от: {{ item.source_label.label }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Graph List View -->
+    <div id="view-list" class="entity-view hidden">
+        <div class="space-y-2">
+            {% for item in graph_results %}
+            <a href="/entity/{{ item.entity.entity_id }}" class="flex items-center gap-4 p-4 rounded-xl border card-hover transition-all"
+               style="background: var(--color-surface); border-color: var(--color-border);">
+                {% if item.entity.image_url %}
+                <div class="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                    <img src="{{ item.entity.image_url }}" alt="" class="w-full h-full object-cover">
+                </div>
+                {% else %}
+                <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold" style="background: var(--color-primary); color: #fff;">
+                    {{ item.kind_label[:1] }}
+                </div>
+                {% endif %}
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <span class="px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
+                        <span class="font-semibold truncate" style="color: var(--color-text);">{{ item.label.label }}</span>
+                    </div>
+                    <div class="text-sm truncate" style="color: var(--color-text-secondary);">{{ item.label.description or '' }}</div>
+                </div>
+                <div class="flex-shrink-0 text-right">
+                    <div class="text-xs px-2 py-1 rounded-lg" style="background: var(--color-bg-secondary, #f1f5f9); color: var(--color-text-secondary);">
+                        {% if item.direction == 'outgoing' %}→{% else %}←{% endif %} {{ item.relation_name }}
+                    </div>
+                    {% if item.source_label %}
+                    <div class="text-xs mt-1" style="color: var(--color-text-secondary);">от: {{ item.source_label.label }}</div>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Graph Table View -->
+    <div id="view-table" class="entity-view hidden">
+        <div class="rounded-xl border overflow-hidden" style="background: var(--color-surface); border-color: var(--color-border);">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--color-border);">
+                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Название</th>
+                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Тип</th>
+                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Связь</th>
+                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Направление</th>
+                        <th class="text-left px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Источник</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in graph_results %}
+                    <tr class="hover:bg-black/5 transition cursor-pointer" onclick="location.href='/entity/{{ item.entity.entity_id }}'" style="border-bottom: 1px solid var(--color-border);">
+                        <td class="px-4 py-3 font-medium" style="color: var(--color-text);">{{ item.label.label }}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
+                        </td>
+                        <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ item.relation_name }}</td>
+                        <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ item.direction }}</td>
+                        <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ item.source_label.label if item.source_label else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-12" style="color: var(--color-text-secondary);">
+        <div class="text-4xl mb-4">🔗</div>
+        <div>{{ request.state.t.get("search_no_graph_results", "No related entities found") }} "{{ query }}"</div>
+    </div>
     {% endif %}
+
+    <!-- Text Search Results -->
+    {% elif query %}
+    <div class="flex items-center justify-between mb-4">
+        <div class="text-sm" style="color: var(--color-text-secondary);">
+            {{ request.state.t.get("search_found", "Found") }}: {{ results | length }} {{ request.state.t.get("search_results_count", "results") }} {{ request.state.t.get("search_by_query", "for query") }} "{{ query }}"
+        </div>
+        <!-- View Mode Toggle -->
+        <div class="flex rounded-lg overflow-hidden" style="border: 1px solid var(--color-border);">
+            <button onclick="setViewMode('preview')" id="btn-preview" class="px-3 py-1.5 text-sm transition" title="{{ request.state.t.view_preview }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </button>
+            <button onclick="setViewMode('grid')" id="btn-grid" class="px-3 py-1.5 text-sm transition" title="{{ request.state.t.view_grid }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+            </button>
+            <button onclick="setViewMode('list')" id="btn-list" class="px-3 py-1.5 text-sm transition" title="{{ request.state.t.view_list }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            </button>
+            <button onclick="setViewMode('table')" id="btn-table" class="px-3 py-1.5 text-sm transition" title="{{ request.state.t.view_table }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18M3 6h18M3 18h18"/></svg>
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if search_mode != 'graph' %}
+    <!-- Preview View (poster cards) -->
+    <div id="view-preview" class="entity-view">
+        <div class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+            {% for item in results %}
+            <a href="/entity/{{ item.entity.entity_id }}" class="block rounded-xl overflow-hidden shadow-sm border card-hover transition-all" style="background: var(--color-surface); border-color: var(--color-border);">
+                <div class="relative aspect-[3/4] overflow-hidden">
+                    {% if item.entity.image_url %}
+                    <img src="{{ item.entity.image_url }}" alt="{{ item.label.label }}" class="w-full h-full object-cover">
+                    {% else %}
+                    <div class="w-full h-full flex items-center justify-center" style="background: var(--color-bg);">
+                        <span class="text-4xl font-bold" style="color: var(--color-text-secondary);">{{ item.label.label[:1] }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="absolute top-2 left-2">
+                        <span class="px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
+                    </div>
+                    {% if item.state_data.get('rating') %}
+                    <div class="absolute top-2 right-2">
+                        <span class="px-2 py-0.5 text-xs rounded-full" style="background: rgba(0,0,0,0.7); color: #fff;">★ {{ item.state_data.rating }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="p-3">
+                    <div class="font-semibold text-sm truncate" style="color: var(--color-text);">{{ item.label.label }}</div>
+                    {% if item.state_data.get('year') %}
+                    <div class="text-xs mt-1" style="color: var(--color-text-secondary);">{{ item.state_data.year }}</div>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
 
     <!-- Grid View -->
     <div id="view-grid" class="entity-view">
@@ -313,6 +456,7 @@
         <div class="text-4xl mb-4">?</div>
         <div>{{ request.state.t.search_no_results }}: "{{ query }}"</div>
     </div>
+    {% endif %}
     {% endif %}
 </div>
 

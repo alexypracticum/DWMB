@@ -62,7 +62,7 @@ async def search_by_relation(
         .join(Entity, Entity.entity_id == EntityProjection.entity_id)
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
-        .join(EntityKindLabel, EntityKindLabel.kind_id == EntityKind.kind_id, isouter=True)
+        .outerjoin(EntityKindLabel, (EntityKindLabel.kind_id == EntityKind.kind_id) & (EntityKindLabel.language_id == EntityLabel.language_id))
         .where(
             SemanticRelation.source_projection_id.in_(projection_ids),
             EntityLabel.is_primary == True,
@@ -85,7 +85,7 @@ async def search_by_relation(
         .join(Entity, Entity.entity_id == EntityProjection.entity_id)
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
-        .join(EntityKindLabel, EntityKindLabel.kind_id == EntityKind.kind_id, isouter=True)
+        .outerjoin(EntityKindLabel, (EntityKindLabel.kind_id == EntityKind.kind_id) & (EntityKindLabel.language_id == EntityLabel.language_id))
         .where(
             SemanticRelation.target_projection_id.in_(projection_ids),
             EntityLabel.is_primary == True,
@@ -103,9 +103,10 @@ async def search_by_relation(
         query = query.where(EntityKind.kind_code == target_kind)
         incoming_query = incoming_query.where(EntityKind.kind_code == target_kind)
 
-    # Execute both queries
-    outgoing_result = await db.execute(query.limit(limit))
-    incoming_result = await db.execute(incoming_query.limit(limit))
+    # Execute both queries — use larger limit for deduplication
+    query_limit = limit * 5  # Accounts for multiple labels per entity
+    outgoing_result = await db.execute(query.limit(query_limit))
+    incoming_result = await db.execute(incoming_query.limit(query_limit))
 
     # Build results — deduplicate by entity_id
     seen = set()
@@ -170,16 +171,14 @@ async def search_related_by_text(
     - "Find all songs by Queen" (text finds Queen → relation finds songs)
     """
     search_pattern = f"%{query_text}%"
-    ru_lang_id = await _get_lang_id(db, lang)
 
-    # Step 1: Find matching entities
+    # Step 1: Find matching entities (search across all languages)
     match_query = (
         select(Entity, EntityLabel, EntityKind)
         .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
         .join(EntityKind, EntityKind.kind_id == Entity.kind_id)
         .where(
             Entity.status == "active",
-            EntityLabel.language_id == ru_lang_id,
             EntityLabel.is_primary == True,
             or_(
                 EntityLabel.label.ilike(search_pattern),

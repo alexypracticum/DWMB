@@ -1,4 +1,5 @@
 from uuid import UUID
+from typing import Optional
 from fastapi import APIRouter, Depends, Request, Query
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -25,20 +26,20 @@ async def search_page(
     db: AsyncSession = Depends(get_db),
     user: UserAccount = Depends(get_current_user),
     q: str = Query(""),
-    kind: str = Query(None),
+    kind: Optional[str] = Query(None),
     search_type: str = Query("text"),
     search_mode: str = Query("text"),
-    relation_code: str = Query(None),
-    year_from: int = Query(None),
-    year_to: int = Query(None),
-    rating_min: float = Query(None),
-    genre: str = Query(None),
-    production_company: str = Query(None),
-    country: str = Query(None),
-    language: str = Query(None),
-    source: str = Query(None),
-    date_from: str = Query(None),
-    date_to: str = Query(None),
+    relation_code: Optional[str] = Query(None),
+    year_from: Optional[str] = Query(None),
+    year_to: Optional[str] = Query(None),
+    rating_min: Optional[str] = Query(None),
+    genre: Optional[str] = Query(None),
+    production_company: Optional[str] = Query(None),
+    country: Optional[str] = Query(None),
+    language: Optional[str] = Query(None),
+    source: Optional[str] = Query(None),
+    date_from: Optional[str] = Query(None),
+    date_to: Optional[str] = Query(None),
     sort_by: str = Query("relevance"),
     use_ai: bool = Query(False),
 ):
@@ -48,6 +49,11 @@ async def search_page(
     ai_parsed = None
     graph_relation_types = []
 
+    # Convert string params to int/float (form sends empty strings)
+    year_from_int = int(year_from) if year_from else None
+    year_to_int = int(year_to) if year_to else None
+    rating_min_val = float(rating_min) if rating_min else None
+
     # AI parsing of natural language query
     if use_ai and q and ai_service.api_key:
         try:
@@ -55,13 +61,13 @@ async def search_page(
             if ai_parsed:
                 if "kind" in ai_parsed and not kind:
                     kind = ai_parsed["kind"]
-                if "year" in ai_parsed and not year_from:
-                    year_from = ai_parsed["year"]
-                    year_to = ai_parsed["year"]
+                if "year" in ai_parsed and not year_from_int:
+                    year_from_int = ai_parsed["year"]
+                    year_to_int = ai_parsed["year"]
                 if "genre" in ai_parsed and not genre:
                     genre = ai_parsed["genre"]
-                if "rating_min" in ai_parsed and not rating_min:
-                    rating_min = ai_parsed["rating_min"]
+                if "rating_min" in ai_parsed and not rating_min_val:
+                    rating_min_val = ai_parsed["rating_min"]
         except Exception:
             pass
 
@@ -147,14 +153,14 @@ async def search_page(
                 state = state_result.scalar_one_or_none()
                 state_data = state.state_data if state else {}
 
-                if year_from and state_data.get("year"):
-                    if int(state_data["year"]) < year_from:
+                if year_from_int and state_data.get("year"):
+                    if int(state_data["year"]) < year_from_int:
                         continue
-                if year_to and state_data.get("year"):
-                    if int(state_data["year"]) > year_to:
+                if year_to_int and state_data.get("year"):
+                    if int(state_data["year"]) > year_to_int:
                         continue
-                if rating_min is not None and state_data.get("rating"):
-                    if float(state_data["rating"]) < rating_min:
+                if rating_min_val is not None and state_data.get("rating"):
+                    if float(state_data["rating"]) < rating_min_val:
                         continue
                 if genre and state_data.get("genre"):
                     if genre.lower() not in str(state_data["genre"]).lower():

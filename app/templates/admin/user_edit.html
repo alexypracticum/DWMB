@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}{% if target_user %}Редактирование пользователя{% else %}Создание пользователя{% endif %} - DWMB{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
+    <a href="/admin" class="hover:underline" style="color: var(--color-primary);">Admin</a>
+    <span class="mx-2">/</span>
+    <a href="/admin/users" class="hover:underline" style="color: var(--color-primary);">Пользователи</a>
+    <span class="mx-2">/</span>
+    <span style="color: var(--color-text);">{% if target_user %}{{ target_user.username }}{% else %}Новый{% endif %}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-2xl">
+    <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">
+        {% if target_user %}Редактирование: {{ target_user.username }}{% else %}Создание пользователя{% endif %}
+    </h1>
+
+    {% if error %}
+    <div class="px-4 py-3 rounded-lg mb-4 text-sm" style="background: color-mix(in srgb, var(--color-error) 15%, transparent); color: var(--color-error);">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
+        <form action="{% if target_user %}/admin/users/{{ target_user.user_id }}/edit{% else %}/admin/users/create{% endif %}" method="post" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+
+            <!-- Username -->
+            <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Имя пользователя</div>
+                <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
+                <div class="flex-1">
+                    {% if target_user %}
+                    <input type="text" value="{{ target_user.username }}" disabled
+                        class="form-input w-full px-3 py-2 rounded-lg outline-none text-sm opacity-60"
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                    {% else %}
+                    <input type="text" name="username" required minlength="3"
+                        class="form-input w-full px-3 py-2 rounded-lg outline-none text-sm"
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);"
+                        placeholder="username">
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Display Name -->
+            <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Отображаемое имя</div>
+                <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
+                <div class="flex-1">
+                    <input type="text" name="display_name" value="{{ target_user.display_name if target_user else '' }}"
+                        class="form-input w-full px-3 py-2 rounded-lg outline-none text-sm"
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+            </div>
+
+            <!-- Email -->
+            <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Email</div>
+                <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
+                <div class="flex-1">
+                    <input type="email" name="email" value="{{ target_user.email if target_user else '' }}"
+                        class="form-input w-full px-3 py-2 rounded-lg outline-none text-sm"
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">
+                    {% if target_user %}Новый пароль{% else %}Пароль{% endif %}
+                </div>
+                <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
+                <div class="flex-1">
+                    <input type="password" name="password" {% if not target_user %}required{% endif %} minlength="8"
+                        class="form-input w-full px-3 py-2 rounded-lg outline-none text-sm"
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);"
+                        placeholder="{% if target_user %}Оставьте пустым для сохранения{% endif %}">
+                    {% if target_user %}
+                    <div class="text-xs mt-1" style="color: var(--color-text-secondary);">Оставьте пустым чтобы не менять</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Role -->
+            <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">{{ request.state.t.get("label_role", "Role") }}</div>
+                <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
+                <div class="flex-1">
+                    <select name="role_id" class="form-select w-full px-3 py-2 rounded-lg outline-none text-sm"
+                        style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                        <option value="">{{ request.state.t.get("label_no_role", "No role") }}</option>
+                        {% for role in roles %}
+                        <option value="{{ role.role_id }}" {% if current_role_id and current_role_id == role.role_id %}selected{% endif %}>
+                            {{ role.role_name }} ({{ role.role_code }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Flags -->
+            <div class="flex items-center py-3" style="border-bottom: 1px solid var(--color-border);">
+                <div class="w-40 text-sm font-medium text-right pr-3" style="color: var(--color-text-secondary);">Flags</div>
+                <div class="pr-3" style="color: var(--color-text-secondary);">:</div>
+                <div class="flex-1 flex gap-6">
+                    <label class="flex items-center gap-2 text-sm cursor-pointer" style="color: var(--color-text);">
+                        <input type="checkbox" name="is_admin" value="true"
+                               {% if target_user and target_user.is_admin %}checked{% endif %}
+                               class="rounded">
+                        {{ request.state.t.get("label_admin_flag", "Administrator") }}
+                    </label>
+                    <label class="flex items-center gap-2 text-sm cursor-pointer" style="color: var(--color-text);">
+                        <input type="checkbox" name="is_active" value="true"
+                               {% if not target_user or target_user.is_active %}checked{% endif %}
+                               class="rounded">
+                        {{ request.state.t.get("label_active_flag", "Active") }}
+                    </label>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="flex justify-end gap-3 pt-4">
+                <a href="/admin/users" class="px-4 py-2 rounded-lg text-sm transition"
+                   style="background: var(--color-bg-secondary, #f1f5f9); color: var(--color-text-secondary);">
+                    {{ request.state.t.get("btn_cancel", "Cancel") }}
+                </a>
+                <button type="submit" class="btn btn-primary px-6 py-2 rounded-lg transition">
+                    {% if target_user %}{{ request.state.t.get("btn_save", "Save") }}{% else %}{{ request.state.t.get("btn_create", "Create") }}{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

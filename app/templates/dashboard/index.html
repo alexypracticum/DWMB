@@ -1,33 +1,33 @@
 {% extends "base.html" %}
-{% block title %}{{ request.state.t.get("label_dashboard", "Личный кабинет") }} - DWMB{% endblock %}
+{% block title %}{{ request.state.t.get("label_dashboard", "Personal Dashboard") }} - DWMB{% endblock %}
 
 {% block breadcrumbs %}
 <nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
     <a href="/" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.sidebar_all }}</a>
     <span class="mx-2">/</span>
-    <span style="color: var(--color-text);">{{ request.state.t.get("label_dashboard", "Личный кабинет") }}</span>
+    <span style="color: var(--color-text);">{{ request.state.t.get("label_dashboard", "Personal Dashboard") }}</span>
 </nav>
 {% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-5xl">
     <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">
-        {{ request.state.t.get("label_dashboard", "Личный кабинет") }}
+        {{ request.state.t.get("label_dashboard", "Personal Dashboard") }}
     </h1>
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-3 gap-4 mb-8">
         <div class="card rounded-xl p-5 shadow-sm text-center" style="border: 1px solid var(--color-border);">
             <div class="text-3xl font-bold" style="color: var(--color-primary);">{{ stats.entities_created }}</div>
-            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">{{ request.state.t.get("label_entities_created", "Создано сущностей") }}</div>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">{{ request.state.t.get("label_entities_created", "Entities Created") }}</div>
         </div>
         <div class="card rounded-xl p-5 shadow-sm text-center" style="border: 1px solid var(--color-border);">
             <div class="text-3xl font-bold" style="color: var(--color-accent);">{{ stats.total_imports }}</div>
-            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">{{ request.state.t.get("label_imports_done", "Импортов выполнено") }}</div>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">{{ request.state.t.get("label_imports_done", "Imports Done") }}</div>
         </div>
         <div class="card rounded-xl p-5 shadow-sm text-center" style="border: 1px solid var(--color-border);">
             <div class="text-3xl font-bold" style="color: var(--color-success, #10b981);">{{ stats.total_favorites }}</div>
-            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">{{ request.state.t.get("label_favorites", "В избранном") }}</div>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">{{ request.state.t.get("label_favorites", "Favorites") }}</div>
         </div>
     </div>
 
@@ -35,7 +35,7 @@
         <!-- Import History -->
         <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
             <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">
-                📥 {{ request.state.t.get("label_import_history", "История импортов") }}
+                📥 {{ request.state.t.get("label_import_history", "Import History") }}
             </h2>
 
             {% if import_history %}
@@ -81,9 +81,9 @@
             {% else %}
             <div class="text-center py-8" style="color: var(--color-text-secondary);">
                 <div class="text-3xl mb-2">📭</div>
-                <div class="text-sm">{{ request.state.t.get("label_no_imports", "Пока нет импортов") }}</div>
+                <div class="text-sm">{{ request.state.t.get("label_no_imports", "No imports yet") }}</div>
                 <a href="/search" class="text-xs mt-2 inline-block" style="color: var(--color-primary);">
-                    {{ request.state.t.get("label_start_import", "Начать импорт") }}
+                    {{ request.state.t.get("label_start_import", "Start import") }}
                 </a>
             </div>
             {% endif %}
@@ -92,7 +92,7 @@
         <!-- Favorites -->
         <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
             <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">
-                ⭐ {{ request.state.t.get("label_favorites", "Избранное") }}
+                ⭐ {{ request.state.t.get("label_favorites", "Favorites") }}
             </h2>
 
             {% if favorites %}
@@ -137,8 +137,8 @@
             {% else %}
             <div class="text-center py-8" style="color: var(--color-text-secondary);">
                 <div class="text-3xl mb-2">💫</div>
-                <div class="text-sm">{{ request.state.t.get("label_no_favorites", "Избранное пусто") }}</div>
-                <div class="text-xs mt-1">{{ request.state.t.get("label_add_favorites_hint", "Нажмите ⭐ на странице сущности") }}</div>
+                <div class="text-sm">{{ request.state.t.get("label_no_favorites", "Favorites is empty") }}</div>
+                <div class="text-xs mt-1">{{ request.state.t.get("label_add_favorites_hint", "Click ⭐ on entity page") }}</div>
             </div>
             {% endif %}
         </div>
@@ -147,13 +147,13 @@
     <!-- Quick Links -->
     <div class="mt-8 card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
         <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">
-            🔗 {{ request.state.t.get("label_quick_links", "Быстрые ссылки") }}
+            🔗 {{ request.state.t.get("label_quick_links", "Quick Links") }}
         </h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             <a href="/profile/" class="flex items-center gap-2 p-3 rounded-lg transition"
                style="background: var(--color-bg-secondary, #f1f5f9); text-decoration: none; color: var(--color-text);">
                 <span>👤</span>
-                <span class="text-sm">{{ request.state.t.get("label_profile", "Профиль") }}</span>
+                <span class="text-sm">{{ request.state.t.get("label_profile", "Profile") }}</span>
             </a>
             <a href="/search" class="flex items-center gap-2 p-3 rounded-lg transition"
                style="background: var(--color-bg-secondary, #f1f5f9); text-decoration: none; color: var(--color-text);">
@@ -163,7 +163,7 @@
             <a href="/entity/create" class="flex items-center gap-2 p-3 rounded-lg transition"
                style="background: var(--color-bg-secondary, #f1f5f9); text-decoration: none; color: var(--color-text);">
                 <span>➕</span>
-                <span class="text-sm">{{ request.state.t.get("label_create_entity", "Создать сущность") }}</span>
+                <span class="text-sm">{{ request.state.t.get("label_create_entity", "Create Entity") }}</span>
             </a>
             <a href="/api/docs" class="flex items-center gap-2 p-3 rounded-lg transition"
                style="background: var(--color-bg-secondary, #f1f5f9); text-decoration: none; color: var(--color-text);">

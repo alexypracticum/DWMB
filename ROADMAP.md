@@ -1,5 +1,43 @@
 # Roadmap
 
+## v0.18.0 — Внешние API, граф, подписки, CI/CD (выполнено)
+
+### Внешние API
+
+- [x] Last.fm интеграция (12 API эндпоинтов, виджет "Часто слушаю", кросс-референс с MusicBrainz)
+- [x] Wikipedia API (поиск, импорт описаний, кэш 1ч, rate limit 500ms)
+- [x] MusicBrainz API (поиск, детали, импорт, кэш 1ч, rate limit 1sec)
+- [x] OMDb кэширование (поиск 1ч, детали 24ч) + rate limiting (500ms)
+
+### Граф связей
+
+- [x] Поиск по графу: расширенный поиск с учётом связей (`/api/v1/search/graph`)
+- [x] Экспорт графа: скачивание как PNG/SVG/JSON
+- [x] Тёмная тема для графа (адаптация D3.js под dark mode)
+
+### GraphQL
+
+- [x] Subscriptions: entityChanged, commentChanged, relationChanged через WebSocket
+- [x] JS клиент: GraphQLSubscriptions class с auto-reconnect
+
+### Инфраструктура
+
+- [x] CI/CD: GitHub Actions (test.yml, deploy.yml, docker-publish.yml)
+- [x] Toast-уведомления (window.showToast) при изменениях через subscriptions
+- [x] Email подтверждение при регистрации
+- [x] CRUD пользователей (создание, редактирование, удаление, роли)
+
+### Исправления
+
+- [x] CSRF: form body validation (url-encoded + multipart)
+- [x] manager import в crud.py (NameError при создании сущности)
+
+### Тесты
+
+- [x] 207 тестовых функций (37 файлов)
+
+---
+
 ## v0.17.0 — Локализация, граф, OMDb, инфраструктура (выполнено)
 
 ### Локализация и i18n
@@ -95,6 +133,8 @@
 ### UI/UX
 
 - [x] Личный кабинет: профиль, история импортов, избранное (/dashboard/)
+- [x] Email подтверждение: верификация при регистрации, повторная отправка, статус в профиле
+- [x] CRUD пользователей: создание, редактирование, удаление, ролевая модель (admin/editor/viewer)
 - [x] Уведомления в UI: toast-уведомления (window.showToast)
 - [x] Тёмная тема для графа: адаптация под dark mode
 

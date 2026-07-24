@@ -1,3 +1,41 @@
+## [0.18.0] — 2026-07-25
+
+### Внешние API
+
+- **Last.fm**: интеграция (12 API эндпоинтов, виджет "Часто слушаю" на странице профиля, кросс-референс с MusicBrainz по MBID)
+- **Wikipedia**: поиск и импорт описаний (`/api/import/wikipedia/*`), кэш 1 час, rate limit 500ms
+- **MusicBrainz**: поиск, детали, импорт музыкальных данных (`/api/import/musicbrainz/*`), кэш 1 час, rate limit 1sec
+- **OMDb**: кэширование результатов поиска (1 час) и деталей фильма (24 часа), rate limiting 500ms между запросами
+
+### Граф связей
+
+- **Поиск по графу**: расширенный поиск с учётом связей (`/api/v1/search/graph`)
+- **Экспорт графа**: скачивание как PNG/SVG/JSON (кнопки в секции графа)
+- **Тёмная тема**: адаптация D3.js графа под dark mode
+
+### GraphQL
+
+- **Subscriptions**: entityChanged, commentChanged, relationChanged через WebSocket
+- **JS клиент**: GraphQLSubscriptions class с auto-reconnect
+
+### Инфраструктура
+
+- **CI/CD**: GitHub Actions workflows (test.yml, deploy.yml, docker-publish.yml)
+- **Тесты**: 207 тестовых функций (37 файлов), включая test_lastfm.py (16), test_graph.py (12), test_external_apis.py
+
+### UI/UX
+
+- **Toast-уведомления**: window.showToast при изменениях через subscriptions
+- **Email подтверждение**: верификация при регистрации, повторная отправка, статус в профиле
+- **CRUD пользователей**: создание, редактирование, удаление, ролевая модель (admin/editor/viewer)
+
+### Исправления
+
+- **CSRF**: проверка form body (url-encoded + multipart) вместо только заголовка
+- **crud.py**: добавлен импорт `manager` из websocket service (NameError при создании сущности)
+
+---
+
 ## [0.17.0] — 2026-07-23 (обновление)
 
 ### Граф связей (D3.js)

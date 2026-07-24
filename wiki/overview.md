@@ -4,7 +4,7 @@ title: "DWMB — Dynamic World Meta-Base"
 description: "Гибридная система для хранения и управления знаниями: Python, FastAPI, PostgreSQL, MinIO"
 tags: [overview, project, introduction]
 date_created: 2026-07-22
-date_updated: 2026-07-22
+date_updated: 2026-07-25
 sources:
   - 19.07.2026.ANALYSIS_REPORT.md
   - 08.03.2026.Пишем БД c ChatGPT.md
@@ -44,10 +44,13 @@ status: stable
 - **28+ таблиц** в 10 архитектурных слоях
 - **7 плагинов**: AI, TMDB, Themes, CMS, Stats, RBAC, Email
 - **7 языков**: ru, en, de, fr, es, zh, ja
-- **135 эндпоинтов** API
-- **165 тестов**
+- **140+ эндпоинтов** API (REST + GraphQL)
+- **207 тестов** (37 файлов)
 - **Версионирование** через event sourcing
 - **AI-интеграция**: OpenAI, Anthropic, Google, MiMo
+- **Внешние API**: Last.fm, Wikipedia, MusicBrainz, OMDb
+- **Граф связей**: D3.js, поиск, экспорт PNG/SVG/JSON
+- **CI/CD**: GitHub Actions
 
 ## Структура wiki
 

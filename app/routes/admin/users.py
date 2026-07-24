@@ -93,6 +93,209 @@ async def toggle_active(user_id: str, db: AsyncSession = Depends(get_db), user: 
     return RedirectResponse(url="/admin/users", status_code=303)
 
 
+@router.post("/users/{user_id}/verify")
+async def verify_user(user_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
+    """Manually verify a user's email (admin action when SMTP is not configured)."""
+    from uuid import UUID
+    result = await db.execute(select(UserAccount).where(UserAccount.user_id == UUID(user_id)))
+    target = result.scalar_one_or_none()
+    if target:
+        target.email_verified = True
+        target.verification_token = None
+        await db.commit()
+    return RedirectResponse(url="/admin/users", status_code=303)
+
+
+# ─── CREATE ────────────────────────────────────────────────────
+
+@router.get("/users/create", response_class=HTMLResponse)
+async def admin_user_create_page(request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
+    """Show create user form."""
+    from app.models.rbac import Role
+    roles_result = await db.execute(select(Role).order_by(Role.role_name))
+    roles = roles_result.scalars().all()
+    return templates.TemplateResponse("admin/user_edit.html", {
+        "request": request,
+        "user": user,
+        "target_user": None,
+        "roles": roles,
+        "error": None,
+    })
+
+
+@router.post("/users/create")
+async def admin_user_create(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(""),
+    password: str = Form(...),
+    display_name: str = Form(""),
+    is_admin: bool = Form(False),
+    role_id: str = Form(None),
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_permission("admin.access")),
+):
+    """Create a new user."""
+    from app.models.rbac import Role, UserRole
+
+    # Validate username
+    if len(username) < 3:
+        roles_result = await db.execute(select(Role).order_by(Role.role_name))
+        roles = roles_result.scalars().all()
+        return templates.TemplateResponse("admin/user_edit.html", {
+            "request": request, "user": user, "target_user": None, "roles": roles,
+            "error": "Имя пользователя должно содержать минимум 3 символа",
+        })
+
+    # Check unique username
+    existing = await db.execute(select(UserAccount).where(UserAccount.username == username))
+    if existing.scalar_one_or_none():
+        roles_result = await db.execute(select(Role).order_by(Role.role_name))
+        roles = roles_result.scalars().all()
+        return templates.TemplateResponse("admin/user_edit.html", {
+            "request": request, "user": user, "target_user": None, "roles": roles,
+            "error": "Пользователь с таким именем уже существует",
+        })
+
+    # Validate password
+    if len(password) < 8:
+        roles_result = await db.execute(select(Role).order_by(Role.role_name))
+        roles = roles_result.scalars().all()
+        return templates.TemplateResponse("admin/user_edit.html", {
+            "request": request, "user": user, "target_user": None, "roles": roles,
+            "error": "Пароль должен содержать минимум 8 символов",
+        })
+
+    new_user = UserAccount(
+        username=username,
+        email=email or None,
+        password_hash=get_password_hash(password),
+        display_name=display_name or username,
+        is_admin=is_admin,
+    )
+    db.add(new_user)
+    await db.flush()
+
+    # Assign role
+    if role_id:
+        role = await db.execute(select(Role).where(Role.role_id == UUID(role_id)))
+        role_obj = role.scalar_one_or_none()
+        if role_obj:
+            db.add(UserRole(user_id=new_user.user_id, role_id=role_obj.role_id))
+
+    await db.commit()
+    return RedirectResponse(url="/admin/users", status_code=303)
+
+
+# ─── EDIT ──────────────────────────────────────────────────────
+
+@router.get("/users/{user_id}/edit", response_class=HTMLResponse)
+async def admin_user_edit_page(user_id: str, request: Request, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
+    """Show edit user form."""
+    from app.models.rbac import Role, UserRole
+
+    result = await db.execute(select(UserAccount).where(UserAccount.user_id == UUID(user_id)))
+    target_user = result.scalar_one_or_none()
+    if not target_user:
+        return RedirectResponse(url="/admin/users", status_code=303)
+
+    roles_result = await db.execute(select(Role).order_by(Role.role_name))
+    roles = roles_result.scalars().all()
+
+    # Get current role
+    current_role_result = await db.execute(
+        select(Role.role_id)
+        .join(UserRole, UserRole.role_id == Role.role_id)
+        .where(UserRole.user_id == target_user.user_id)
+        .limit(1)
+    )
+    current_role_id = current_role_result.scalar_one_or_none()
+
+    return templates.TemplateResponse("admin/user_edit.html", {
+        "request": request,
+        "user": user,
+        "target_user": target_user,
+        "roles": roles,
+        "current_role_id": current_role_id,
+        "error": None,
+    })
+
+
+@router.post("/users/{user_id}/edit")
+async def admin_user_edit(
+    user_id: str,
+    request: Request,
+    email: str = Form(""),
+    display_name: str = Form(""),
+    password: str = Form(""),
+    is_admin: bool = Form(False),
+    is_active: bool = Form(True),
+    role_id: str = Form(None),
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_permission("admin.access")),
+):
+    """Update an existing user."""
+    from app.models.rbac import Role, UserRole
+
+    result = await db.execute(select(UserAccount).where(UserAccount.user_id == UUID(user_id)))
+    target_user = result.scalar_one_or_none()
+    if not target_user:
+        return RedirectResponse(url="/admin/users", status_code=303)
+
+    target_user.email = email or None
+    target_user.display_name = display_name or target_user.username
+    target_user.is_admin = is_admin
+    target_user.is_active = is_active
+
+    if password:
+        if len(password) < 8:
+            roles_result = await db.execute(select(Role).order_by(Role.role_name))
+            roles = roles_result.scalars().all()
+            return templates.TemplateResponse("admin/user_edit.html", {
+                "request": request, "user": user, "target_user": target_user, "roles": roles,
+                "error": "Пароль должен содержать минимум 8 символов",
+            })
+        target_user.password_hash = get_password_hash(password)
+
+    # Update role
+    if role_id:
+        # Remove existing roles
+        await db.execute(
+            UserRole.__table__.delete().where(UserRole.user_id == target_user.user_id)
+        )
+        # Add new role
+        role = await db.execute(select(Role).where(Role.role_id == UUID(role_id)))
+        role_obj = role.scalar_one_or_none()
+        if role_obj:
+            db.add(UserRole(user_id=target_user.user_id, role_id=role_obj.role_id))
+
+    await db.commit()
+    return RedirectResponse(url="/admin/users", status_code=303)
+
+
+# ─── DELETE ────────────────────────────────────────────────────
+
+@router.post("/users/{user_id}/delete")
+async def admin_user_delete(user_id: str, db: AsyncSession = Depends(get_db), user: UserAccount = Depends(require_permission("admin.access"))):
+    """Delete a user (cannot delete self)."""
+    target_id = UUID(user_id)
+
+    # Prevent self-deletion
+    if target_id == user.user_id:
+        return RedirectResponse(url="/admin/users", status_code=303)
+
+    result = await db.execute(select(UserAccount).where(UserAccount.user_id == target_id))
+    target = result.scalar_one_or_none()
+    if target:
+        # Remove user roles first
+        from app.models.rbac import UserRole
+        await db.execute(UserRole.__table__.delete().where(UserRole.user_id == target_id))
+        await db.delete(target)
+        await db.commit()
+
+    return RedirectResponse(url="/admin/users", status_code=303)
+
+
 # =============================================================================
 #  TEMPLATE MANAGEMENT
 # =============================================================================

@@ -28,6 +28,8 @@ status: stable
 | [[architecture/data-model]] | Полная схема данных (28+ таблиц) |
 | [[architecture/entity-migration]] | План миграции таблиц в сущности |
 | [[architecture/plugin-system]] | Система плагинов (PluginBase) |
+| [[architecture/caching]] | Кэширование: Redis + in-memory fallback |
+| [[architecture/security]] | Безопасность: JWT, bcrypt, RBAC, rate limiting |
 
 ## База данных
 
@@ -49,6 +51,7 @@ status: stable
 | [[api/rest-api]] | REST API: эндпоинты, CRUD |
 | [[api/router]] | Маршрутизация FastAPI |
 | [[api/search]] | Полнотекстовый и векторный поиск |
+| [[api/graphql]] | GraphQL API: queries, mutations, subscriptions |
 | [[api/graphql]] | GraphQL API (strawberry-graphql) |
 
 ## Frontend
@@ -70,6 +73,9 @@ status: stable
 | [[features/admin-panel]] | Админ-панель (21 шаблон) |
 | [[features/export]] | Экспорт в Markdown/HTML |
 | [[features/feeds]] | RSS/Atom фиды |
+| [[features/workflow]] | Workflow: draft/published/archived, аудит переходов |
+| [[features/wysiwyg]] | WYSIWYG редактор (TipTap v2.6.6) |
+| [[features/backup]] | Бэкапы: pg_dump, экспорт/импорт сущностей |
 
 ## Интерфейс
 
@@ -100,6 +106,7 @@ status: stable
 | [[development/roadmap]] | Дорожная карта проекта |
 | [[development/testing]] | Тестирование |
 | [[development/contributing]] | Руководство по вкладу |
+| [[development/cli]] | CLI утилита: status, seed, stats, backup, restore, migrate |
 | [[development/improvements]] | План улучшений |
 | [[development/architecture-analysis]] | Анализ архитектуры и рефакторинг |
 
@@ -112,6 +119,6 @@ status: stable
 
 ---
 
-**Всего страниц:** 42  
-**Обновлено:** 2026-07-23  
-**Проект:** DWMB v0.17.0
+**Всего страниц:** 51  
+**Обновлено:** 2026-07-25  
+**Проект:** DWMB v0.18.0

@@ -3,7 +3,12 @@
 
 {% block content %}
 <div class="fade-in">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ request.state.t.admin_users }}</h1>
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">{{ request.state.t.admin_users }} ({{ users | length }})</h1>
+        <a href="/admin/users/create" class="btn btn-primary px-4 py-2 rounded-lg transition text-sm">
+            + {{ request.state.t.get("btn_create_user", "Create User") }}
+        </a>
+    </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <table class="w-full text-sm">
@@ -11,6 +16,7 @@
                 <tr class="text-left text-gray-500 bg-gray-50 border-b">
                     <th class="px-4 py-3">{{ request.state.t.admin_user_name }}</th>
                     <th class="px-4 py-3">{{ request.state.t.admin_user_email }}</th>
+                    <th class="px-4 py-3">{{ request.state.t.label_status }}</th>
                     <th class="px-4 py-3">{{ request.state.t.admin_user_role }}</th>
                     <th class="px-4 py-3">{{ request.state.t.label_status }}</th>
                     <th class="px-4 py-3">{{ request.state.t.table_created }}</th>
@@ -26,6 +32,15 @@
                     </td>
                     <td class="px-4 py-3 text-gray-500">{{ u.email or '-' }}</td>
                     <td class="px-4 py-3">
+                        {% if u.email_verified %}
+                        <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">✓</span>
+                        {% elif u.email %}
+                        <span class="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-700 rounded-full">⚠</span>
+                        {% else %}
+                        <span class="text-xs text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3">
                         {% if u.is_admin %}
                         <span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">admin</span>
                         {% else %}
@@ -34,26 +49,40 @@
                     </td>
                     <td class="px-4 py-3">
                         {% if u.is_active %}
-                        <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">{{ request.state.t.status_active }}</span>
+                        <span class="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Активен</span>
                         {% else %}
-                        <span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">{{ request.state.t.status_blocked }}</span>
+                        <span class="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded-full">Заблокирован</span>
                         {% endif %}
                     </td>
                     <td class="px-4 py-3 text-gray-500 text-xs">{{ u.created_at.strftime('%d.%m.%Y') if u.created_at else '-' }}</td>
                     <td class="px-4 py-3">
-                        <div class="flex gap-2">
-                            <form action="/admin/users/{{ u.user_id }}/toggle-admin" method="post" class="inline">
+                        <div class="flex gap-2 flex-wrap">
+                            <a href="/admin/users/{{ u.user_id }}/edit" class="text-xs text-blue-600 hover:text-blue-800 underline">
+                                {{ request.state.t.get("btn_edit_short", "Edit") }}
+                            </a>
+                            {% if u.email and not u.email_verified %}
+                            <form action="/admin/users/{{ u.user_id }}/verify" method="post" class="inline">
             <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
-                                <button type="submit" class="text-xs text-blue-600 hover:text-blue-800 underline">
-                                    {% if u.is_admin %}{{ request.state.t.admin_remove_admin }}{% else %}{{ request.state.t.admin_make_admin }}{% endif %}
+                                <button type="submit" class="text-xs text-green-600 hover:text-green-800 underline">
+                                    {{ request.state.t.get("btn_verify_short", "Verify") }}
                                 </button>
                             </form>
+                            {% endif %}
+                            {% if u.user_id != user.user_id %}
                             <form action="/admin/users/{{ u.user_id }}/toggle-active" method="post" class="inline">
             <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                                 <button type="submit" class="text-xs text-orange-600 hover:text-orange-800 underline">
-                                    {% if u.is_active %}{{ request.state.t.admin_block }}{% else %}{{ request.state.t.admin_unblock }}{% endif %}
+                                    {% if u.is_active %}{{ request.state.t.get("btn_block_short", "Block") }}{% else %}{{ request.state.t.get("btn_unblock_short", "Unblock") }}{% endif %}
                                 </button>
                             </form>
+                            <form action="/admin/users/{{ u.user_id }}/delete" method="post" class="inline"
+                                  onsubmit="return confirm('{{ request.state.t.get("confirm_delete_user", "Delete user") }} {{ u.username }}?')">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+                                <button type="submit" class="text-xs text-red-600 hover:text-red-800 underline">
+                                    {{ request.state.t.get("btn_delete_short", "Del") }}
+                                </button>
+                            </form>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

@@ -118,12 +118,15 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/
 - **28+ таблиц** в 10 архитектурных слоях
 - **7 плагинов**: AI, TMDB, Themes, CMS, Stats, RBAC, Email
 - **7 языков**: ru, en, de, fr, es, zh, ja
-- **138 эндпоинтов** API (REST + GraphQL)
-- **165 тестов**
+- **140+ эндпоинтов** API (REST + GraphQL)
+- **207 тестов** (37 файлов)
 - **Версионирование** через event sourcing
 - **AI-интеграция**: OpenAI, Anthropic, Google, MiMo
-- **GraphQL API**: strawberry-graphql с 7 запросами
+- **GraphQL API**: 7 queries + 5 mutations + 3 subscriptions
 - **CSRF защита** на всех формах
+- **Внешние API**: Last.fm, Wikipedia, MusicBrainz, OMDb (кэш + rate limit)
+- **Граф связей**: D3.js визуализация, поиск по графу, экспорт PNG/SVG/JSON
+- **CI/CD**: GitHub Actions (test, deploy, docker-publish)
 
 ### Ядро
 - Онтологическая модель: kinds, projections, templates, contexts
@@ -151,6 +154,9 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/
 - Комментарии с вложенностью
 - Экспорт в Markdown/HTML
 - Управление плагинами (/admin/plugins)
+- Toast-уведомления (window.showToast)
+- Тёмная тема (включая для графа)
+- Виджет "Часто слушаю" (Last.fm) на странице профиля
 
 ### Инфраструктура
 - Redis кэширование с in-memory fallback
@@ -159,6 +165,9 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/
 - Backup через CLI
 - RSS/Atom фиды
 - Языковые сущности (ISO 639-1, ISO 639-2, ГОСТ 7.75-97)
+- CI/CD: GitHub Actions (test.yml, deploy.yml, docker-publish.yml)
+- WebSocket: real-time уведомления
+- GraphQL subscriptions: entityChanged, commentChanged, relationChanged
 
 ## Технологии
 

@@ -68,6 +68,33 @@
                 <button type="submit" class="btn btn-primary px-6 py-2 rounded-lg transition">{{ request.state.t.btn_save }}</button>
             </div>
         </form>
+
+        <!-- Email Verification Status -->
+        {% if user.email and not user.email_verified %}
+        <div class="mt-4 p-3 rounded-lg flex items-center justify-between" style="background: color-mix(in srgb, var(--color-accent) 10%, transparent); border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);">
+            <div class="flex items-center gap-2">
+                <span>📧</span>
+                <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.get("label_email_not_verified", "Email not verified") }}</span>
+            </div>
+            <form action="/auth/resend-verification" method="post" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+                <button type="submit" class="text-xs px-3 py-1 rounded-lg transition" style="background: var(--color-accent); color: #000;">
+                    {{ request.state.t.get("btn_resend", "Resend") }}
+                </button>
+            </form>
+        </div>
+        {% elif user.email and user.email_verified %}
+        <div class="mt-4 p-3 rounded-lg flex items-center gap-2" style="background: color-mix(in srgb, var(--color-success, #10b981) 10%, transparent); border: 1px solid color-mix(in srgb, var(--color-success, #10b981) 30%, transparent);">
+            <span>✅</span>
+            <span class="text-sm" style="color: var(--color-success, #10b981);">{{ request.state.t.get("label_email_verified", "Email verified") }}</span>
+        </div>
+        {% endif %}
+
+        {% if request.query_params.get('verify_sent') %}
+        <div class="mt-4 p-3 rounded-lg" style="background: color-mix(in srgb, var(--color-primary) 10%, transparent); border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);">
+            <span class="text-sm" style="color: var(--color-primary);">📧 {{ request.state.t.get("verify_sent", "Verification email sent") }} {{ user.email }}</span>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Change Password -->

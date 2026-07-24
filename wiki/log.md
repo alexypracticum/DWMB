@@ -4,13 +4,33 @@ title: "Журнал изменений wiki"
 description: "Хронология создания и обновления страниц wiki DWMB"
 tags: [log, changelog, history]
 date_created: 2026-07-22
-date_updated: 2026-07-22
+date_updated: 2026-07-25
 status: stable
 ---
 
 # Журнал изменений wiki
 
 Хронология создания и обновления страниц wiki [[overview|DWMB]].
+
+## 2026-07-25 (обновление v0.18.0)
+
+### Добавлено (9 новых wiki-страниц)
+- `features/workflow.md` — 3-state workflow (draft/published/archived), аудит переходов
+- `features/wysiwyg.md` — TipTap v2.6.6 rich text редактор, 13 кнопок, CDN
+- `features/backup.md` — pg_dump через CLI, экспорт/импорт сущностей, TMDB импорт
+- `development/cli.md` — cli.py: status, seed, stats, backup, restore, migrate
+- `architecture/caching.md` — Redis + in-memory fallback, KindsMiddleware cache
+- `architecture/security.md` — JWT, bcrypt, RBAC, rate limiting, CORS, SSRF, XSS, CSRF
+- `api/graphql.md` — GraphQL API: 7 queries + 5 mutations + 3 subscriptions
+- `development/improvements.md` — план улучшений (40 пунктов, 6 этапов)
+- `development/architecture-analysis.md` — анализ архитектуры и нормы
+
+### Обновлено
+- `overview.md` — v0.10.0 → v0.18.0, 165 → 207 тестов, добавлены внешние API и граф
+- `index.md` — добавлены ссылки на 9 новых страниц
+- `moc.md` — добавлены GraphQL subscriptions, CI/CD, Last.fm, graph
+
+---
 
 ## 2026-07-22 (обновление)
 
