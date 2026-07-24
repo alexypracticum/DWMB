@@ -3,14 +3,30 @@ External API integrations for DWMB.
 Provides search and import from IMDB, Wikipedia, MusicBrainz.
 """
 import logging
+import asyncio
+import time
 from typing import Optional, List, Dict
 import httpx
 
 logger = logging.getLogger(__name__)
 
+# Simple in-memory rate limiter for external APIs
+_api_rate_limits: Dict[str, float] = {}
+OMDB_MIN_INTERVAL = 0.5  # 500ms between requests (OMDb free tier: 1000/day)
+
+
+def _check_rate_limit(api_name: str, min_interval: float = OMDB_MIN_INTERVAL) -> bool:
+    """Check if we can make a request (rate limit)."""
+    now = time.time()
+    last_call = _api_rate_limits.get(api_name, 0)
+    if now - last_call < min_interval:
+        return False
+    _api_rate_limits[api_name] = now
+    return True
+
 
 async def search_imdb(query: str, api_key: str = None) -> List[Dict]:
-    """Search IMDB via OMDb API."""
+    """Search IMDB via OMDb API. Results are cached for 1 hour."""
     if not api_key:
         from app.config import get_settings
         api_key = get_settings().OMDB_API_KEY
@@ -18,6 +34,17 @@ async def search_imdb(query: str, api_key: str = None) -> List[Dict]:
     if not api_key:
         logger.warning("No OMDB_API_KEY configured")
         return []
+
+    # Check cache
+    from app.services.cache import cache_get, cache_set
+    cache_key = f"omdb:search:{query.lower().strip()}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    # Rate limit
+    if not _check_rate_limit("omdb"):
+        await asyncio.sleep(0.5)
 
     try:
         async with httpx.AsyncClient() as client:
@@ -29,7 +56,7 @@ async def search_imdb(query: str, api_key: str = None) -> List[Dict]:
             data = resp.json()
 
             if data.get("Response") == "True":
-                return [
+                results = [
                     {
                         "title": item.get("Title"),
                         "year": item.get("Year"),
@@ -39,6 +66,8 @@ async def search_imdb(query: str, api_key: str = None) -> List[Dict]:
                     }
                     for item in data.get("Search", [])[:10]
                 ]
+                await cache_set(cache_key, results, ttl=3600)  # Cache 1 hour
+                return results
             return []
     except Exception as e:
         logger.error("IMDB search failed: %s", e)
@@ -46,13 +75,24 @@ async def search_imdb(query: str, api_key: str = None) -> List[Dict]:
 
 
 async def get_imdb_details(imdb_id: str, api_key: str = None) -> Optional[Dict]:
-    """Get detailed IMDB info by ID."""
+    """Get detailed IMDB info by ID. Results are cached for 24 hours."""
     if not api_key:
         from app.config import get_settings
         api_key = get_settings().OMDB_API_KEY
 
     if not api_key:
         return None
+
+    # Check cache
+    from app.services.cache import cache_get, cache_set
+    cache_key = f"omdb:details:{imdb_id}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    # Rate limit
+    if not _check_rate_limit("omdb"):
+        await asyncio.sleep(0.5)
 
     try:
         async with httpx.AsyncClient() as client:
@@ -64,7 +104,7 @@ async def get_imdb_details(imdb_id: str, api_key: str = None) -> Optional[Dict]:
             data = resp.json()
 
             if data.get("Response") == "True":
-                return {
+                result = {
                     "title": data.get("Title"),
                     "year": data.get("Year"),
                     "imdb_id": data.get("imdbID"),
@@ -83,6 +123,8 @@ async def get_imdb_details(imdb_id: str, api_key: str = None) -> Optional[Dict]:
                     "metascore": data.get("Metascore"),
                     "votes": data.get("imdbVotes"),
                 }
+                await cache_set(cache_key, result, ttl=86400)  # Cache 24 hours
+                return result
             return None
     except Exception as e:
         logger.error("IMDB details failed: %s", e)
