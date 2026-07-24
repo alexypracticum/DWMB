@@ -550,3 +550,54 @@ async def omdb_import_movie(
         return {"status": "exists", "message": result["message"], "entity_code": result["entity_code"]}
 
     return {"status": "created", "message": f"Фильм '{movie['title']}' импортирован", "entity_id": result["entity_id"], "entity_code": result["entity_code"]}
+
+
+# ─── Wikipedia ────────────────────────────────────────────────
+
+@router.get("/wikipedia/search", summary="Поиск в Wikipedia")
+async def wikipedia_search(
+    q: str = Query(..., min_length=1),
+    lang: str = Query("ru", regex="^(ru|en|de|fr|es|zh|ja)$"),
+    user: UserAccount = Depends(require_auth),
+):
+    """Search Wikipedia articles."""
+    from app.services.external_apis import search_wikipedia
+    results = await search_wikipedia(q, lang)
+    return {"results": results, "query": q, "lang": lang}
+
+
+@router.get("/wikipedia/page/{title}", summary="Страница Wikipedia")
+async def wikipedia_get_page(
+    title: str,
+    lang: str = Query("ru", regex="^(ru|en|de|fr|es|zh|ja)$"),
+    user: UserAccount = Depends(require_auth),
+):
+    """Get Wikipedia page summary."""
+    from app.services.external_apis import get_wikipedia_page
+    page = await get_wikipedia_page(title, lang)
+    if not page:
+        raise HTTPException(404, "Страница не найдена в Wikipedia")
+    return page
+
+
+@router.post("/wikipedia/import/{title}", summary="Импорт статьи из Wikipedia")
+async def wikipedia_import_page(
+    title: str,
+    lang: str = Query("ru", regex="^(ru|en|de|fr|es|zh|ja)$"),
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_auth),
+):
+    """Import a Wikipedia article as an entity."""
+    from app.services.external_apis import get_wikipedia_page, import_wikipedia_page
+
+    page = await get_wikipedia_page(title, lang)
+    if not page:
+        raise HTTPException(404, "Страница не найдена в Wikipedia")
+
+    result = await import_wikipedia_page(db, page, user.user_id, lang)
+    await db.commit()
+
+    if result["status"] == "exists":
+        return {"status": "exists", "message": result["message"], "entity_code": result["entity_code"]}
+
+    return {"status": "created", "message": f"Статья '{title}' импортирована", "entity_id": result["entity_id"], "entity_code": result["entity_code"]}

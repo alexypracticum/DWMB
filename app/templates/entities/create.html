@@ -148,6 +148,20 @@
                     Импортировать
                 </button>
             </div>
+
+            <!-- Wikipedia Import Button -->
+            <div class="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gray-600 rounded-lg flex items-center justify-center text-white text-lg font-bold">W</div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-800">Импорт из Wikipedia</div>
+                        <div class="text-xs text-gray-500">Описания и данные</div>
+                    </div>
+                </div>
+                <button type="button" onclick="openWikipediaImport()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">
+                    Импортировать
+                </button>
+            </div>
         </div>
 
         <!-- Always show label_ru and description_ru -->
@@ -534,6 +548,119 @@
             setFieldValue('imdb_id', imdbId);
 
             closeOmdbModal();
+        } catch (e) {
+            resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">Ошибка: ${e.message}</div>`;
+        }
+    }
+    </script>
+
+    <!-- Wikipedia Import Modal -->
+    <div id="wikipediaModal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">W</div>
+                    <h3 class="text-lg font-semibold text-gray-800">Импорт из Wikipedia</h3>
+                </div>
+                <button onclick="closeWikipediaModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+
+            <div class="p-4">
+                <div class="flex gap-2 mb-4">
+                    <select id="wikiLang" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 outline-none">
+                        <option value="ru">Русский</option>
+                        <option value="en">English</option>
+                        <option value="de">Deutsch</option>
+                        <option value="fr">Français</option>
+                        <option value="es">Español</option>
+                        <option value="zh">中文</option>
+                        <option value="ja">日本語</option>
+                    </select>
+                    <input type="text" id="wikiSearchInput" placeholder="Поиск в Wikipedia..."
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 outline-none"
+                           oninput="debounceWikiSearch()" onkeydown="if(event.key==='Enter'){event.preventDefault();wikiSearch();}">
+                    <button onclick="wikiSearch()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-sm">Найти</button>
+                </div>
+
+                <div id="wikiResults" class="max-h-[50vh] overflow-y-auto">
+                    <div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let wikiSearchTimeout = null;
+
+    function openWikipediaImport() {
+        document.getElementById('wikipediaModal').classList.remove('hidden');
+        document.getElementById('wikiSearchInput').focus();
+    }
+
+    function closeWikipediaModal() {
+        document.getElementById('wikipediaModal').classList.add('hidden');
+        document.getElementById('wikiResults').innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">Введите запрос для поиска</div>';
+    }
+
+    function debounceWikiSearch() {
+        clearTimeout(wikiSearchTimeout);
+        wikiSearchTimeout = setTimeout(wikiSearch, 400);
+    }
+
+    async function wikiSearch() {
+        const query = document.getElementById('wikiSearchInput').value.trim();
+        const lang = document.getElementById('wikiLang').value;
+        if (!query) return;
+
+        const resultsDiv = document.getElementById('wikiResults');
+        resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Загрузка...</div>';
+
+        try {
+            const resp = await fetch(`/api/import/wikipedia/search?q=${encodeURIComponent(query)}&lang=${lang}`);
+            const data = await resp.json();
+
+            if (data.detail) {
+                resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">${data.detail}</div>`;
+                return;
+            }
+
+            if (!data.results || data.results.length === 0) {
+                resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Ничего не найдено</div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = data.results.map(item => `
+                <div class="p-3 border border-gray-200 rounded-lg mb-2 hover:border-gray-400 hover:bg-gray-50 transition cursor-pointer"
+                     onclick="selectWikiItem('${encodeURIComponent(item.title)}', '${lang}')">
+                    <div class="font-medium text-gray-800 text-sm">${item.title}</div>
+                    <div class="text-xs text-gray-500 mt-0.5">${item.description || ''}</div>
+                    <div class="text-xs text-gray-400 mt-0.5 font-mono truncate">${item.url || ''}</div>
+                </div>
+            `).join('');
+        } catch (e) {
+            resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">Ошибка: ${e.message}</div>`;
+        }
+    }
+
+    async function selectWikiItem(encodedTitle, lang) {
+        const resultsDiv = document.getElementById('wikiResults');
+        resultsDiv.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">Загрузка статьи...</div>';
+
+        try {
+            const title = decodeURIComponent(encodedTitle);
+            const resp = await fetch(`/api/import/wikipedia/page/${encodeURIComponent(title)}?lang=${lang}`);
+            const data = await resp.json();
+
+            if (data.detail) {
+                resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">${data.detail}</div>`;
+                return;
+            }
+
+            setFieldValue('label_ru', data.title || '');
+            setFieldValue('description_ru', data.extract || '');
+            setFieldValue('title', data.title || '');
+
+            closeWikipediaModal();
         } catch (e) {
             resultsDiv.innerHTML = `<div class="text-center py-4 text-red-500 text-sm">Ошибка: ${e.message}</div>`;
         }

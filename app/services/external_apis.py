@@ -260,23 +260,50 @@ async def import_imdb_movie(db, imdb_data: Dict, user_id) -> Dict:
 
 
 async def search_wikipedia(query: str, lang: str = "ru") -> List[Dict]:
-    """Search Wikipedia API."""
+    """Search Wikipedia using opensearch API. Cached for 1 hour."""
+    # Check cache
+    from app.services.cache import cache_get, cache_set
+    cache_key = f"wikipedia:search:{lang}:{query.lower().strip()}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    # Rate limit
+    if not _check_rate_limit("wikipedia"):
+        await asyncio.sleep(0.5)
+
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
-                f"https://{lang}.wikipedia.org/api/rest_v1/page/summary/{query}",
+                f"https://{lang}.wikipedia.org/w/api.php",
+                params={
+                    "action": "opensearch",
+                    "search": query,
+                    "limit": 10,
+                    "namespace": 0,
+                    "format": "json",
+                },
                 timeout=10.0,
-                headers={"User-Agent": "DWMB/1.0"}
+                headers={"User-Agent": "DWMB/1.0 (https://github.com/alexypracticum/DWMB)"}
             )
-            
+
             if resp.status_code == 200:
                 data = resp.json()
-                return [{
-                    "title": data.get("title"),
-                    "extract": data.get("extract"),
-                    "url": data.get("content_urls", {}).get("desktop", {}).get("page"),
-                    "thumbnail": data.get("thumbnail", {}).get("source"),
-                }]
+                # opensearch returns [query, [titles], [descriptions], [urls]]
+                titles = data[1] if len(data) > 1 else []
+                descriptions = data[2] if len(data) > 2 else []
+                urls = data[3] if len(data) > 3 else []
+
+                results = []
+                for i, title in enumerate(titles):
+                    results.append({
+                        "title": title,
+                        "description": descriptions[i] if i < len(descriptions) else "",
+                        "url": urls[i] if i < len(urls) else "",
+                    })
+
+                await cache_set(cache_key, results, ttl=3600)  # Cache 1 hour
+                return results
             return []
     except Exception as e:
         logger.error("Wikipedia search failed: %s", e)
@@ -284,28 +311,99 @@ async def search_wikipedia(query: str, lang: str = "ru") -> List[Dict]:
 
 
 async def get_wikipedia_page(title: str, lang: str = "ru") -> Optional[Dict]:
-    """Get Wikipedia page content."""
+    """Get Wikipedia page summary. Cached for 24 hours."""
+    # Check cache
+    from app.services.cache import cache_get, cache_set
+    cache_key = f"wikipedia:page:{lang}:{title}"
+    cached = await cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    # Rate limit
+    if not _check_rate_limit("wikipedia"):
+        await asyncio.sleep(0.5)
+
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"https://{lang}.wikipedia.org/api/rest_v1/page/summary/{title}",
                 timeout=10.0,
-                headers={"User-Agent": "DWMB/1.0"}
+                headers={"User-Agent": "DWMB/1.0 (https://github.com/alexypracticum/DWMB)"}
             )
-            
+
             if resp.status_code == 200:
                 data = resp.json()
-                return {
+                result = {
                     "title": data.get("title"),
                     "extract": data.get("extract"),
                     "url": data.get("content_urls", {}).get("desktop", {}).get("page"),
                     "thumbnail": data.get("thumbnail", {}).get("source"),
                     "description": data.get("description"),
                 }
+                await cache_set(cache_key, result, ttl=86400)  # Cache 24 hours
+                return result
             return None
     except Exception as e:
         logger.error("Wikipedia page failed: %s", e)
         return None
+
+
+async def import_wikipedia_page(db, wiki_data: Dict, user_id, lang: str = "ru") -> Dict:
+    """Import a Wikipedia article as an entity."""
+    import hashlib, json
+    from uuid import uuid4
+    from sqlalchemy import select, func
+    from app.models.entities import Entity, EntityLabel
+    from app.models.kinds import EntityKind, EntityKindLabel
+    from app.models.projections import EntityProjection, ProjectionState, OntologyTemplate
+    from app.services.language import get_language_id
+
+    title = wiki_data.get("title", "")
+    entity_code = f"wiki_{lang}_{title.replace(' ', '_')[:50]}"
+
+    # Check if already exists
+    existing = await db.execute(select(Entity).where(Entity.entity_code == entity_code))
+    if existing.scalar_one_or_none():
+        return {"status": "exists", "entity_code": entity_code, "message": "Article already imported"}
+
+    # Get or create article kind
+    kind = (await db.execute(select(EntityKind).where(EntityKind.kind_code == "article"))).scalars().first()
+    if not kind:
+        kind = EntityKind(kind_code="article", description="Wikipedia article", is_abstract=False, sort_order=100, version_id=1)
+        db.add(kind)
+        await db.flush()
+        ru_lang_id = await get_language_id(db, "ru")
+        db.add(EntityKindLabel(kind_id=kind.kind_id, language_id=ru_lang_id, label="Статья", description="Article"))
+
+    version_result = await db.execute(select(func.max(Entity.version_id)))
+    version_id = (version_result.scalar() or 0) + 1
+
+    eid = uuid4()
+    entity = Entity(entity_id=eid, entity_code=entity_code, kind_id=kind.kind_id, status="active",
+                    image_url=wiki_data.get("thumbnail"), owner_id=user_id, version_id=version_id)
+    db.add(entity)
+    await db.flush()
+
+    lang_id = await get_language_id(db, lang)
+    label = EntityLabel(entity_id=eid, language_id=lang_id, label=title,
+                        description=wiki_data.get("description", ""), is_primary=True,
+                        owner_id=user_id, version_id=version_id)
+    db.add(label)
+
+    # Create projection
+    tmpl = (await db.execute(select(OntologyTemplate).where(OntologyTemplate.kind_id == kind.kind_id, OntologyTemplate.is_active == True).limit(1))).scalars().first()
+    proj_id = uuid4()
+    db.add(EntityProjection(projection_id=proj_id, entity_id=eid, model_id=tmpl.model_id if tmpl else uuid4(),
+                            template_id=tmpl.template_id if tmpl else None, projection_code=entity_code,
+                            projection_name=title, confidence=1.0, version_id=version_id))
+    await db.flush()
+
+    state_data = {"title": title, "url": wiki_data.get("url", ""), "extract": wiki_data.get("extract", ""),
+                  "description": wiki_data.get("description", ""), "thumbnail": wiki_data.get("thumbnail", ""), "lang": lang}
+    state_hash = hashlib.sha256(json.dumps(state_data, sort_keys=True, default=str).encode()).hexdigest()
+    db.add(ProjectionState(projection_id=proj_id, state_data=state_data, state_hash=state_hash, is_current=True, version_id=version_id))
+
+    return {"status": "created", "entity_id": str(eid), "entity_code": entity_code}
 
 
 async def search_musicbrainz(query: str, entity_type: str = "recording") -> List[Dict]:
