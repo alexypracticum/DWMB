@@ -10,3 +10,4 @@ from app.models.field_labels import *
 from app.models.rbac import *
 from app.models.comments import *
 from app.models.languages import *
+from app.models.favorites import *

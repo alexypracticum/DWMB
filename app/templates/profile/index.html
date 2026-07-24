@@ -100,7 +100,7 @@
     </div>
 
     <!-- Themes -->
-    <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
+    <div class="card rounded-xl p-6 shadow-sm mb-6" style="border: 1px solid var(--color-border);">
         <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">{{ request.state.t.label_themes }}</h2>
 
         <!-- Create new theme -->
@@ -144,5 +144,8 @@
             {% endif %}
         </div>
     </div>
+
+    <!-- Last.fm: Часто слушаю -->
+    {% include "macros/lastfm_widget.html" with context %}
 </div>
 {% endblock %}

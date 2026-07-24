@@ -652,3 +652,166 @@ async def musicbrainz_import(
         return {"status": "exists", "message": result["message"], "entity_code": result["entity_code"]}
 
     return {"status": "created", "message": f"'{details['title']}' импортирован", "entity_id": result["entity_id"], "entity_code": result["entity_code"]}
+
+
+# ─── Last.fm ───────────────────────────────────────────────────
+
+@router.get("/lastfm/status", summary="Проверка настройки Last.fm API")
+async def lastfm_status(user: UserAccount = Depends(require_auth)):
+    """Check if Last.fm API is configured."""
+    from app.services.lastfm import lastfm_status as _status
+    return await _status()
+
+
+@router.get("/lastfm/user/{username}", summary="Профиль Last.fm пользователя")
+async def lastfm_user_info(
+    username: str,
+    user: UserAccount = Depends(require_auth),
+):
+    """Get Last.fm user profile info."""
+    from app.services.lastfm import get_user_info
+    info = await get_user_info(username)
+    if not info:
+        raise HTTPException(404, "Пользователь Last.fm не найден или API ключ не настроен")
+    return info
+
+
+@router.get("/lastfm/user/{username}/history", summary="История прослушиваний Last.fm")
+async def lastfm_history(
+    username: str,
+    limit: int = Query(50, ge=1, le=200),
+    page: int = Query(1, ge=1),
+    user: UserAccount = Depends(require_auth),
+):
+    """Get user's recent listening history from Last.fm."""
+    from app.services.lastfm import get_recent_tracks
+    tracks = await get_recent_tracks(username, limit, page)
+    return {"tracks": tracks, "username": username, "page": page}
+
+
+@router.get("/lastfm/user/{username}/top-tracks", summary="Часто слушаемые треки Last.fm")
+async def lastfm_top_tracks(
+    username: str,
+    period: str = Query("overall", regex="^(7day|1month|3months|6months|12months|overall)$"),
+    limit: int = Query(20, ge=1, le=50),
+    user: UserAccount = Depends(require_auth),
+):
+    """Get user's most played tracks from Last.fm."""
+    from app.services.lastfm import get_top_tracks
+    tracks = await get_top_tracks(username, period, limit)
+    return {"tracks": tracks, "username": username, "period": period}
+
+
+@router.get("/lastfm/user/{username}/top-artists", summary="Часто слушаемые артисты Last.fm")
+async def lastfm_top_artists(
+    username: str,
+    period: str = Query("overall", regex="^(7day|1month|3months|6months|12months|overall)$"),
+    limit: int = Query(20, ge=1, le=50),
+    user: UserAccount = Depends(require_auth),
+):
+    """Get user's most played artists from Last.fm."""
+    from app.services.lastfm import get_top_artists
+    artists = await get_top_artists(username, period, limit)
+    return {"artists": artists, "username": username, "period": period}
+
+
+@router.get("/lastfm/user/{username}/top-albums", summary="Часто слушаемые альбомы Last.fm")
+async def lastfm_top_albums(
+    username: str,
+    period: str = Query("overall", regex="^(7day|1month|3months|6months|12months|overall)$"),
+    limit: int = Query(20, ge=1, le=50),
+    user: UserAccount = Depends(require_auth),
+):
+    """Get user's most played albums from Last.fm."""
+    from app.services.lastfm import get_top_albums
+    albums = await get_top_albums(username, period, limit)
+    return {"albums": albums, "username": username, "period": period}
+
+
+@router.get("/lastfm/track/{artist}/{track}", summary="Информация о треке Last.fm")
+async def lastfm_track_info(
+    artist: str,
+    track: str,
+    user: UserAccount = Depends(require_auth),
+):
+    """Get detailed track info from Last.fm including MusicBrainz IDs."""
+    from app.services.lastfm import get_track_info
+    info = await get_track_info(artist, track)
+    if not info:
+        raise HTTPException(404, "Трек не найден в Last.fm")
+    return info
+
+
+@router.post("/lastfm/import-top/{username}", summary="Импорт часто слушаемых треков Last.fm")
+async def lastfm_import_top(
+    username: str,
+    period: str = Query("overall", regex="^(7day|1month|3months|6months|12months|overall)$"),
+    limit: int = Query(20, ge=1, le=50),
+    with_musicbrainz: bool = Query(True),
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_auth),
+):
+    """Import user's top tracks from Last.fm as entities.
+    
+    Each track is cross-referenced with MusicBrainz for richer metadata.
+    """
+    from app.services.lastfm import import_top_tracks
+    result = await import_top_tracks(db, username, user.user_id, period, limit, with_musicbrainz)
+    await db.commit()
+    return result
+
+
+@router.post("/lastfm/import-history/{username}", summary="Импорт истории прослушиваний Last.fm")
+async def lastfm_import_history(
+    username: str,
+    limit: int = Query(50, ge=1, le=200),
+    with_musicbrainz: bool = Query(True),
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_auth),
+):
+    """Import recent listening history from Last.fm as entities."""
+    from app.services.lastfm import get_recent_tracks, import_lastfm_track, resolve_with_musicbrainz
+
+    tracks = await get_recent_tracks(username, limit)
+    if not tracks:
+        return {"imported": 0, "message": "No tracks found or Last.fm API not configured"}
+
+    imported = 0
+    skipped = 0
+    errors = 0
+
+    for track in tracks:
+        try:
+            mb_data = None
+            if with_musicbrainz:
+                mb_data = await resolve_with_musicbrainz(track)
+            result = await import_lastfm_track(db, track, user.user_id, mb_data)
+            if result["status"] == "created":
+                imported += 1
+            elif result["status"] == "exists":
+                skipped += 1
+        except Exception as e:
+            logger.error("Failed to import history track %s: %s", track.get("name"), e)
+            errors += 1
+
+    await db.commit()
+    return {
+        "imported": imported,
+        "skipped": skipped,
+        "errors": errors,
+        "message": f"Импортировано {imported} треков, пропущено {skipped}, ошибок {errors}",
+    }
+
+
+@router.get("/lastfm/widget/{user_id}", summary="Виджет «Часто слушаю»")
+async def lastfm_frequently_played(
+    user_id: str,
+    limit: int = Query(10, ge=1, le=30),
+    db: AsyncSession = Depends(get_db),
+    user: UserAccount = Depends(require_auth),
+):
+    """Get top frequently played tracks from the database for a user (widget data)."""
+    from uuid import UUID
+    from app.services.lastfm import get_frequently_played
+    tracks = await get_frequently_played(db, UUID(user_id), limit)
+    return {"tracks": tracks, "user_id": user_id}

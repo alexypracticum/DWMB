@@ -106,13 +106,16 @@ function initGraph(containerId, data, options = {}) {
         .attr('stroke', d => d.is_center ? '#1d4ed8' : '#fff')
         .attr('stroke-width', d => d.is_center ? 3 : 2);
 
-    // Node labels
+    // Node labels — adapt to dark mode
+    const isDark = document.documentElement.classList.contains('dark');
+    const labelColor = isDark ? '#e2e8f0' : '#374151';
+
     node.append('text')
         .attr('dy', d => d.is_center ? 36 : 30)
         .attr('text-anchor', 'middle')
         .attr('font-size', '11px')
         .attr('font-weight', d => d.is_center ? 'bold' : 'normal')
-        .attr('fill', 'var(--color-text, #374151)')
+        .attr('fill', labelColor)
         .text(d => d.label.length > 20 ? d.label.substring(0, 18) + '...' : d.label);
 
     // Center node icon
@@ -246,6 +249,10 @@ function initGraph(containerId, data, options = {}) {
     window._graphKindColors = {};
     kinds.forEach(k => window._graphKindColors[k] = kindColorScale(k));
 
+    // Store graph data for export
+    window._graphData = data;
+    window._graphSvg = svg;
+
     // Auto-fit after simulation settles
     simulation.on('end', () => {
         const bounds = g.node().getBBox();
@@ -262,3 +269,164 @@ function initGraph(containerId, data, options = {}) {
         );
     });
 }
+
+// ─── Graph Export Functions ─────────────────────────────────────
+
+function _downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function _getGraphFileName(ext) {
+    const center = window._graphData?.nodes?.find(n => n.is_center);
+    const name = center ? center.label.replace(/[^a-zA-Z0-9а-яА-ЯёЁ]/g, '_').substring(0, 30) : 'graph';
+    return `graph_${name}.${ext}`;
+}
+
+/**
+ * Export graph as JSON (nodes + edges + metadata)
+ */
+function exportGraphJSON() {
+    const data = window._graphData;
+    if (!data) return;
+
+    const exportData = {
+        exported_at: new Date().toISOString(),
+        center: data.nodes.find(n => n.is_center)?.label || '',
+        nodes: data.nodes.map(n => ({
+            id: n.id,
+            code: n.code,
+            label: n.label,
+            kind: n.kind,
+            kind_label: n.kind_label,
+            image_url: n.image_url,
+            is_center: n.is_center,
+        })),
+        edges: data.edges.map(e => ({
+            source: typeof e.source === 'object' ? e.source.id : e.source,
+            target: typeof e.target === 'object' ? e.target.id : e.target,
+            relation_type: e.relation_type,
+            relation_name: e.relation_name,
+            weight: e.weight,
+        })),
+        relation_types: data.relation_types || [],
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    _downloadBlob(blob, _getGraphFileName('json'));
+    _showToast('JSON экспорт готов', 'success');
+}
+
+/**
+ * Export graph as SVG
+ */
+function exportGraphSVG() {
+    const svgEl = document.querySelector('#entity-graph svg');
+    if (!svgEl) return;
+
+    const clone = svgEl.cloneNode(true);
+
+    // Inline computed styles for portability
+    clone.querySelectorAll('text').forEach(el => {
+        const computed = window.getComputedStyle(el);
+        el.style.fontFamily = computed.fontFamily;
+        el.style.fontSize = computed.fontSize;
+    });
+
+    // Add white background
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('width', '100%');
+    bg.setAttribute('height', '100%');
+    bg.setAttribute('fill', '#ffffff');
+    clone.insertBefore(bg, clone.firstChild);
+
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(clone);
+    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    _downloadBlob(blob, _getGraphFileName('svg'));
+    _showToast('SVG экспорт готов', 'success');
+}
+
+/**
+ * Export graph as PNG (rasterized from SVG)
+ */
+function exportGraphPNG() {
+    const svgEl = document.querySelector('#entity-graph svg');
+    if (!svgEl) return;
+
+    const scale = 2; // Retina quality
+    const width = svgEl.clientWidth || 1200;
+    const height = svgEl.clientHeight || 500;
+
+    const clone = svgEl.cloneNode(true);
+    clone.setAttribute('width', width);
+    clone.setAttribute('height', height);
+
+    // Add white background
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('width', '100%');
+    bg.setAttribute('height', '100%');
+    bg.setAttribute('fill', '#ffffff');
+    clone.insertBefore(bg, clone.firstChild);
+
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(clone);
+    const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(scale, scale);
+        ctx.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+
+        canvas.toBlob(blob => {
+            _downloadBlob(blob, _getGraphFileName('png'));
+            _showToast('PNG экспорт готов', 'success');
+        }, 'image/png');
+    };
+    img.src = url;
+}
+
+// ─── Toast Notifications ───────────────────────────────────────
+
+function _showToast(message, type = 'info') {
+    const existing = document.getElementById('dwmb-toast');
+    if (existing) existing.remove();
+
+    const colors = {
+        success: { bg: '#10b981', text: '#fff' },
+        error: { bg: '#ef4444', text: '#fff' },
+        info: { bg: '#3b82f6', text: '#fff' },
+    };
+    const c = colors[type] || colors.info;
+
+    const toast = document.createElement('div');
+    toast.id = 'dwmb-toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+        padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 500;
+        background: ${c.bg}; color: ${c.text}; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: toastIn 0.3s ease;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
+}
+
+// Expose toast globally
+window.showToast = _showToast;

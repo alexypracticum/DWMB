@@ -74,6 +74,11 @@
             </form>
             {% endif %}
             <a href="/entity/{{ entity.entity_id }}/history" class="px-4 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.btn_history }}</a>
+            <button onclick="toggleFavoriteDetail('{{ entity.entity_id }}')" id="fav-btn"
+                    class="px-4 py-2 text-sm rounded-lg transition"
+                    style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">
+                <span id="fav-icon">☆</span> {{ request.state.t.get("btn_favorite", "Избранное") }}
+            </button>
             <a href="/entity/{{ entity.entity_id }}/edit" class="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">{{ request.state.t.btn_edit }}</a>
             <div class="relative group">
                 <button class="px-4 py-2 text-sm rounded-lg transition" style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.btn_export }} ▾</button>
@@ -242,10 +247,17 @@
 
     <!-- Graph -->
     <div id="graph-section" class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6" style="display:none;">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">
-            {{ request.state.t.section_graph }}
-            <span id="graph-count" class="text-sm font-normal text-gray-400 ml-2"></span>
-        </h2>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-800">
+                {{ request.state.t.section_graph }}
+                <span id="graph-count" class="text-sm font-normal text-gray-400 ml-2"></span>
+            </h2>
+            <div class="flex gap-2">
+                <button onclick="exportGraphJSON()" class="text-xs px-3 py-1.5 rounded-lg transition" style="background: var(--color-bg-secondary, #f1f5f9); color: var(--color-text-secondary, #64748b);">JSON</button>
+                <button onclick="exportGraphSVG()" class="text-xs px-3 py-1.5 rounded-lg transition" style="background: var(--color-bg-secondary, #f1f5f9); color: var(--color-text-secondary, #64748b);">SVG</button>
+                <button onclick="exportGraphPNG()" class="text-xs px-3 py-1.5 rounded-lg transition" style="background: var(--color-bg-secondary, #f1f5f9); color: var(--color-text-secondary, #64748b);">PNG</button>
+            </div>
+        </div>
         <div id="graph-filters" class="flex flex-wrap gap-2 mb-4"></div>
         <div id="entity-graph" style="width:100%; height:500px; border:1px solid var(--color-border, #e5e7eb); border-radius:0.5rem; overflow:hidden;"></div>
     </div>
@@ -406,5 +418,43 @@
             }
         })
         .catch(err => console.error('Graph load error:', err));
+
+    // Favorite toggle
+    async function toggleFavoriteDetail(entityId) {
+        try {
+            const resp = await fetch('/dashboard/favorite/' + entityId, { method: 'POST' });
+            const data = await resp.json();
+            const btn = document.getElementById('fav-btn');
+            const icon = document.getElementById('fav-icon');
+            if (data.favorited) {
+                icon.textContent = '★';
+                btn.style.color = 'var(--color-accent)';
+                btn.style.borderColor = 'var(--color-accent)';
+            } else {
+                icon.textContent = '☆';
+                btn.style.color = 'var(--color-text-secondary)';
+                btn.style.borderColor = 'var(--color-border)';
+            }
+        } catch (e) {
+            console.error('Favorite error:', e);
+        }
+    }
+
+    // Check favorite status on load
+    (async function() {
+        try {
+            const resp = await fetch('/dashboard/favorites/check/{{ entity.entity_id }}');
+            const data = await resp.json();
+            if (data.favorited) {
+                const icon = document.getElementById('fav-icon');
+                const btn = document.getElementById('fav-btn');
+                if (icon) icon.textContent = '★';
+                if (btn) {
+                    btn.style.color = 'var(--color-accent)';
+                    btn.style.borderColor = 'var(--color-accent)';
+                }
+            }
+        } catch (e) {}
+    })();
 </script>
 {% endblock %}

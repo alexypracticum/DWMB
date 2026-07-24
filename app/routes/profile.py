@@ -103,12 +103,17 @@ async def profile_page(
     lang_result = await db.execute(select(Language).where(Language.is_active == True).order_by(Language.sort_order))
     languages = lang_result.scalars().all()
 
+    # Get Last.fm frequently played tracks
+    from app.services.lastfm import get_frequently_played
+    lastfm_tracks = await get_frequently_played(db, user.user_id, limit=10)
+
     return templates.TemplateResponse("profile/index.html", {
         "request": request,
         "user": user,
         "themes": themes,
         "languages": languages,
         "active_theme": active_theme,
+        "lastfm_tracks": lastfm_tracks,
     })
 
 

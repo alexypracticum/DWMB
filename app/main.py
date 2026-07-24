@@ -25,10 +25,40 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("dwmb")
 
 # ─── App ──────────────────────────────────────────────────────
+tags_metadata = [
+    {"name": "entities", "description": "CRUD операции с сущностями (создание, чтение, обновление, удаление)"},
+    {"name": "kinds", "description": "Управление типами сущностей (entity kinds)"},
+    {"name": "relations", "description": "Семантические связи между сущностями и граф"},
+    {"name": "search", "description": "Полнотекстовый и граф-поиск по сущностям"},
+    {"name": "import", "description": "Импорт данных из внешних источников (TMDB, OMDb, Wikipedia, MusicBrainz, Last.fm)"},
+    {"name": "auth", "description": "Аутентификация и управление аккаунтом"},
+    {"name": "admin", "description": "Админ-панель: управление типами, шаблонами, пользователями, плагинами"},
+    {"name": "profile", "description": "Профиль пользователя и настройки тем"},
+    {"name": "stats", "description": "Статистика и аналитика"},
+    {"name": "graphql", "description": "GraphQL API (строка запроса /graphql)"},
+]
+
 app = FastAPI(
     title="DWMB — Dynamic World Meta-Base",
-    description="Семантическая база знаний с онтологической моделью данных",
+    description=(
+        "Семантическая база знаний с онтологической моделью данных.\n\n"
+        "## Возможности\n"
+        "- **47 типов** сущностей (фильмы, книги, музыка, люди, места...)\n"
+        "- **71 тип** семантических связей\n"
+        "- **7 языков**: ru, en, de, fr, es, zh, ja\n"
+        "- **GraphQL** API с подписками\n"
+        "- **Импорт** из TMDB, OMDb, Wikipedia, MusicBrainz, Last.fm\n\n"
+        "## Авторизация\n"
+        "Все эндпоинты `/api/v1/*` требуют JWT токен в cookie `access_token`.\n"
+        "Получить токен: `POST /auth/login` (form data: username, password).\n\n"
+        "## Версионирование\n"
+        "API версионируется через префикс пути: `/api/v1/...`"
+    ),
     version="0.17.0",
+    openapi_tags=tags_metadata,
+    openapi_url="/api/openapi.json",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
 )
 
 # ─── Middleware (order matters: last added = first executed) ───
@@ -209,6 +239,7 @@ async def toggle_dark(request: Request):
 
 # ─── Core routers (always loaded) ─────────────────────────────
 from app.routes import auth, entities, search, editor_api, profile, comments, export, feeds
+from app.routes.dashboard import router as dashboard_router
 from plugins import load_plugins
 from app.graphql.schema import graphql_router
 app.include_router(auth.router)
@@ -224,6 +255,7 @@ app.include_router(websocket_router)
 app.include_router(api_v1_router)
 app.include_router(editor_api.router)
 app.include_router(profile.router)
+app.include_router(dashboard_router)
 app.include_router(comments.router)
 app.include_router(export.router)
 app.include_router(feeds.router)

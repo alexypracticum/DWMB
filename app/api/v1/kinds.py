@@ -15,6 +15,7 @@ router = APIRouter()
 
 
 class CreateKindRequest(BaseModel):
+    """Запрос на создание типа сущности."""
     kind_code: str
     description: Optional[str] = None
     is_abstract: bool = False
@@ -25,6 +26,7 @@ class CreateKindRequest(BaseModel):
 
 
 class KindResponse(BaseModel):
+    """Модель типа сущности."""
     kind_id: str
     kind_code: str
     description: Optional[str]
@@ -33,14 +35,14 @@ class KindResponse(BaseModel):
     label: str
 
 
-@router.get("/", response_model=List[KindResponse])
+@router.get("/", response_model=List[KindResponse], summary="Типы сущностей", tags=["kinds"])
 async def list_kinds(
-    include_abstract: bool = Query(False),
-    lang: str = Query("ru"),
+    include_abstract: bool = Query(False, description="Включить абстрактные типы"),
+    lang: str = Query("ru", description="Язык меток"),
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ):
-    """List all entity kinds."""
+    """Получить список всех типов сущностей (film, book, song, person и т.д.)."""
     kinds = await KindService.list_kinds(db, include_abstract=include_abstract, lang=lang)
     
     return [
@@ -56,13 +58,13 @@ async def list_kinds(
     ]
 
 
-@router.get("/{kind_id}", response_model=KindResponse)
+@router.get("/{kind_id}", response_model=KindResponse, summary="Получить тип", tags=["kinds"])
 async def get_kind(
     kind_id: str,
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ):
-    """Get a single kind by ID."""
+    """Получить один тип сущности по UUID."""
     result = await KindService.get_kind(db, UUID(kind_id))
     if not result:
         raise HTTPException(status_code=404, detail="Kind not found")
@@ -77,13 +79,13 @@ async def get_kind(
     )
 
 
-@router.post("/", response_model=KindResponse, status_code=201)
+@router.post("/", response_model=KindResponse, status_code=201, summary="Создать тип", tags=["kinds"])
 async def create_kind(
     request: CreateKindRequest,
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ):
-    """Create a new entity kind."""
+    """Создать новый тип сущности с мультиязычными метками."""
     try:
         result = await KindService.create_kind(
             db,
@@ -108,13 +110,13 @@ async def create_kind(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/{kind_id}")
+@router.delete("/{kind_id}", summary="Удалить тип", tags=["kinds"])
 async def delete_kind(
     kind_id: str,
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ):
-    """Delete an entity kind."""
+    """Удалить тип сущности (если нет сущностей этого типа)."""
     try:
         result = await KindService.delete_kind(db, UUID(kind_id))
         if not result:

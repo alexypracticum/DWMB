@@ -347,3 +347,22 @@ html.dark textarea:focus {
 /* No additional overrides needed — elements using CSS variables
    (card, form-input, sidebar, etc.) already pick up theme colors
    via var(--color-*) and are not affected by Tailwind utilities. */
+
+/* Toast notification animation */
+@keyframes toastIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Dark mode graph container */
+html.dark #entity-graph {
+    background: var(--color-bg) !important;
+    border-color: var(--color-border) !important;
+}
+html.dark #graph-section {
+    background: var(--color-surface) !important;
+    border-color: var(--color-border) !important;
+}
+html.dark #graph-section h2 {
+    color: var(--color-text) !important;
+}

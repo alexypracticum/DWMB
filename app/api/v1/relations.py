@@ -23,23 +23,25 @@ router = APIRouter()
 
 
 class CreateRelationRequest(BaseModel):
+    """Запрос на создание связи между сущностями."""
     source_entity_id: str
     target_entity_id: str
     relation_code: str
 
 
 class RelationTypeResponse(BaseModel):
+    """Модель типа связи."""
     type_id: str
     code: str
     name: str
 
 
-@router.get("/types", response_model=List[RelationTypeResponse])
+@router.get("/types", response_model=List[RelationTypeResponse], summary="Типы связей", tags=["relations"])
 async def list_relation_types(
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ):
-    """List all relation types."""
+    """Получить список всех доступных типов семантических связей."""
     types = await RelationService.list_relation_types(db)
 
     return [
@@ -52,14 +54,15 @@ async def list_relation_types(
     ]
 
 
-@router.get("/graph/{entity_id}")
+@router.get("/graph/{entity_id}", summary="Граф связей сущности", tags=["relations"])
 async def get_entity_graph(
     entity_id: str,
-    depth: int = Query(1, ge=1, le=2),
-    limit: int = Query(50, ge=10, le=200),
+    depth: int = Query(1, ge=1, le=2, description="Глубина обхода (1-2 уровня)"),
+    limit: int = Query(50, ge=10, le=200, description="Максимум узлов"),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get graph data (nodes + edges) for an entity and its neighbors."""
+    """Получить данные графа (узлы + рёбра) для сущности и её соседей.
+    Используется D3.js force-directed графом на странице сущности."""
     eid = UUID(entity_id)
 
     # 1. Get center entity
@@ -229,14 +232,14 @@ async def get_entity_graph(
     }
 
 
-@router.get("/entity/{entity_id}")
+@router.get("/entity/{entity_id}", summary="Связи сущности", tags=["relations"])
 async def get_entity_relations(
     entity_id: str,
-    relation_type: Optional[str] = Query(None),
+    relation_type: Optional[str] = Query(None, description="Фильтр по коду типа связи"),
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ):
-    """Get all relations for an entity."""
+    """Получить все входящие и исходящие связи для сущности."""
     result = await RelationService.get_entity_relations(
         db, UUID(entity_id), relation_type_code=relation_type
     )
@@ -267,13 +270,13 @@ async def get_entity_relations(
     }
 
 
-@router.post("/", status_code=201)
+@router.post("/", status_code=201, summary="Создать связь", tags=["relations"])
 async def create_relation(
     request: CreateRelationRequest,
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ):
-    """Create a semantic relation between two entities."""
+    """Создать семантическую связь между двумя сущностями."""
     try:
         result = await RelationService.create_relation(
             db,
@@ -291,13 +294,13 @@ async def create_relation(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/{relation_id}")
+@router.delete("/{relation_id}", summary="Удалить связь", tags=["relations"])
 async def delete_relation(
     relation_id: str,
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ):
-    """Delete a semantic relation."""
+    """Удалить семантическую связь по UUID."""
     result = await RelationService.delete_relation(db, UUID(relation_id))
     if not result:
         raise HTTPException(status_code=404, detail="Relation not found")

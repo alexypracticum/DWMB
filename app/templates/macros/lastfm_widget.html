@@ -1,0 +1,211 @@
+{# 
+  Last.fm "Часто слушаю" widget.
+  Usage: {% include "macros/lastfm_widget.html" %}
+  
+  Expects: lastfm_tracks (list of dicts with entity_id, title, artist, playcount, duration, url, image)
+#}
+
+{% set tracks = lastfm_tracks | default([]) %}
+
+<div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);" id="lastfm-widget">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold" style="color: var(--color-text);">
+            🎵 {{ request.state.t.get("label_frequently_played", "Часто слушаю") }}
+        </h2>
+        <span class="text-xs px-2 py-1 rounded-full" style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); color: var(--color-primary);">
+            Last.fm
+        </span>
+    </div>
+
+    {% if tracks %}
+    <div class="space-y-2">
+        {% for track in tracks %}
+        <a href="/entity/{{ track.entity_id }}" 
+           class="flex items-center gap-3 p-2 rounded-lg transition hover:opacity-80"
+           style="border-bottom: 1px solid var(--color-border); text-decoration: none; color: inherit;">
+            
+            <!-- Rank -->
+            <div class="w-6 text-center text-xs font-bold" style="color: var(--color-text-secondary);">
+                {{ loop.index }}
+            </div>
+
+            <!-- Image -->
+            {% if track.image %}
+            <div class="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+                <img src="{{ track.image }}" alt="" class="w-full h-full object-cover">
+            </div>
+            {% else %}
+            <div class="w-10 h-10 rounded flex-shrink-0 flex items-center justify-center" style="background: var(--color-bg-secondary);">
+                <span class="text-lg">🎵</span>
+            </div>
+            {% endif %}
+
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium truncate" style="color: var(--color-text);">
+                    {{ track.artist }} — {{ track.title }}
+                </div>
+                {% if track.tags %}
+                <div class="flex gap-1 mt-1 flex-wrap">
+                    {% for tag in track.tags[:3] %}
+                    <span class="text-xs px-1.5 py-0.5 rounded" style="background: var(--color-bg-secondary); color: var(--color-text-secondary);">
+                        {{ tag }}
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Playcount -->
+            <div class="text-right flex-shrink-0">
+                <div class="text-sm font-semibold" style="color: var(--color-primary);">
+                    {{ track.playcount }}
+                </div>
+                <div class="text-xs" style="color: var(--color-text-secondary);">
+                    plays
+                </div>
+            </div>
+
+            <!-- Duration -->
+            {% if track.duration %}
+            <div class="text-xs flex-shrink-0" style="color: var(--color-text-secondary);">
+                {{ (track.duration // 60000) }}:{{ ((track.duration % 60000) // 1000) | string | format('%02d') }}
+            </div>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-6" style="color: var(--color-text-secondary);">
+        <div class="text-3xl mb-2">🎧</div>
+        <div class="text-sm mb-3">Нет данных о прослушиваниях</div>
+        <button onclick="showLastfmImport()" class="text-sm px-4 py-2 rounded-lg transition" 
+                style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); color: var(--color-primary);">
+            Импортировать из Last.fm
+        </button>
+    </div>
+    {% endif %}
+
+    {% if tracks %}
+    <div class="mt-4 pt-3 flex justify-between items-center" style="border-top: 1px solid var(--color-border);">
+        <button onclick="showLastfmImport()" class="text-xs px-3 py-1.5 rounded-lg transition"
+                style="background: color-mix(in srgb, var(--color-primary) 15%, transparent); color: var(--color-primary);">
+            Обновить
+        </button>
+        <span class="text-xs" style="color: var(--color-text-secondary);">
+            {{ tracks | length }} треков
+        </span>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Last.fm Import Modal -->
+<div id="lastfm-import-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.5);">
+    <div class="rounded-xl p-6 w-full max-w-md shadow-2xl" style="background: var(--color-bg); border: 1px solid var(--color-border);">
+        <h3 class="text-lg font-semibold mb-4" style="color: var(--color-text);">🎵 Импорт из Last.fm</h3>
+        
+        <div class="space-y-3">
+            <div>
+                <label class="block text-sm mb-1" style="color: var(--color-text-secondary);">Last.fm username</label>
+                <input type="text" id="lastfm-username" placeholder="Введите имя пользователя"
+                    class="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style="background: var(--color-bg-secondary); border: 1px solid var(--color-border); color: var(--color-text);">
+            </div>
+
+            <div>
+                <label class="block text-sm mb-1" style="color: var(--color-text-secondary);">Период</label>
+                <select id="lastfm-period" class="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style="background: var(--color-bg-secondary); border: 1px solid var(--color-border); color: var(--color-text);">
+                    <option value="overall">За всё время</option>
+                    <option value="12months">За 12 месяцев</option>
+                    <option value="6months">За 6 месяцев</option>
+                    <option value="3months">За 3 месяца</option>
+                    <option value="1month">За месяц</option>
+                    <option value="7day">За неделю</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-1" style="color: var(--color-text-secondary);">Количество треков</label>
+                <select id="lastfm-limit" class="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                    style="background: var(--color-bg-secondary); border: 1px solid var(--color-border); color: var(--color-text);">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="lastfm-musicbrainz" checked class="rounded">
+                <label for="lastfm-musicbrainz" class="text-sm" style="color: var(--color-text-secondary);">
+                    Кросс-референс с MusicBrainz
+                </label>
+            </div>
+        </div>
+
+        <div id="lastfm-import-status" class="hidden mt-4 text-sm" style="color: var(--color-text-secondary);"></div>
+
+        <div class="flex justify-end gap-3 mt-6">
+            <button onclick="hideLastfmImport()" class="px-4 py-2 rounded-lg text-sm transition"
+                    style="background: var(--color-bg-secondary); color: var(--color-text-secondary);">
+                Отмена
+            </button>
+            <button onclick="importLastfmTracks()" id="lastfm-import-btn" class="btn btn-primary px-4 py-2 rounded-lg text-sm transition">
+                Импортировать
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showLastfmImport() {
+    document.getElementById('lastfm-import-modal').classList.remove('hidden');
+}
+
+function hideLastfmImport() {
+    document.getElementById('lastfm-import-modal').classList.add('hidden');
+}
+
+async function importLastfmTracks() {
+    const username = document.getElementById('lastfm-username').value.trim();
+    if (!username) {
+        alert('Введите имя пользователя Last.fm');
+        return;
+    }
+
+    const period = document.getElementById('lastfm-period').value;
+    const limit = document.getElementById('lastfm-limit').value;
+    const withMb = document.getElementById('lastfm-musicbrainz').checked;
+    const status = document.getElementById('lastfm-import-status');
+    const btn = document.getElementById('lastfm-import-btn');
+
+    btn.disabled = true;
+    btn.textContent = 'Импорт...';
+    status.classList.remove('hidden');
+    status.textContent = 'Загрузка данных из Last.fm...';
+
+    try {
+        const url = `/api/import/lastfm/import-top/${encodeURIComponent(username)}?period=${period}&limit=${limit}&with_musicbrainz=${withMb}`;
+        const resp = await fetch(url, { method: 'POST' });
+        const data = await resp.json();
+
+        if (resp.ok) {
+            status.textContent = data.message || `Импортировано: ${data.imported}`;
+            status.style.color = 'var(--color-success, #22c55e)';
+            setTimeout(() => {
+                hideLastfmImport();
+                location.reload();
+            }, 1500);
+        } else {
+            status.textContent = data.detail || 'Ошибка импорта';
+            status.style.color = 'var(--color-error, #ef4444)';
+        }
+    } catch (e) {
+        status.textContent = 'Ошибка сети: ' + e.message;
+        status.style.color = 'var(--color-error, #ef4444)';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Импортировать';
+    }
+}
+</script>

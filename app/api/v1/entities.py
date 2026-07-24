@@ -68,17 +68,17 @@ class DeleteResponse(BaseModel):
 
 # ─── Endpoints ────────────────────────────────────────────────
 
-@router.get("/", response_model=EntityListResponse)
+@router.get("/", response_model=EntityListResponse, summary="Список сущностей", tags=["entities"])
 async def list_entities(
-    kind: Optional[str] = Query(None),
-    search: Optional[str] = Query(None),
-    page: int = Query(1, ge=1),
-    per_page: int = Query(20, ge=1, le=100),
-    lang: str = Query("ru"),
+    kind: Optional[str] = Query(None, description="Фильтр по типу сущности (kind_code)"),
+    search: Optional[str] = Query(None, description="Поиск по названию или коду"),
+    page: int = Query(1, ge=1, description="Номер страницы"),
+    per_page: int = Query(20, ge=1, le=100, description="Количество на странице"),
+    lang: str = Query("ru", description="Язык меток (ru, en, de, fr, es, zh, ja)"),
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ) -> EntityListResponse:
-    """List entities with filtering and pagination."""
+    """Получить список сущностей с фильтрацией и пагинацией."""
     result = await EntityService.list_entities(
         db, kind=kind, search=search, page=page, per_page=per_page, lang=lang
     )
@@ -110,13 +110,13 @@ async def list_entities(
     )
 
 
-@router.get("/{entity_id}", response_model=EntityResponse)
+@router.get("/{entity_id}", response_model=EntityResponse, summary="Получить сущность", tags=["entities"])
 async def get_entity(
     entity_id: str,
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ) -> EntityResponse:
-    """Get a single entity by ID."""
+    """Получить одну сущность по UUID с метками и типом."""
     result = await EntityService.get_entity(db, UUID(entity_id))
     if not result:
         raise HTTPException(status_code=404, detail="Entity not found")
@@ -139,13 +139,13 @@ async def get_entity(
     )
 
 
-@router.post("/", response_model=EntityResponse, status_code=201)
+@router.post("/", response_model=EntityResponse, status_code=201, summary="Создать сущность", tags=["entities"])
 async def create_entity(
     request: CreateEntityRequest,
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ) -> EntityResponse:
-    """Create a new entity."""
+    """Создать новую сущность с мультиязычными метками."""
     try:
         result = await EntityService.create_entity(
             db,
@@ -180,14 +180,14 @@ async def create_entity(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.put("/{entity_id}", response_model=EntityResponse)
+@router.put("/{entity_id}", response_model=EntityResponse, summary="Обновить сущность", tags=["entities"])
 async def update_entity(
     entity_id: str,
     request: UpdateEntityRequest,
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ) -> EntityResponse:
-    """Update an existing entity."""
+    """Обновить существующую сущность (частичное обновление)."""
     result = await EntityService.update_entity(
         db,
         entity_id=UUID(entity_id),
@@ -220,13 +220,13 @@ async def update_entity(
     )
 
 
-@router.delete("/{entity_id}", response_model=DeleteResponse)
+@router.delete("/{entity_id}", response_model=DeleteResponse, summary="Удалить сущность", tags=["entities"])
 async def delete_entity(
     entity_id: str,
     db=Depends(get_db),
     user: UserAccount = Depends(get_current_user),
 ) -> DeleteResponse:
-    """Delete an entity (soft delete)."""
+    """Удалить сущность (мягкое удаление — статус в 'deleted')."""
     result = await EntityService.delete_entity(db, UUID(entity_id))
     if not result:
         raise HTTPException(status_code=404, detail="Entity not found")

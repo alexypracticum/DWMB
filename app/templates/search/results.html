@@ -23,6 +23,21 @@
                 <button type="submit" class="btn btn-primary px-8 py-3 rounded-lg transition font-medium">{{ request.state.t.search_btn }}</button>
             </div>
 
+            <!-- Search Mode Tabs -->
+            <div class="flex gap-1 p-1 rounded-lg" style="background: var(--color-bg-secondary, #f1f5f9);">
+                <button type="button" onclick="setSearchMode('text')" id="mode-text"
+                        class="flex-1 px-4 py-2 rounded-md text-sm font-medium transition search-mode-btn"
+                        style="{% if search_mode != 'graph' %}background: var(--color-bg); color: var(--color-text); box-shadow: 0 1px 3px rgba(0,0,0,0.1);{% else %}color: var(--color-text-secondary);{% endif %}">
+                    🔍 {{ request.state.t.get("search_text_mode", "Текстовый поиск") }}
+                </button>
+                <button type="button" onclick="setSearchMode('graph')" id="mode-graph"
+                        class="flex-1 px-4 py-2 rounded-md text-sm font-medium transition search-mode-btn"
+                        style="{% if search_mode == 'graph' %}background: var(--color-bg); color: var(--color-text); box-shadow: 0 1px 3px rgba(0,0,0,0.1);{% else %}color: var(--color-text-secondary);{% endif %}">
+                    🔗 {{ request.state.t.get("search_graph_mode", "Поиск по графу") }}
+                </button>
+                <input type="hidden" name="search_mode" id="search_mode_input" value="{{ search_mode | default('text') }}">
+            </div>
+
             <!-- Basic Filters -->
             <div class="flex flex-wrap gap-3 items-center">
                 <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_type }}:</span>
@@ -33,6 +48,18 @@
                     <option value="{{ kind.kind_code }}" {% if current_kind == kind.kind_code %}selected{% endif %}>{{ kind._display_label if kind._display_label else kind.kind_code }}</option>
                     {% endfor %}
                 </select>
+
+                <!-- Graph-specific filters -->
+                <div id="graph-filters" style="{% if search_mode != 'graph' %}display:none{% endif %}">
+                    <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.get("search_relation", "Связь") }}:</span>
+                    <select name="relation_code" class="form-select px-3 py-1.5 rounded-lg text-sm outline-none"
+                            style="background: var(--color-bg); border: 1px solid var(--color-border); color: var(--color-text);">
+                        <option value="">{{ request.state.t.get("search_all_relations", "Все связи") }}</option>
+                        {% for rt in graph_relation_types %}
+                        <option value="{{ rt.code }}" {% if current_relation == rt.code %}selected{% endif %}>{{ rt.name }} ({{ rt.count }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
                 <span class="text-sm" style="color: var(--color-text-secondary);">{{ request.state.t.search_year_from }}:</span>
                 <input type="number" name="year_from" value="{{ year_from or '' }}" placeholder="1900"
@@ -122,8 +149,66 @@
     </div>
     {% endif %}
 
-    <!-- Results -->
-    {% if query %}
+    <!-- Graph Search Results -->
+    {% if search_mode == 'graph' and query %}
+    <div class="flex items-center justify-between mb-4">
+        <div class="text-sm" style="color: var(--color-text-secondary);">
+            Найдено: {{ graph_results | length }} связанных результат(ов) по запросу "{{ query }}"
+        </div>
+    </div>
+
+    {% if graph_results %}
+    <div class="space-y-3">
+        {% for item in graph_results %}
+        <a href="/entity/{{ item.entity.entity_id }}" class="block rounded-xl p-4 shadow-sm hover:shadow-md transition-all"
+           style="border: 1px solid var(--color-border); background: var(--color-surface);"
+           onmouseover="this.style.borderColor='var(--color-primary)'" onmouseout="this.style.borderColor='var(--color-border)'">
+            <div class="flex items-center gap-3">
+                <!-- Entity Image or Icon -->
+                {% if item.entity.image_url %}
+                <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                    <img src="{{ item.entity.image_url }}" alt="" class="w-full h-full object-cover">
+                </div>
+                {% else %}
+                <div class="w-12 h-12 rounded-lg flex-shrink-0 flex items-center justify-center text-lg" style="background: var(--color-bg-secondary, #f1f5f9);">
+                    {{ item.kind_label[:1] }}
+                </div>
+                {% endif %}
+
+                <!-- Info -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="px-2 py-0.5 text-xs rounded-full" style="background: var(--color-primary); color: #fff;">{{ item.kind_label }}</span>
+                        <span class="font-semibold" style="color: var(--color-text);">{{ item.label.label }}</span>
+                    </div>
+                    <div class="text-sm" style="color: var(--color-text-secondary);">{{ item.label.description or '' }}</div>
+                </div>
+
+                <!-- Relation Badge -->
+                <div class="flex-shrink-0 text-right">
+                    <div class="text-xs px-2 py-1 rounded-lg mb-1" style="background: var(--color-bg-secondary, #f1f5f9); color: var(--color-text-secondary);">
+                        {% if item.direction == 'outgoing' %}→{% else %}←{% endif %}
+                        {{ item.relation_name }}
+                    </div>
+                    {% if item.source_label %}
+                    <div class="text-xs" style="color: var(--color-text-secondary);">
+                        от: {{ item.source_label.label }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12" style="color: var(--color-text-secondary);">
+        <div class="text-4xl mb-4">🔗</div>
+        <div>Не найдено связанных сущностей для "{{ query }}"</div>
+    </div>
+    {% endif %}
+
+    <!-- Text Search Results -->
+    {% elif query %}
     <div class="flex items-center justify-between mb-4">
         <div class="text-sm" style="color: var(--color-text-secondary);">
             Найдено: {{ results | length }} результат(ов) по запросу "{{ query }}"
@@ -259,6 +344,27 @@
     };
 
     applyView(currentView);
+
+    // Search mode toggle
+    window.setSearchMode = function(mode) {
+        document.getElementById('search_mode_input').value = mode;
+        document.querySelectorAll('.search-mode-btn').forEach(btn => {
+            btn.style.background = 'transparent';
+            btn.style.color = 'var(--color-text-secondary)';
+            btn.style.boxShadow = 'none';
+        });
+        const active = document.getElementById('mode-' + mode);
+        if (active) {
+            active.style.background = 'var(--color-bg)';
+            active.style.color = 'var(--color-text)';
+            active.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        }
+        // Show/hide graph-specific filters
+        const graphFilters = document.getElementById('graph-filters');
+        if (graphFilters) {
+            graphFilters.style.display = mode === 'graph' ? 'inline-flex' : 'none';
+        }
+    };
 })();
 </script>
 {% endblock %}

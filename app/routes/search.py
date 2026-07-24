@@ -1,3 +1,4 @@
+from uuid import UUID
 from fastapi import APIRouter, Depends, Request, Query
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -18,8 +19,6 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 
-
-
 @router.get("/search", response_class=HTMLResponse)
 async def search_page(
     request: Request,
@@ -28,6 +27,8 @@ async def search_page(
     q: str = Query(""),
     kind: str = Query(None),
     search_type: str = Query("text"),
+    search_mode: str = Query("text"),
+    relation_code: str = Query(None),
     year_from: int = Query(None),
     year_to: int = Query(None),
     rating_min: float = Query(None),
@@ -42,15 +43,16 @@ async def search_page(
     use_ai: bool = Query(False),
 ):
     results = []
+    graph_results = []
     total_count = 0
     ai_parsed = None
+    graph_relation_types = []
 
     # AI parsing of natural language query
     if use_ai and q and ai_service.api_key:
         try:
             ai_parsed = await ai_service.parse_entity_text(q, "search_query", db)
             if ai_parsed:
-                # Apply AI-parsed filters
                 if "kind" in ai_parsed and not kind:
                     kind = ai_parsed["kind"]
                 if "year" in ai_parsed and not year_from:
@@ -61,13 +63,29 @@ async def search_page(
                 if "rating_min" in ai_parsed and not rating_min:
                     rating_min = ai_parsed["rating_min"]
         except Exception:
-            pass  # Fall back to regular search
+            pass
 
-    if q:
+    lang = getattr(request.state, "lang", "ru")
+
+    if search_mode == "graph" and q:
+        # ── Graph Search Mode ──────────────────────────────────
+        from app.services.graph_search import search_related_by_text, get_relation_types_for_entity
+
+        graph_results = await search_related_by_text(
+            db,
+            query_text=q,
+            relation_code=relation_code,
+            target_kind=kind,
+            limit=100,
+            lang=lang,
+        )
+        total_count = len(graph_results)
+
+    elif q:
+        # ── Text Search Mode ───────────────────────────────────
         search_pattern = f"%{q}%"
         ru_lang_id = await get_language_id(db, "ru")
 
-        # Base query with labels and kinds
         base_query = (
             select(Entity, EntityLabel, EntityKind)
             .join(EntityLabel, EntityLabel.entity_id == Entity.entity_id)
@@ -79,7 +97,6 @@ async def search_page(
             )
         )
 
-        # Text search
         if search_type == "fts":
             base_query = base_query.where(
                 or_(
@@ -97,19 +114,16 @@ async def search_page(
                 )
             )
 
-        # Kind filter
         if kind:
             kind_obj = await db.execute(select(EntityKind).where(EntityKind.kind_code == kind))
             kind_row = kind_obj.scalar_one_or_none()
             if kind_row:
                 base_query = base_query.where(Entity.kind_id == kind_row.kind_id)
 
-        # Count
         count_q = select(func.count()).select_from(base_query.subquery())
         count_params = {"q": q} if search_type == "fts" else {}
         total_count = (await db.execute(count_q, count_params)).scalar() or 0
 
-        # Sort
         if sort_by == "name":
             base_query = base_query.order_by(EntityLabel.label)
         elif sort_by == "newest":
@@ -119,13 +133,11 @@ async def search_page(
 
         result = await db.execute(base_query.limit(100), {"q": q} if search_type == "fts" else {})
         seen = set()
-        lang = getattr(request.state, "lang", "ru")
         for entity, label, kind in result.unique():
             if entity.entity_id not in seen:
                 seen.add(entity.entity_id)
                 kl = await get_kind_label(db, kind.kind_id, lang) or kind.kind_code
 
-                # Get state_data for metadata
                 state_result = await db.execute(
                     select(ProjectionState)
                     .join(EntityProjection, EntityProjection.projection_id == ProjectionState.projection_id)
@@ -135,7 +147,6 @@ async def search_page(
                 state = state_result.scalar_one_or_none()
                 state_data = state.state_data if state else {}
 
-                # Apply filters on state_data
                 if year_from and state_data.get("year"):
                     if int(state_data["year"]) < year_from:
                         continue
@@ -158,7 +169,6 @@ async def search_page(
                     if language.lower() not in str(state_data["language"]).lower():
                         continue
 
-                # Source filter
                 if source and entity.source_id:
                     from app.models.entities import SourceSystem
                     src_result = await db.execute(
@@ -168,7 +178,6 @@ async def search_page(
                     if src_code and source.lower() != src_code.lower():
                         continue
 
-                # Date filters
                 if date_from and entity.created_at:
                     from datetime import datetime
                     try:
@@ -199,15 +208,33 @@ async def search_page(
     )
     kinds = kinds_result.scalars().all()
 
+    # Get relation types for graph mode filter
+    if search_mode == "graph":
+        from app.models.relations import RelationType
+        rt_result = await db.execute(
+            select(RelationType.relation_code, RelationType.relation_name, func.count(SemanticRelation.relation_id))
+            .join(SemanticRelation, SemanticRelation.relation_type_id == RelationType.relation_type_id)
+            .group_by(RelationType.relation_code, RelationType.relation_name)
+            .order_by(func.count(SemanticRelation.relation_id).desc())
+        )
+        graph_relation_types = [
+            {"code": code, "name": name, "count": count}
+            for code, name, count in rt_result
+        ]
+
     return templates.TemplateResponse("search/results.html", {
         "request": request,
         "user": user,
         "query": q,
         "results": results,
+        "graph_results": graph_results,
         "total_count": total_count,
         "kinds": kinds,
         "current_kind": kind,
         "search_type": search_type,
+        "search_mode": search_mode,
+        "current_relation": relation_code,
+        "graph_relation_types": graph_relation_types,
         "year_from": year_from,
         "year_to": year_to,
         "rating_min": rating_min,

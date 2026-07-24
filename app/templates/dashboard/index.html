@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %}{{ request.state.t.get("label_dashboard", "Личный кабинет") }} - DWMB{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="mb-4 text-sm" style="color: var(--color-text-secondary);">
+    <a href="/" class="hover:underline" style="color: var(--color-primary);">{{ request.state.t.sidebar_all }}</a>
+    <span class="mx-2">/</span>
+    <span style="color: var(--color-text);">{{ request.state.t.get("label_dashboard", "Личный кабинет") }}</span>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-5xl">
+    <h1 class="text-2xl font-bold mb-6" style="color: var(--color-text);">
+        {{ request.state.t.get("label_dashboard", "Личный кабинет") }}
+    </h1>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-3 gap-4 mb-8">
+        <div class="card rounded-xl p-5 shadow-sm text-center" style="border: 1px solid var(--color-border);">
+            <div class="text-3xl font-bold" style="color: var(--color-primary);">{{ stats.entities_created }}</div>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">{{ request.state.t.get("label_entities_created", "Создано сущностей") }}</div>
+        </div>
+        <div class="card rounded-xl p-5 shadow-sm text-center" style="border: 1px solid var(--color-border);">
+            <div class="text-3xl font-bold" style="color: var(--color-accent);">{{ stats.total_imports }}</div>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">{{ request.state.t.get("label_imports_done", "Импортов выполнено") }}</div>
+        </div>
+        <div class="card rounded-xl p-5 shadow-sm text-center" style="border: 1px solid var(--color-border);">
+            <div class="text-3xl font-bold" style="color: var(--color-success, #10b981);">{{ stats.total_favorites }}</div>
+            <div class="text-sm mt-1" style="color: var(--color-text-secondary);">{{ request.state.t.get("label_favorites", "В избранном") }}</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Import History -->
+        <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">
+                📥 {{ request.state.t.get("label_import_history", "История импортов") }}
+            </h2>
+
+            {% if import_history %}
+            <div class="space-y-3">
+                {% for item in import_history %}
+                <a href="/entity/{{ item.entity.entity_id }}"
+                   class="flex items-center gap-3 p-3 rounded-lg transition hover:opacity-80"
+                   style="border-bottom: 1px solid var(--color-border); text-decoration: none; color: inherit;">
+                    <!-- Image or Icon -->
+                    {% if item.entity.image_url %}
+                    <div class="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+                        <img src="{{ item.entity.image_url }}" alt="" class="w-full h-full object-cover">
+                    </div>
+                    {% else %}
+                    <div class="w-10 h-10 rounded flex-shrink-0 flex items-center justify-center text-sm font-bold"
+                         style="background: var(--color-primary); color: #fff;">
+                        {{ (item.label.label[:1] if item.label else '?') | upper }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Info -->
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium truncate" style="color: var(--color-text);">
+                            {{ item.label.label if item.label else item.entity.entity_code }}
+                        </div>
+                        <div class="text-xs" style="color: var(--color-text-secondary);">
+                            {{ item.entity.kind_id | string }}
+                            {% if item.source %}
+                            <span class="ml-1 px-1.5 py-0.5 rounded" style="background: var(--color-bg-secondary, #f1f5f9);">
+                                {{ item.source }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Date -->
+                    <div class="text-xs flex-shrink-0" style="color: var(--color-text-secondary);">
+                        {{ item.event.occurred_at.strftime('%d.%m') if item.event.occurred_at else '' }}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8" style="color: var(--color-text-secondary);">
+                <div class="text-3xl mb-2">📭</div>
+                <div class="text-sm">{{ request.state.t.get("label_no_imports", "Пока нет импортов") }}</div>
+                <a href="/search" class="text-xs mt-2 inline-block" style="color: var(--color-primary);">
+                    {{ request.state.t.get("label_start_import", "Начать импорт") }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Favorites -->
+        <div class="card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
+            <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">
+                ⭐ {{ request.state.t.get("label_favorites", "Избранное") }}
+            </h2>
+
+            {% if favorites %}
+            <div class="space-y-3">
+                {% for item in favorites %}
+                <a href="/entity/{{ item.entity.entity_id }}"
+                   class="flex items-center gap-3 p-3 rounded-lg transition hover:opacity-80"
+                   style="border-bottom: 1px solid var(--color-border); text-decoration: none; color: inherit;">
+                    <!-- Image or Icon -->
+                    {% if item.entity.image_url %}
+                    <div class="w-10 h-10 rounded overflow-hidden flex-shrink-0">
+                        <img src="{{ item.entity.image_url }}" alt="" class="w-full h-full object-cover">
+                    </div>
+                    {% else %}
+                    <div class="w-10 h-10 rounded flex-shrink-0 flex items-center justify-center text-sm"
+                         style="background: var(--color-accent); color: #fff;">
+                        ⭐
+                    </div>
+                    {% endif %}
+
+                    <!-- Info -->
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium truncate" style="color: var(--color-text);">
+                            {{ item.label.label if item.label else item.entity.entity_code }}
+                        </div>
+                        <div class="text-xs" style="color: var(--color-text-secondary);">
+                            <span class="px-1.5 py-0.5 rounded" style="background: var(--color-bg-secondary, #f1f5f9);">
+                                {{ item.kind_label }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Remove button -->
+                    <button onclick="event.preventDefault(); toggleFavorite('{{ item.entity.entity_id }}', this)"
+                            class="text-xs px-2 py-1 rounded transition"
+                            style="color: var(--color-error, #ef4444);">
+                        ✕
+                    </button>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8" style="color: var(--color-text-secondary);">
+                <div class="text-3xl mb-2">💫</div>
+                <div class="text-sm">{{ request.state.t.get("label_no_favorites", "Избранное пусто") }}</div>
+                <div class="text-xs mt-1">{{ request.state.t.get("label_add_favorites_hint", "Нажмите ⭐ на странице сущности") }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="mt-8 card rounded-xl p-6 shadow-sm" style="border: 1px solid var(--color-border);">
+        <h2 class="text-lg font-semibold mb-4" style="color: var(--color-text);">
+            🔗 {{ request.state.t.get("label_quick_links", "Быстрые ссылки") }}
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <a href="/profile/" class="flex items-center gap-2 p-3 rounded-lg transition"
+               style="background: var(--color-bg-secondary, #f1f5f9); text-decoration: none; color: var(--color-text);">
+                <span>👤</span>
+                <span class="text-sm">{{ request.state.t.get("label_profile", "Профиль") }}</span>
+            </a>
+            <a href="/search" class="flex items-center gap-2 p-3 rounded-lg transition"
+               style="background: var(--color-bg-secondary, #f1f5f9); text-decoration: none; color: var(--color-text);">
+                <span>🔍</span>
+                <span class="text-sm">{{ request.state.t.btn_search }}</span>
+            </a>
+            <a href="/entity/create" class="flex items-center gap-2 p-3 rounded-lg transition"
+               style="background: var(--color-bg-secondary, #f1f5f9); text-decoration: none; color: var(--color-text);">
+                <span>➕</span>
+                <span class="text-sm">{{ request.state.t.get("label_create_entity", "Создать сущность") }}</span>
+            </a>
+            <a href="/api/docs" class="flex items-center gap-2 p-3 rounded-lg transition"
+               style="background: var(--color-bg-secondary, #f1f5f9); text-decoration: none; color: var(--color-text);">
+                <span>📚</span>
+                <span class="text-sm">API Docs</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+async function toggleFavorite(entityId, btn) {
+    try {
+        const resp = await fetch(`/dashboard/favorite/${entityId}`, { method: 'POST' });
+        const data = await resp.json();
+        if (data.status === 'removed') {
+            // Remove from list
+            const row = btn.closest('a');
+            if (row) {
+                row.style.opacity = '0';
+                row.style.transition = 'opacity 0.3s';
+                setTimeout(() => row.remove(), 300);
+            }
+        }
+    } catch (e) {
+        console.error('Failed to toggle favorite:', e);
+    }
+}
+</script>
+{% endblock %}
