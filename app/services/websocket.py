@@ -84,7 +84,8 @@ class ConnectionManager:
             "data": entity_data,
             "timestamp": datetime.utcnow().isoformat()
         })
-    
+        await self._publish_to_subscriptions("entity_created", entity_data)
+
     async def notify_entity_updated(self, entity_data: dict):
         """Notify all clients about an entity update."""
         await self.broadcast({
@@ -92,7 +93,8 @@ class ConnectionManager:
             "data": entity_data,
             "timestamp": datetime.utcnow().isoformat()
         })
-    
+        await self._publish_to_subscriptions("entity_updated", entity_data)
+
     async def notify_entity_deleted(self, entity_id: str):
         """Notify all clients about an entity deletion."""
         await self.broadcast({
@@ -100,7 +102,8 @@ class ConnectionManager:
             "data": {"entity_id": entity_id},
             "timestamp": datetime.utcnow().isoformat()
         })
-    
+        await self._publish_to_subscriptions("entity_deleted", {"entity_id": entity_id})
+
     async def notify_comment_added(self, comment_data: dict):
         """Notify all clients about a new comment."""
         await self.broadcast({
@@ -108,6 +111,15 @@ class ConnectionManager:
             "data": comment_data,
             "timestamp": datetime.utcnow().isoformat()
         })
+        await self._publish_to_subscriptions("comment_added", comment_data)
+
+    async def _publish_to_subscriptions(self, event_type: str, data: dict):
+        """Publish event to GraphQL subscription bus."""
+        try:
+            from app.graphql.subscriptions import publish_event
+            await publish_event(event_type, data)
+        except ImportError:
+            pass
     
     def get_connection_count(self) -> int:
         """Get the number of active connections."""
