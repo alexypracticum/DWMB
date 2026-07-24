@@ -23,6 +23,17 @@ status: stable
 - `architecture/security.md` — JWT, bcrypt, RBAC, rate limiting, CORS, SSRF, XSS, CSRF
 - `api/graphql.md` — GraphQL API: 7 queries + 5 mutations + 3 subscriptions
 - `development/improvements.md` — план улучшений (40 пунктов, 6 этапов)
+
+### Добавлено (admin UI)
+- `/admin/event-log` — журнал событий с фильтрами
+- `/admin/roles` — CRUD ролей и разрешений
+- `/admin/api-settings` — настройки API ключей
+- `/admin/email-settings` — настройки SMTP
+- `/admin/security` — CORS, rate limit, CSRF, SECRET_KEY
+- `/admin/backup` — бэкап/восстановление PostgreSQL
+
+### Исправлено
+- Dark mode toggle: удалён дублирующийся маршрут, корректное переключение тем
 - `development/architecture-analysis.md` — анализ архитектуры и нормы
 
 ### Обновлено
