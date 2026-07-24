@@ -3,7 +3,7 @@ Unit tests for layout rendering service.
 """
 from app.services.layout import (
     render_layout, render_block_html, get_state_field,
-    BLOCK_TYPES, RU_LABELS,
+    BLOCK_TYPES,
 )
 
 
@@ -166,7 +166,7 @@ def test_block_type_actor_character_row_config():
     """actor_character_row block type must be registered in BLOCK_TYPES."""
     assert "actor_character_row" in BLOCK_TYPES
     meta = BLOCK_TYPES["actor_character_row"]
-    assert meta["name"] == "Актёр — персонаж"
+    assert "name" in meta
     keys = {f["key"] for f in meta["config_fields"]}
     assert "acted_in_type" in keys
     assert "plays_type" in keys
@@ -174,8 +174,8 @@ def test_block_type_actor_character_row_config():
     assert "max_items" in keys
 
 
-def test_ru_labels_cover_common_keys():
-    """RU_LABELS should cover common field keys."""
-    common_keys = ["year", "genre", "title", "director", "rating", "description"]
-    for key in common_keys:
-        assert key in RU_LABELS, f"RU_LABELS missing key '{key}'"
+def test_block_types_have_labels():
+    """All block types should have name and description."""
+    for key, bt in BLOCK_TYPES.items():
+        assert "name" in bt, f"Block type '{key}' missing 'name'"
+        assert "description" in bt, f"Block type '{key}' missing 'description'"

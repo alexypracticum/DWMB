@@ -10,58 +10,61 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env:
-          POSTGRES_DB: dwmb_test
-          POSTGRES_USER: dwmb
-          POSTGRES_PASSWORD: test_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 5
-
-    env:
-      DATABASE_URL: postgresql+asyncpg://dwmb:test_password@localhost:5432/dwmb_test
-      SECRET_KEY: ci-test-secret-key-for-github-actions-only-32ch
-      ADMIN_PASSWORD: admin123
-      OMDB_API_KEY: ""
-      TMDB_API_KEY: ""
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: ${{ runner.os }}-pip-
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Initialize database
+      - name: Create .env for CI
         run: |
-          PGPASSWORD=test_password psql -h localhost -U dwmb -d dwmb_test -f db/init.sql || true
+          cat > .env << 'EOF'
+          DATABASE_URL=postgresql+asyncpg://dwmb:ci_password@db:5432/dwmb
+          POSTGRES_DB=dwmb
+          POSTGRES_USER=dwmb
+          POSTGRES_PASSWORD=ci_password
+          SECRET_KEY=ci-test-secret-key-for-github-actions-only-32chars!!
+          ADMIN_PASSWORD=admin123
+          OMDB_API_KEY=
+          TMDB_API_KEY=
+          MINIO_ENDPOINT=minio:9000
+          MINIO_ACCESS_KEY=dwmb_minio
+          MINIO_SECRET_KEY=dwmb_minio_secret
+          MINIO_BUCKET=dwmb-media
+          REDIS_URL=redis://redis:6379/0
+          CORS_ORIGINS=http://localhost:8000
+          EOF
 
-      - name: Run tests
-        run: pytest tests/ -v --tb=short
-
-      - name: Run tests (Docker alternative)
-        if: failure()
+      - name: Build and start services
         run: |
-          echo "Tests failed. Trying with Docker..."
-          docker compose -f docker-compose.yml up -d db
+          docker compose up -d --build db redis minio
+          echo "Waiting for services..."
+          sleep 15
+          docker compose ps
+
+      - name: Wait for database
+        run: |
+          for i in $(seq 1 30); do
+            docker compose exec -T db pg_isready -U dwmb && break
+            echo "Waiting for db... ($i)"
+            sleep 2
+          done
+
+      - name: Run tests in app container
+        run: |
+          docker compose up -d --build app
           sleep 10
-          docker compose -f docker-compose.yml exec -T db psql -U dwmb -d dwmb -f /docker-entrypoint-initdb.d/01-init.sql || true
+          docker compose exec -T app python -m pytest tests/ -v --tb=short 2>&1 | tee test-results.txt
+          exit_code=${PIPESTATUS[0]}
+          echo "Test exit code: $exit_code"
+          exit $exit_code
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.txt
+          retention-days: 7
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v

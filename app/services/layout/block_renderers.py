@@ -120,7 +120,7 @@ def render_block_html(block: dict, state_data: dict, relations: dict = None, ent
                 val = get_localized_value(state_data, fkey, lang) or ""
                 if not val and val != 0:
                     continue
-                label = get_label(fkey, lang, t) or f.get("label")
+                label = f.get("label") or get_label(fkey, lang, t)
                 ftype = f.get("type", "string")
                 val_str = str(val)
                 if ftype == "currency":

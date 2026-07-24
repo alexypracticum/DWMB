@@ -23,32 +23,32 @@ def test_import_imdb_movie_function_exists():
 def test_omdb_search_endpoint_exists():
     """Test that OMDb search endpoint is registered."""
     from app.routes.import_api import router
-    routes = [r.path for r in router.routes]
-    assert "/omdb/search" in routes
+    routes = [r.path for r in router.routes if hasattr(r, 'path')]
+    assert "/api/import/omdb/search" in routes
 
 
 def test_omdb_movie_endpoint_exists():
     """Test that OMDb movie endpoint is registered."""
     from app.routes.import_api import router
-    routes = [r.path for r in router.routes]
-    assert "/omdb/movie/{imdb_id}" in routes
+    routes = [r.path for r in router.routes if hasattr(r, 'path')]
+    assert "/api/import/omdb/movie/{imdb_id}" in routes
 
 
 def test_omdb_import_endpoint_exists():
     """Test that OMDb import endpoint is registered."""
     from app.routes.import_api import router
-    routes = [r.path for r in router.routes]
-    assert "/omdb/import/{imdb_id}" in routes
+    routes = [r.path for r in router.routes if hasattr(r, 'path')]
+    assert "/api/import/omdb/import/{imdb_id}" in routes
 
 
 def test_omdb_status_endpoint_exists():
     """Test that OMDb status endpoint is registered."""
     from app.routes.import_api import router
-    routes = [r.path for r in router.routes]
-    assert "/omdb/status" in routes
+    routes = [r.path for r in router.routes if hasattr(r, 'path')]
+    assert "/api/import/omdb/status" in routes
 
 
 def test_config_has_omdb_key():
     """Test that OMDB_API_KEY is in settings."""
     from app.config import Settings
-    assert hasattr(Settings, 'OMDB_API_KEY')
+    assert "OMDB_API_KEY" in Settings.model_fields
