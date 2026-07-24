@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}API Settings - DWMB{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-3xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">API Settings</h1>
+        <a href="/admin" class="text-sm" style="color: var(--color-primary);">{{ request.state.t.admin_back }}</a>
+    </div>
+
+    <form method="post" action="/admin/api-settings" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+
+        {% for item in items %}
+        <div class="rounded-xl p-5 shadow-sm border" style="background: var(--color-surface); border-color: var(--color-border);">
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-sm font-semibold" style="color: var(--color-text);">{{ item.label }}</label>
+                <span class="text-xs px-2 py-0.5 rounded-full"
+                    {% if item.source == 'database' %}
+                    style="background: #10b981; color: #fff;"
+                    {% elif item.source == 'env' %}
+                    style="background: #3b82f6; color: #fff;"
+                    {% else %}
+                    style="background: var(--color-text-secondary); color: #fff;"
+                    {% endif %}
+                >{{ item.source }}</span>
+            </div>
+            <div class="text-xs mb-3" style="color: var(--color-text-secondary);">{{ item.description }}</div>
+            <input type="text" name="{{ item.key }}" value="{{ item.value }}" placeholder="Enter API key..."
+                class="w-full px-3 py-2 rounded-lg text-sm border font-mono" style="border-color: var(--color-border); background: var(--color-bg); color: var(--color-text);">
+        </div>
+        {% endfor %}
+
+        <div class="flex gap-3">
+            <button type="submit" class="px-6 py-2 rounded-lg text-sm font-medium" style="background: var(--color-primary); color: #fff;">{{ request.state.t.btn_save }}</button>
+            <a href="/admin" class="px-6 py-2 rounded-lg text-sm" style="border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.btn_cancel }}</a>
+        </div>
+    </form>
+
+    <div class="mt-6 rounded-xl p-4 shadow-sm border text-sm" style="background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-secondary);">
+        <strong>How it works:</strong> Keys saved here are stored in the database and override .env values. If a key is not set in the database, the .env value is used. Restart is not required.
+    </div>
+</div>
+{% endblock %}

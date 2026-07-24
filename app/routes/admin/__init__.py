@@ -18,6 +18,12 @@ from .languages import router as languages_router
 from .ui_translations import router as ui_translations_router
 from .users import router as users_router
 from .plugins import router as plugins_router
+from .event_log import router as event_log_router
+from .roles import router as roles_router
+from .api_settings import router as api_settings_router
+from .email_settings import router as email_settings_router
+from .security import router as security_router
+from .backup import router as backup_router
 
 router.include_router(dashboard_router)
 router.include_router(kinds_router)
@@ -30,3 +36,9 @@ router.include_router(languages_router)
 router.include_router(ui_translations_router)
 router.include_router(users_router)
 router.include_router(plugins_router)
+router.include_router(event_log_router)
+router.include_router(roles_router)
+router.include_router(api_settings_router)
+router.include_router(email_settings_router)
+router.include_router(security_router)
+router.include_router(backup_router)

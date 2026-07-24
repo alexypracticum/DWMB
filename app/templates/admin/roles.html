@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Roles - DWMB{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-4xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">Roles & Permissions</h1>
+        <div class="flex gap-2">
+            <a href="/admin/roles/create" class="px-4 py-2 rounded-lg text-sm font-medium" style="background: var(--color-primary); color: #fff;">+ Create Role</a>
+            <a href="/admin" class="text-sm" style="color: var(--color-primary);">{{ request.state.t.admin_back }}</a>
+        </div>
+    </div>
+
+    <div class="rounded-xl shadow-sm border overflow-hidden" style="background: var(--color-surface); border-color: var(--color-border);">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left" style="border-bottom: 1px solid var(--color-border); background: var(--color-bg);">
+                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Role</th>
+                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Code</th>
+                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Description</th>
+                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Users</th>
+                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Permissions</th>
+                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for role in roles %}
+                    <tr style="border-bottom: 1px solid var(--color-border);">
+                        <td class="px-4 py-3 font-medium" style="color: var(--color-text);">{{ role.role_name }}</td>
+                        <td class="px-4 py-3"><code class="text-xs px-2 py-0.5 rounded" style="background: var(--color-bg); color: var(--color-text-secondary);">{{ role.role_code }}</code></td>
+                        <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ role.description or '-' }}</td>
+                        <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ role_user_counts.get(role.role_id, 0) }}</td>
+                        <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ role_perm_counts.get(role.role_id, 0) }}</td>
+                        <td class="px-4 py-3">
+                            <div class="flex gap-2">
+                                <a href="/admin/roles/{{ role.role_id }}/edit" class="text-xs" style="color: var(--color-primary);">Edit</a>
+                                <form action="/admin/roles/{{ role.role_id }}/delete" method="post" class="inline" onsubmit="return confirm('Delete this role?')">
+                                    <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+                                    <button type="submit" class="text-xs" style="color: var(--color-error);">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not roles %}
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center" style="color: var(--color-text-secondary);">No roles found</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

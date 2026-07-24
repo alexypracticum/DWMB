@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Security Settings - DWMB{% endblock %}
+
+{% block content %}
+<div class="fade-in max-w-3xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">Security Settings</h1>
+        <a href="/admin" class="text-sm" style="color: var(--color-primary);">{{ request.state.t.admin_back }}</a>
+    </div>
+
+    <!-- SECRET_KEY Status -->
+    <div class="rounded-xl p-5 shadow-sm border mb-6" style="background: var(--color-surface); border-color: var(--color-border);">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold"
+                {% if secret_key_status == 'ok' %}
+                style="background: #10b981; color: #fff;">OK
+                {% elif secret_key_status == 'short' %}
+                style="background: #f59e0b; color: #fff;">!
+                {% else %}
+                style="background: #ef4444; color: #fff;">X
+                {% endif %}
+            </div>
+            <div>
+                <div class="font-medium" style="color: var(--color-text);">SECRET_KEY</div>
+                <div class="text-sm" style="color: var(--color-text-secondary);">
+                    {% if secret_key_status == 'ok' %}
+                    Strong key ({{ secret_key_length }} chars)
+                    {% elif secret_key_status == 'short' %}
+                    Too short ({{ secret_key_length }} chars) — use at least 32
+                    {% else %}
+                    Using default key — change in .env immediately!
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" action="/admin/security" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+
+        {% for item in items %}
+        <div class="rounded-xl p-5 shadow-sm border" style="background: var(--color-surface); border-color: var(--color-border);">
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-sm font-semibold" style="color: var(--color-text);">{{ item.label }}</label>
+                <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--color-text-secondary); color: #fff;">{{ item.source }}</span>
+            </div>
+            <div class="text-xs mb-3" style="color: var(--color-text-secondary);">{{ item.description }}</div>
+            {% if item.type == 'checkbox' %}
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="{{ item.key }}" {% if item.value == 'true' %}checked{% endif %} class="rounded">
+                <span class="text-sm" style="color: var(--color-text);">Enabled</span>
+            </label>
+            {% else %}
+            <input type="text" name="{{ item.key }}" value="{{ item.value }}" placeholder="Enter value..."
+                class="w-full px-3 py-2 rounded-lg text-sm border font-mono" style="border-color: var(--color-border); background: var(--color-bg); color: var(--color-text);">
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="flex gap-3">
+            <button type="submit" class="px-6 py-2 rounded-lg text-sm font-medium" style="background: var(--color-primary); color: #fff;">{{ request.state.t.btn_save }}</button>
+            <a href="/admin" class="px-6 py-2 rounded-lg text-sm" style="border: 1px solid var(--color-border); color: var(--color-text-secondary);">{{ request.state.t.btn_cancel }}</a>
+        </div>
+    </form>
+
+    <div class="mt-6 rounded-xl p-4 shadow-sm border text-sm" style="background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-secondary);">
+        <strong>Note:</strong> CORS origins and rate limits are saved in the database. Some settings (like SECRET_KEY) must be changed in .env and require a restart.
+    </div>
+</div>
+{% endblock %}
