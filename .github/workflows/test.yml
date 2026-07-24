@@ -41,7 +41,7 @@ jobs:
           MINIO_SECRET_KEY: dwmb_minio_secret
           MINIO_BUCKET: dwmb-media
           REDIS_URL: redis://localhost:6379/0
-          CORS_ORIGINS: http://localhost:8000
+          CORS_ORIGINS: '["http://localhost:8000"]'
         run: |
           pytest tests/test_layout.py tests/test_external_apis.py tests/test_api_v1.py tests/test_security_features.py -v --tb=short
 
