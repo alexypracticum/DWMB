@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Security Settings - DWMB{% endblock %}
+{% block title %}{{ request.state.t.admin_security_settings }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-3xl mx-auto">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold" style="color: var(--color-text);">Security Settings</h1>
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">{{ request.state.t.admin_security_settings }}</h1>
         <a href="/admin" class="text-sm" style="color: var(--color-primary);">{{ request.state.t.admin_back }}</a>
     </div>
 
@@ -21,14 +21,14 @@
                 {% endif %}
             </div>
             <div>
-                <div class="font-medium" style="color: var(--color-text);">SECRET_KEY</div>
+                <div class="font-medium" style="color: var(--color-text);">{{ request.state.t.admin_secret_key_status }}</div>
                 <div class="text-sm" style="color: var(--color-text-secondary);">
                     {% if secret_key_status == 'ok' %}
-                    Strong key ({{ secret_key_length }} chars)
+                    {{ request.state.t.admin_secret_key_strong }} ({{ secret_key_length }})
                     {% elif secret_key_status == 'short' %}
-                    Too short ({{ secret_key_length }} chars) — use at least 32
+                    {{ request.state.t.admin_secret_key_short }} ({{ secret_key_length }})
                     {% else %}
-                    Using default key — change in .env immediately!
+                    {{ request.state.t.admin_secret_key_default }}
                     {% endif %}
                 </div>
             </div>
@@ -41,17 +41,24 @@
         {% for item in items %}
         <div class="rounded-xl p-5 shadow-sm border" style="background: var(--color-surface); border-color: var(--color-border);">
             <div class="flex items-center justify-between mb-2">
-                <label class="text-sm font-semibold" style="color: var(--color-text);">{{ item.label }}</label>
-                <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--color-text-secondary); color: #fff;">{{ item.source }}</span>
+                {% set raw_key = item.key.replace('security_', '') %}
+                {% if raw_key == 'csrf_enabled' %}
+                    {% set label_key = 'admin_csrf_protection' %}
+                {% else %}
+                    {% set label_key = 'admin_' + raw_key %}
+                {% endif %}
+                <label class="text-sm font-semibold" style="color: var(--color-text);">{{ request.state.t.get(label_key, item.label) }}</label>
+                <span class="text-xs px-2 py-0.5 rounded-full" style="background: var(--color-text-secondary); color: #fff;">{{ request.state.t.get('admin_api_source_' + item.source, item.source) }}</span>
             </div>
-            <div class="text-xs mb-3" style="color: var(--color-text-secondary);">{{ item.description }}</div>
+            {% set desc_key = label_key + '_desc' %}
+            <div class="text-xs mb-3" style="color: var(--color-text-secondary);">{{ request.state.t.get(desc_key, item.description) }}</div>
             {% if item.type == 'checkbox' %}
             <label class="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" name="{{ item.key }}" {% if item.value == 'true' %}checked{% endif %} class="rounded">
-                <span class="text-sm" style="color: var(--color-text);">Enabled</span>
+                <span class="text-sm" style="color: var(--color-text);">{{ request.state.t.admin_enabled }}</span>
             </label>
             {% else %}
-            <input type="text" name="{{ item.key }}" value="{{ item.value }}" placeholder="Enter value..."
+            <input type="text" name="{{ item.key }}" value="{{ item.value }}" placeholder="..."
                 class="w-full px-3 py-2 rounded-lg text-sm border font-mono" style="border-color: var(--color-border); background: var(--color-bg); color: var(--color-text);">
             {% endif %}
         </div>
@@ -64,7 +71,7 @@
     </form>
 
     <div class="mt-6 rounded-xl p-4 shadow-sm border text-sm" style="background: var(--color-surface); border-color: var(--color-border); color: var(--color-text-secondary);">
-        <strong>Note:</strong> CORS origins and rate limits are saved in the database. Some settings (like SECRET_KEY) must be changed in .env and require a restart.
+        {{ request.state.t.admin_security_note }}
     </div>
 </div>
 {% endblock %}

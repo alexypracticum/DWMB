@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Roles - DWMB{% endblock %}
+{% block title %}{{ request.state.t.admin_roles }} - DWMB{% endblock %}
 
 {% block content %}
 <div class="fade-in max-w-4xl mx-auto">
     <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold" style="color: var(--color-text);">Roles & Permissions</h1>
+        <h1 class="text-2xl font-bold" style="color: var(--color-text);">{{ request.state.t.admin_roles }}</h1>
         <div class="flex gap-2">
-            <a href="/admin/roles/create" class="px-4 py-2 rounded-lg text-sm font-medium" style="background: var(--color-primary); color: #fff;">+ Create Role</a>
+            <a href="/admin/roles/create" class="px-4 py-2 rounded-lg text-sm font-medium" style="background: var(--color-primary); color: #fff;">+ {{ request.state.t.admin_create_role }}</a>
             <a href="/admin" class="text-sm" style="color: var(--color-primary);">{{ request.state.t.admin_back }}</a>
         </div>
     </div>
@@ -16,12 +16,12 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="text-left" style="border-bottom: 1px solid var(--color-border); background: var(--color-bg);">
-                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Role</th>
-                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Code</th>
-                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Description</th>
-                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Users</th>
-                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Permissions</th>
-                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">Actions</th>
+                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.admin_role_name }}</th>
+                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.admin_role_code }}</th>
+                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.admin_role_description }}</th>
+                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.admin_role_users }}</th>
+                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.admin_role_permissions }}</th>
+                        <th class="px-4 py-3 font-medium" style="color: var(--color-text-secondary);">{{ request.state.t.label_actions }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -34,10 +34,10 @@
                         <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ role_perm_counts.get(role.role_id, 0) }}</td>
                         <td class="px-4 py-3">
                             <div class="flex gap-2">
-                                <a href="/admin/roles/{{ role.role_id }}/edit" class="text-xs" style="color: var(--color-primary);">Edit</a>
-                                <form action="/admin/roles/{{ role.role_id }}/delete" method="post" class="inline" onsubmit="return confirm('Delete this role?')">
+                                <a href="/admin/roles/{{ role.role_id }}/edit" class="text-xs" style="color: var(--color-primary);">{{ request.state.t.admin_edit_role }}</a>
+                                <form action="/admin/roles/{{ role.role_id }}/delete" method="post" class="inline" onsubmit="return confirm('{{ request.state.t.admin_confirm_delete_role }}')">
                                     <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
-                                    <button type="submit" class="text-xs" style="color: var(--color-error);">Delete</button>
+                                    <button type="submit" class="text-xs" style="color: var(--color-error);">{{ request.state.t.admin_delete }}</button>
                                 </form>
                             </div>
                         </td>
@@ -45,7 +45,7 @@
                     {% endfor %}
                     {% if not roles %}
                     <tr>
-                        <td colspan="6" class="px-4 py-8 text-center" style="color: var(--color-text-secondary);">No roles found</td>
+                        <td colspan="6" class="px-4 py-8 text-center" style="color: var(--color-text-secondary);">{{ request.state.t.admin_no_roles }}</td>
                     </tr>
                     {% endif %}
                 </tbody>
