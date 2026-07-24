@@ -51,7 +51,7 @@ def _extract_form_token(body: bytes, content_type: str) -> str | None:
 
 class CSRFMiddleware(BaseHTTPMiddleware):
     SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
-    EXEMPT_PATHS = {"/health", "/api/ai/search", "/api/ai/similar", "/api/editor/search", "/graphql", "/graphql/", "/api/set-language", "/auth/login", "/auth/register", "/profile", "/profile/update", "/profile/change-password", "/profile/theme", "/toggle-dark"}
+    EXEMPT_PATHS = {"/health", "/api/ai/search", "/api/ai/similar", "/api/editor/search", "/graphql", "/graphql/", "/api/set-language", "/auth/login", "/auth/register", "/profile", "/profile/update", "/profile/change-password", "/profile/theme", "/profile/toggle-dark"}
 
     async def dispatch(self, request: Request, call_next):
         cookie_token = request.cookies.get(CSRF_TOKEN_NAME)

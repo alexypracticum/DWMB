@@ -51,6 +51,19 @@ _theme_cache: dict[str, dict] = {}
 _theme_cache_ttl = 300
 
 
+def invalidate_theme_cache(user_id: str = None):
+    """Invalidate theme cache for a specific user or all users."""
+    global _theme_cache, _user_cache
+    if user_id:
+        # Remove specific user from user cache (contains theme)
+        keys_to_remove = [k for k in _user_cache.keys()]
+        for key in keys_to_remove:
+            del _user_cache[key]
+    else:
+        _theme_cache.clear()
+        _user_cache.clear()
+
+
 def _get_cached_user(username: str) -> dict | None:
     """Get user from cache if valid."""
     entry = _user_cache.get(username)

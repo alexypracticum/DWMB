@@ -192,44 +192,68 @@ async def change_password(
 async def toggle_dark(
     request: Request,
     db: AsyncSession = Depends(get_db),
-    user: UserAccount = Depends(require_auth),
 ):
-    """Toggle between system light/dark themes."""
-    # Determine target is_dark by checking current active theme
-    current_dark = False
-    if user.theme_id:
+    """Toggle dark/light mode. Authenticated: toggles system themes. Unauthenticated: toggles cookie."""
+    from jose import JWTError, jwt
+    from app.config import get_settings
+    settings = get_settings()
+
+    referer = request.headers.get("referer", "/")
+    token = request.cookies.get("access_token")
+    user = None
+
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            username = payload.get("sub")
+            if username:
+                result = await db.execute(
+                    select(UserAccount).where(UserAccount.username == username)
+                )
+                user = result.scalar_one_or_none()
+        except JWTError:
+            pass
+
+    if user and user.theme_id:
+        # Authenticated: toggle between system themes
+        await _ensure_system_themes(db, user)
+
         result = await db.execute(
-            select(UserTheme).where(UserTheme.theme_id == user.theme_id)
+            select(UserTheme).where(
+                UserTheme.user_id == user.user_id,
+                UserTheme.is_system == True,
+            ).order_by(UserTheme.is_dark)
         )
-        current = result.scalar_one_or_none()
-        if current:
-            current_dark = current.is_dark
+        system_themes = result.scalars().all()
 
-    target_dark = not current_dark
+        if len(system_themes) >= 2:
+            current_idx = 0
+            for i, t in enumerate(system_themes):
+                if t.theme_id == user.theme_id:
+                    current_idx = i
+                    break
 
-    # Find the system theme with the target is_dark value
-    result = await db.execute(
-        select(UserTheme).where(
-            UserTheme.user_id == user.user_id,
-            UserTheme.is_system == True,
-            UserTheme.is_dark == target_dark,
-        )
-    )
-    target_theme = result.scalar_one_or_none()
+            target_idx = 1 - current_idx
+            target_theme = system_themes[target_idx]
 
-    if target_theme:
-        # Deactivate all themes
-        all_themes = await db.execute(
-            select(UserTheme).where(UserTheme.user_id == user.user_id)
-        )
-        for t in all_themes.scalars().all():
-            t.is_active = False
+            for t in system_themes:
+                t.is_active = False
 
-        target_theme.is_active = True
-        user.theme_id = target_theme.theme_id
-        await db.commit()
+            target_theme.is_active = True
+            user.theme_id = target_theme.theme_id
+            await db.commit()
 
-    return RedirectResponse(url="/profile/", status_code=303)
+            from app.middleware.theme import invalidate_theme_cache
+            invalidate_theme_cache()
+    else:
+        # Unauthenticated: toggle cookie
+        current = request.cookies.get("dark_mode", "0")
+        new_value = "0" if current == "1" else "1"
+        response = RedirectResponse(url=referer, status_code=303)
+        response.set_cookie("dark_mode", new_value, max_age=365 * 24 * 3600, httponly=False)
+        return response
+
+    return RedirectResponse(url=referer, status_code=303)
 
 
 @router.post("/theme/create")

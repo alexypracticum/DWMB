@@ -238,7 +238,7 @@
             </div>
             <div class="flex items-center gap-3">
                 <!-- Dark mode toggle -->
-                <form action="/toggle-dark" method="post" class="inline">
+                <form action="/profile/toggle-dark" method="post" class="inline">
                     <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
                     <input type="checkbox" name="is_dark" value="true" id="darkModeToggle"
                            {% if (request.state.theme and request.state.theme.is_dark) or (not request.state.theme and request.cookies.get('dark_mode') == '1') %}checked{% endif %}

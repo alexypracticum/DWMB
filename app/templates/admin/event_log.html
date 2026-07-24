@@ -74,7 +74,7 @@
                         </td>
                         <td class="px-4 py-3">
                             {% if event.entity_id %}
-                            <a href="/entity/{{ event.entity_id }}" class="hover:underline" style="color: var(--color-primary);">{{ entity_labels.get(event.entity_id, event.entity_id|string[:8] ~ '...') }}</a>
+                            <a href="/entity/{{ event.entity_id }}" class="hover:underline" style="color: var(--color-primary);">{{ entity_labels.get(event.entity_id, (event.entity_id|string)[:8] ~ '...') }}</a>
                             {% else %}-{% endif %}
                         </td>
                         <td class="px-4 py-3" style="color: var(--color-text-secondary);">{{ event.caused_by or '-' }}</td>
