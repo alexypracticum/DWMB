@@ -36,6 +36,18 @@
 - **Dark mode**: toggle доступен для всех (auth + anon через cookie)
 - **0 hardcoded Russian** строк в шаблонах (кроме entity data и language names)
 
+### Инфраструктура (Приоритет D)
+
+- **CI/CD**: GitHub Actions workflows (test.yml, deploy.yml, docker-publish.yml)
+- **GraphQL subscriptions**: entityChanged, commentChanged, relationChanged через WebSocket
+- **WebSocket event bus**: asyncio.Queue для передачи событий от manager к subscriptions
+- **JS клиент**: GraphQLSubscriptions class с auto-reconnect
+
+### OMDb кэширование и rate limiting
+
+- **Кэширование**: поиск OMDb — 1 час, детали фильма — 24 часа (Redis/memory fallback)
+- **Rate limiting**: 500ms между запросами к OMDb API
+
 ### Коммиты
 
 - `ad83ecd` — RU_LABELS/EN_LABELS удалены, версия 0.17.0

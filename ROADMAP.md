@@ -1,6 +1,6 @@
 # Roadmap
 
-## v0.17.0 — Локализация, граф связей, OMDb (выполнено)
+## v0.17.0 — Локализация, граф, OMDb, инфраструктура (выполнено)
 
 ### Локализация и i18n
 
@@ -30,104 +30,73 @@
 - [x] `import_imdb_movie()` — импорт фильма как сущность с данными
 - [x] REST эндпоинты: status, search, movie, import
 - [x] UI модалка поиска/импорта на странице создания сущности
+- [x] Кэширование OMDb: поиск 1 час, детали 24 часа (Redis/memory)
+- [x] Rate limiting OMDb: 500ms между запросами
+
+### Инфраструктура (Приоритет D)
+
+- [x] CI/CD: GitHub Actions (test.yml, deploy.yml, docker-publish.yml)
+- [x] GraphQL subscriptions: entityChanged, commentChanged, relationChanged
+- [x] WebSocket event bus для subscriptions
+- [x] JS клиент GraphQL subscriptions с auto-reconnect
 
 ### Исправления
 
 - [x] CSRF middleware: проверка form body (url-encoded + multipart)
 - [x] Импорт `manager` в crud.py (WebSocket notifications)
+- [x] Исправлен label priority в info_table (config label > get_label)
 
 ---
 
 ## v0.16.0 — Рефакторинг архитектуры (выполнено)
 
-### Цель: Разделение приложения и пользовательских данных, нормализация кода
-
-**Разделение данных:**
-- [x] Созданы таблицы `ui_string` и `ui_string_translation` (663 ключа)
-- [x] Мигрированы UI-строки из сущностей (4639 переводов)
-- [x] Обновлён middleware для работы с новыми таблицами
-
-**Service Layer:**
-- [x] Создан `entity_service.py` для CRUD сущностей
-- [x] Создан `kind_service.py` для управления типами
-- [x] Создан `relation_service.py` для управления связями
-
-**API Versioning:**
-- [x] Префикс `/api/v1/` для entities, kinds, relations, search
-
-**Типизация:**
+- [x] UI strings: миграция в dedicated таблицы (663 ключа x 7 языков)
+- [x] Service Layer: entity_service, kind_service, relation_service
+- [x] API Versioning: /api/v1/
 - [x] Type hints для services и API v1
-
-**Accessibility:**
-- [x] WCAG AA compliance (skip link, ARIA, alt texts, focus styles)
+- [x] Accessibility WCAG AA
+- [x] Исправлен language switching bug
 
 ---
 
 ## v0.15.0 — RLS, Микросервисы, WebSocket (выполнено)
 
-- [x] RBAC интеграция (require_permission во всех admin роутах)
-- [x] Email service (регистрация, сброс пароля)
-- [x] Redis кэширование (init_cache при старте)
-- [x] GraphQL mutations (createKind, createEntity, updateEntity, deleteEntity, createRelation)
-- [x] Геосвязи (entity_geo, /map, Leaflet.js)
-- [x] Автосохранение языка (/api/set-language)
-- [x] RLS (5 политик на entity)
-- [x] Микросервисы (AI=8001, Search=8002, Media=8003)
-- [x] WebSocket (/ws endpoint)
+- [x] RBAC, Email, Redis, GraphQL mutations, Геосвязи, RLS, WebSocket
 
 ---
 
 ## v0.12.0 — GraphQL, Docker, Tests (выполнено)
 
-- [x] GraphQL API (strawberry-graphql, sync engine)
-- [x] Docker: multi-stage, non-root, healthcheck, .dockerignore, prod override
-- [x] 165 тестов, исправлены импорты
-- [x] CSRF: cookie + header validation, 27 шаблонов
+- [x] GraphQL API, Docker, CSRF, 165 тестов
 
 ---
 
 ## v0.11.0 — Безопасность и архитектура (выполнено)
 
-- [x] CORS, SSRF, XSS, password validation, SECRET_KEY warnings
-- [x] admin.py → 11 подмодулей, entities.py → 4, layout.py → 4
-- [x] theme.py кэширование, kinds.py оптимизация
-- [x] Плагины: lifecycle hooks, 7 плагинов
-- [x] N+1 batch queries, lazy init
+- [x] CORS, SSRF, XSS, реструктуризация, плагины, оптимизация
 
 ---
 
-## v0.9.0 — Полный перевод всех страниц (выполнено)
+## Дальнейшие улучшения
 
-- [x] Переведены все страницы на 7 языков
+### Функциональные
 
----
+- [ ] Wikipedia API: поиск и импорт описаний (заготовки есть)
+- [ ] MusicBrainz API: поиск музыкальных данных (заготовки есть)
+- [ ] Поиск по графу: расширенный поиск с учётом связей
+- [ ] Экспорт графа: скачивание как PNG/SVG/JSON
 
-## v0.8.0 — Полный переход на БД (выполнено)
+### Технические
 
-- [x] i18n.py заменена на language.py + БД
+- [ ] Тесты покрытие: добавить тесты для графа, OMDb, subscriptions
+- [ ] API документация: OpenAPI аннотации для всех эндпоинтов
 
----
+### UI/UX
 
-## v0.7.0 — Мультиязычность через проекции (выполнено)
+- [ ] Личный кабинет: профиль, история импортов, избранное
+- [ ] Уведомления в UI: toast-уведомления через subscriptions
+- [ ] Тёмная тема для графа: адаптация под dark mode
 
-- [x] EntityKind "ui_string" → позже заменены на dedicated таблицы
+### Продакшен (отложить)
 
----
-
-## v0.6.0 — Мультиязычность (выполнено)
-
-- [x] meta.language таблица, 7 языков, переключатель
-
----
-
-## v0.5.0 — Архитектура плагинов, инфраструктура, UI/UX (выполнено)
-
-- [x] Плагины, RBAC, EventLog, Redis, Rate limiting, Email, Версионирование, Комментарии, WYSIWYG, Экспорт, CLI, RSS
-
----
-
-## Следующий этап — Приоритет D: Промышленная
-
-- [ ] CI/CD (GitHub Actions)
 - [ ] Мониторинг (Prometheus/Grafana)
-- [ ] GraphQL subscriptions
